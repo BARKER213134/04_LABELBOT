@@ -373,6 +373,17 @@ async def setup_bot_application(environment='sandbox'):
     _users_service = users_service
     _templates_service = templates_service
     
+    # IMPORTANT: Add callback handlers BEFORE ConversationHandler
+    # This ensures menu buttons work even when user is in conversation
+    from telegram.ext import CallbackQueryHandler
+    application.add_handler(CallbackQueryHandler(check_balance_callback, pattern="^check_balance$"))
+    application.add_handler(CallbackQueryHandler(back_to_menu_callback, pattern="^back_to_menu$"))
+    application.add_handler(CallbackQueryHandler(templates_menu_callback, pattern="^templates_menu$"))
+    application.add_handler(CallbackQueryHandler(template_view_callback, pattern="^tpl_view_"))
+    application.add_handler(CallbackQueryHandler(template_delete_callback, pattern="^tpl_del_"))
+    application.add_handler(CallbackQueryHandler(refund_info_callback, pattern="^refund_info$"))
+    application.add_handler(CallbackQueryHandler(faq_info_callback, pattern="^faq_info$"))
+    
     # Add conversation handler (includes start_create button callback)
     conversation_handler_instance = TelegramConversationHandler(
         db, orders_service, shipengine_service, users_service, templates_service
@@ -382,16 +393,6 @@ async def setup_bot_application(environment='sandbox'):
     # Add command handlers
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(CommandHandler("help", help_command))
-    
-    # Add callback handlers
-    from telegram.ext import CallbackQueryHandler
-    application.add_handler(CallbackQueryHandler(check_balance_callback, pattern="^check_balance$"))
-    application.add_handler(CallbackQueryHandler(back_to_menu_callback, pattern="^back_to_menu$"))
-    application.add_handler(CallbackQueryHandler(templates_menu_callback, pattern="^templates_menu$"))
-    application.add_handler(CallbackQueryHandler(template_view_callback, pattern="^tpl_view_"))
-    application.add_handler(CallbackQueryHandler(template_delete_callback, pattern="^tpl_del_"))
-    application.add_handler(CallbackQueryHandler(refund_info_callback, pattern="^refund_info$"))
-    application.add_handler(CallbackQueryHandler(faq_info_callback, pattern="^faq_info$"))
     
     logger.info("Bot application setup complete")
     return application
