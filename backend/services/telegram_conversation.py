@@ -814,13 +814,21 @@ class TelegramConversationHandler:
         return await self.shipengine_service.get_rates(shipment_data)
     
     async def _show_rates(self, query, user_id: str, rates: List[Dict[str, Any]]):
-        """Display available rates with prices"""
-        # Group rates by carrier
-        carrier_icons = {
-            'stamps_com': '📦 USPS',
-            'usps': '📦 USPS',
-            'fedex': '✈️ FedEx',
-            'ups': '🚚 UPS',
+        """Display available rates with prices - 4 per carrier"""
+        # Carrier display settings
+        carrier_config = {
+            'stamps_com': {'icon': '📦', 'name': 'USPS'},
+            'usps': {'icon': '📦', 'name': 'USPS'},
+            'fedex': {'icon': '✈️', 'name': 'FedEx'},
+            'ups': {'icon': '🚚', 'name': 'UPS'},
+        }
+        
+        # Popular services to prioritize (in order of priority)
+        popular_services = {
+            'stamps_com': ['usps_ground_advantage', 'usps_priority_mail', 'usps_first_class_mail', 'usps_priority_mail_express'],
+            'usps': ['usps_ground_advantage', 'usps_priority_mail', 'usps_first_class_mail', 'usps_priority_mail_express'],
+            'fedex': ['fedex_ground', 'fedex_home_delivery', 'fedex_2day', 'fedex_express_saver'],
+            'ups': ['ups_ground', 'ups_3_day_select', 'ups_2nd_day_air', 'ups_next_day_air_saver'],
         }
         
         text = (
@@ -832,31 +840,56 @@ class TelegramConversationHandler:
             "_Цены включают все сборы_\n\n"
         )
         
-        keyboard = []
-        
-        # Sort rates by total price
-        sorted_rates = sorted(rates, key=lambda x: x.get('total_amount', 999))
-        
-        for i, rate in enumerate(sorted_rates[:8]):  # Limit to 8 options
+        # Group rates by carrier
+        rates_by_carrier = {}
+        for rate in rates:
             carrier_code = rate.get('carrier_code', '').lower()
-            carrier_name = carrier_icons.get(carrier_code, rate.get('carrier_friendly_name', 'Unknown'))
-            service_type = rate.get('service_type', '')
-            total_price = rate.get('total_amount', 0)
-            delivery_days = rate.get('delivery_days', '')
+            if carrier_code not in rates_by_carrier:
+                rates_by_carrier[carrier_code] = []
+            rates_by_carrier[carrier_code].append(rate)
+        
+        keyboard = []
+        rate_index = 0
+        data = self.get_user_data(user_id)
+        data['rate_map'] = {}
+        
+        # Process each carrier
+        for carrier_code in ['stamps_com', 'fedex', 'ups']:
+            carrier_rates = rates_by_carrier.get(carrier_code, [])
+            if not carrier_rates:
+                continue
             
-            # Format delivery time
-            delivery_text = f" ({delivery_days} дн.)" if delivery_days else ""
+            config = carrier_config.get(carrier_code, {'icon': '📦', 'name': carrier_code})
+            popular = popular_services.get(carrier_code, [])
             
-            button_text = f"{carrier_name} {service_type}{delivery_text} - ${total_price:.2f}"
+            # Sort rates: prioritize popular services, then by price
+            def rate_sort_key(r):
+                service_code = r.get('service_code', '')
+                try:
+                    priority = popular.index(service_code)
+                except ValueError:
+                    priority = 999
+                return (priority, r.get('total_amount', 999))
             
-            # Store rate info for later use
-            rate_id = f"rate_{i}"
-            data = self.get_user_data(user_id)
-            if 'rate_map' not in data:
-                data['rate_map'] = {}
-            data['rate_map'][rate_id] = rate
+            sorted_carrier_rates = sorted(carrier_rates, key=rate_sort_key)
             
-            keyboard.append([InlineKeyboardButton(button_text, callback_data=rate_id)])
+            # Take top 4 rates for this carrier
+            for rate in sorted_carrier_rates[:4]:
+                service_type = rate.get('service_type', rate.get('service_code', ''))
+                total_price = rate.get('total_amount', 0)
+                delivery_days = rate.get('delivery_days', '')
+                
+                # Format delivery time
+                delivery_text = f" ({delivery_days} дн.)" if delivery_days else ""
+                
+                button_text = f"{config['icon']} {config['name']} {service_type}{delivery_text} - ${total_price:.2f}"
+                
+                # Store rate info
+                rate_id = f"rate_{rate_index}"
+                data['rate_map'][rate_id] = rate
+                rate_index += 1
+                
+                keyboard.append([InlineKeyboardButton(button_text, callback_data=rate_id)])
         
         keyboard.append([InlineKeyboardButton("◀️ Назад к проверке", callback_data="back_to_review_from_rates")])
         
