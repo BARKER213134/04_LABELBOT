@@ -27,26 +27,25 @@ class TelegramService:
         self.bot = Bot(token=bot_token)
         self.environment = environment
     
-    async def send_welcome_message(self, chat_id: int):
+    async def send_welcome_message(self, chat_id: int, balance: float = None):
         """Send welcome message with instructions"""
         from telegram import InlineKeyboardButton, InlineKeyboardMarkup
         
+        balance_text = f"💰 Баланс: *${balance:.2f}*\n\n" if balance is not None else ""
+        
         text = (
             "━━━━━━━━━━━━━━━━━━━━\n"
-            "🚀 *SHIPBOT - SHIPPING LABELS*\n"
+            "📦 *WHITE LABEL SHIPPING BOT*\n"
             "━━━━━━━━━━━━━━━━━━━━\n\n"
-            "Здравствуйте!\n\n"
-            "Добро пожаловать в профессиональный сервис создания shipping labels.\n\n"
-            "📦 *Поддерживаемые перевозчики:*\n"
-            "▫️ USPS (US Postal Service)\n"
-            "▫️ FedEx\n"
-            "▫️ UPS\n\n"
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
-            "Нажмите кнопку ниже, чтобы начать:"
+            f"{balance_text}"
+            "Создавайте shipping labels для:\n"
+            "USPS • FedEx • UPS\n\n"
+            "━━━━━━━━━━━━━━━━━━━━"
         )
         
         keyboard = [
-            [InlineKeyboardButton("📦 Создать Shipping Label", callback_data="start_create")]
+            [InlineKeyboardButton("📦 Создать Label", callback_data="start_create")],
+            [InlineKeyboardButton("💰 Баланс", callback_data="check_balance")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
