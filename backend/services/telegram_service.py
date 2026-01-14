@@ -46,7 +46,8 @@ class TelegramService:
         keyboard = [
             [InlineKeyboardButton("📦 Создать Label", callback_data="start_create")],
             [InlineKeyboardButton("📋 Шаблоны", callback_data="templates_menu")],
-            [InlineKeyboardButton("💰 Баланс", callback_data="check_balance")]
+            [InlineKeyboardButton("💰 Баланс", callback_data="check_balance")],
+            [InlineKeyboardButton("↩️ Refund Label", callback_data="refund_info")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
