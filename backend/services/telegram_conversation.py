@@ -720,10 +720,15 @@ class TelegramConversationHandler:
             "❌ *СОЗДАНИЕ ОТМЕНЕНО*\n"
             "━━━━━━━━━━━━━━━━━━━━\n\n"
             "Вы отменили создание лейбла.\n\n"
-            "Используйте /create чтобы начать заново."
+            "Нажмите кнопку ниже, чтобы вернуться в главное меню:"
         )
         
-        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        keyboard = [
+            [InlineKeyboardButton("🏠 Вернуться в главное меню", callback_data="back_to_menu")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        await update.message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
         return ConversationHandler.END
     
     def get_conversation_handler(self) -> ConversationHandler:
