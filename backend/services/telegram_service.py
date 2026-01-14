@@ -15,12 +15,16 @@ class TelegramService:
     async def send_welcome_message(self, chat_id: int):
         """Send welcome message with instructions"""
         text = (
-            "🚀 *Добро пожаловать в ShipBot*\\!\n\n"
-            "Я помогу вам создать shipping labels для:\n"
-            "• USPS\n"
-            "• FedEx\n"
-            "• UPS\n\n"
-            "Используйте /create для создания нового лейбла"
+            "🚀 *Добро пожаловать в ShipBot\\!*\\n\\n"
+            "Я помогу вам создать shipping labels для:\\n"
+            "📦 USPS\\n"
+            "✈️ FedEx\\n"
+            "🚚 UPS\\n\\n"
+            "*Доступные команды:*\\n"
+            "/create \\- Создать новый лейбл\\n"
+            "/help \\- Показать помощь\\n\\n"
+            "💡 Для полного функционала используйте веб\\-дашборд:\\n"
+            "https://shipbot\\-labels\\.preview\\.emergentagent\\.com"
         )
         await self.bot.send_message(
             chat_id=chat_id,
