@@ -13,6 +13,7 @@ from services.telegram_conversation import TelegramConversationHandler
 from services.orders_service import OrdersService
 from services.shipengine_service import ShipEngineService
 from services.users_service import UsersService
+from services.templates_service import TemplatesService
 
 logging.basicConfig(
     level=logging.INFO,
@@ -20,8 +21,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Global reference to users_service for use in handlers
+# Global references for use in handlers
 _users_service = None
+_templates_service = None
 
 async def start_command(update, context):
     """Handle /start command"""
