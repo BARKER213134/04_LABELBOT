@@ -29,6 +29,17 @@ async def start_command(update, context):
     """Handle /start command"""
     global _users_service
     
+    # Delete the previous menu message if exists
+    try:
+        last_menu_msg_id = context.user_data.get('last_menu_message_id')
+        if last_menu_msg_id:
+            await context.bot.delete_message(
+                chat_id=update.effective_chat.id,
+                message_id=last_menu_msg_id
+            )
+    except Exception as e:
+        logger.debug(f"Could not delete previous menu message: {e}")
+    
     balance = 0.0
     # Create/update user in database
     if _users_service:
@@ -43,7 +54,11 @@ async def start_command(update, context):
         logger.info(f"User {tg_user.id} ({tg_user.username}) - balance: ${balance:.2f}")
     
     telegram_service = TelegramService()
-    await telegram_service.send_welcome_message(update.effective_chat.id, balance)
+    sent_message = await telegram_service.send_welcome_message(update.effective_chat.id, balance)
+    
+    # Store the new menu message id
+    if sent_message:
+        context.user_data['last_menu_message_id'] = sent_message.message_id
 
 async def check_balance_callback(update, context):
     """Handle balance check button"""
