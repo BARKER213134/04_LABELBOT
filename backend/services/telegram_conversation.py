@@ -1732,7 +1732,8 @@ class TelegramConversationHandler:
                 
                 TEMPLATE_SAVE_NAME: [
                     MessageHandler(filters.TEXT & ~filters.COMMAND, self.save_template_name),
-                    CallbackQueryHandler(self.handle_edit_choice, pattern="^continue_to_carrier$")
+                    CallbackQueryHandler(self.handle_edit_choice, pattern="^continue_to_carrier$"),
+                    CallbackQueryHandler(self.back_to_review_from_template, pattern="^back_to_review_after_save$")
                 ],
                 
                 TEMPLATE_EDIT: [
