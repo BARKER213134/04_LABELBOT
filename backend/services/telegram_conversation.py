@@ -644,15 +644,26 @@ class TelegramConversationHandler:
         await self.show_review_summary(update.message, user_id)
         return REVIEW_SUMMARY
     
-    async def show_review_summary(self, message, user_id: str):
+    async def show_review_summary(self, message, user_id: str, from_template: bool = False):
         """Show summary with edit options"""
         data = self.get_user_data(user_id)
         
-        text = (
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "📋 *ПРОВЕРКА ДАННЫХ*\n"
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
-            "Пожалуйста, проверьте введенные данные перед выбором перевозчика.\n\n"
+        if from_template:
+            header = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "📋 *ДАННЫЕ ИЗ ШАБЛОНА*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "Проверьте данные и отредактируйте при необходимости.\n\n"
+            )
+        else:
+            header = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "📋 *ПРОВЕРКА ДАННЫХ*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "Пожалуйста, проверьте введенные данные перед выбором перевозчика.\n\n"
+            )
+        
+        text = header + (
             "━━━━━━━━━━━━━━━━━━━━\n"
             "📍 *ОТПРАВИТЕЛЬ*\n"
             f"▫️ Имя: {data.get('shipFromName')}\n"
