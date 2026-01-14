@@ -2,7 +2,11 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import List, Dict, Any
 from database import Database
 from services.users_service import UsersService
+from services.telegram_service import TelegramService
 from models.user import UserBalanceUpdate, UserResponse
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -36,6 +40,10 @@ async def update_balance(
     service: UsersService = Depends(get_users_service)
 ):
     """Update user balance (add or subtract)"""
+    # Get user before update to check old balance
+    old_user = await service.get_user(update.telegram_id)
+    old_balance = old_user.get('balance', 0) if old_user else 0
+    
     user = await service.update_balance(
         telegram_id=update.telegram_id,
         amount=update.amount,
@@ -44,6 +52,42 @@ async def update_balance(
     
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    # Send Telegram notification
+    try:
+        telegram_service = TelegramService()
+        new_balance = user.get('balance', 0)
+        
+        if update.amount > 0:
+            # Balance added
+            message = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "💰 *БАЛАНС ПОПОЛНЕН*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"▫️ Сумма: *+${update.amount:.2f}*\n"
+                f"▫️ Причина: {update.reason or 'Пополнение баланса'}\n\n"
+                f"▫️ Было: ${old_balance:.2f}\n"
+                f"▫️ Стало: *${new_balance:.2f}*\n\n"
+                "━━━━━━━━━━━━━━━━━━━━"
+            )
+        else:
+            # Balance deducted
+            message = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "💸 *СПИСАНИЕ СРЕДСТВ*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"▫️ Сумма: *-${abs(update.amount):.2f}*\n"
+                f"▫️ Причина: {update.reason or 'Списание средств'}\n\n"
+                f"▫️ Было: ${old_balance:.2f}\n"
+                f"▫️ Стало: *${new_balance:.2f}*\n\n"
+                "━━━━━━━━━━━━━━━━━━━━"
+            )
+        
+        await telegram_service.send_message(int(update.telegram_id), message)
+        logger.info(f"Balance notification sent to {update.telegram_id}")
+    except Exception as e:
+        logger.error(f"Failed to send balance notification: {e}")
+        # Don't fail the request if notification fails
     
     return user
 
