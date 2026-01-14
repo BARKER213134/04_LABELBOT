@@ -135,6 +135,8 @@ async def templates_menu_callback(update, context):
     query = update.callback_query
     await query.answer()
     
+    logger.info(f"templates_menu_callback triggered by user {update.effective_user.id}")
+    
     user_id = str(update.effective_user.id)
     
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
