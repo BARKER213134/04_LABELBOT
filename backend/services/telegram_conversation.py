@@ -837,6 +837,7 @@ class TelegramConversationHandler:
         shipment_data = {
             "ship_from": {
                 "name": data.get('shipFromName'),
+                "company_name": "",
                 "address_line1": data.get('shipFromAddressLine1'),
                 "city_locality": data.get('shipFromCity'),
                 "state_province": data.get('shipFromState'),
@@ -846,6 +847,7 @@ class TelegramConversationHandler:
             },
             "ship_to": {
                 "name": data.get('shipToName'),
+                "company_name": "",
                 "address_line1": data.get('shipToAddressLine1'),
                 "city_locality": data.get('shipToCity'),
                 "state_province": data.get('shipToState'),
