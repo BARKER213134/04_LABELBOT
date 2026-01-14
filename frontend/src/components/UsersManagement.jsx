@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import api from '../services/api';
+import axios from 'axios';
+
+const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const UsersManagement = () => {
   const [users, setUsers] = useState([]);
@@ -18,7 +20,7 @@ const UsersManagement = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/users/');
+      const response = await axios.get(`${API_URL}/users/`);
       setUsers(response.data);
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -38,7 +40,7 @@ const UsersManagement = () => {
 
     setIsUpdating(true);
     try {
-      const response = await api.post('/users/balance', {
+      const response = await axios.post(`${API_URL}/users/balance`, {
         telegram_id: selectedUser.telegram_id,
         amount: isAdd ? amount : -amount,
         reason: balanceReason || (isAdd ? 'Пополнение баланса' : 'Списание средств')
@@ -63,7 +65,7 @@ const UsersManagement = () => {
 
   const fetchBalanceHistory = async (telegramId) => {
     try {
-      const response = await api.get(`/users/${telegramId}/balance-history`);
+      const response = await axios.get(`${API_URL}/users/${telegramId}/balance-history`);
       setBalanceHistory(response.data);
       setShowHistory(true);
     } catch (error) {
