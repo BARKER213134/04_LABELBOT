@@ -1348,6 +1348,15 @@ class TelegramConversationHandler:
         
         return ConversationHandler.END
     
+    async def back_to_review_from_template(self, update: Update, context) -> int:
+        """Return to review summary from template save prompt"""
+        query = update.callback_query
+        await query.answer()
+        
+        user_id = str(update.effective_user.id)
+        await self.show_review_summary(query.message, user_id, edit_message=True)
+        return REVIEW_SUMMARY
+    
     async def save_template_prompt(self, update: Update, context) -> int:
         """Ask for template name"""
         query = update.callback_query
