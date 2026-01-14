@@ -1256,6 +1256,8 @@ class TelegramConversationHandler:
             reply_markup = InlineKeyboardMarkup(keyboard)
             
             await query.edit_message_text(success_message, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+            # Clear data after success
+            self.clear_user_data(user_id)
             
         except Exception as e:
             logger.error(f"Error creating label: {e}", exc_info=True)
@@ -1284,6 +1286,8 @@ class TelegramConversationHandler:
                 ]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 await query.edit_message_text(error_message, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+                # Don't clear data - allow user to try different rate
+                return SELECT_RATE
             else:
                 # Generic error
                 error_text = error_str.replace('*', '').replace('_', '').replace('[', '').replace(']', '')
@@ -1302,8 +1306,9 @@ class TelegramConversationHandler:
                 ]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 await query.edit_message_text(error_message, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+                # Don't clear data - allow user to try again
+                return SELECT_RATE
         
-        self.clear_user_data(user_id)
         return ConversationHandler.END
     
     async def save_template_prompt(self, update: Update, context) -> int:
