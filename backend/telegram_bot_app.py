@@ -27,6 +27,7 @@ async def start_command(update, context):
     """Handle /start command"""
     global _users_service
     
+    balance = 0.0
     # Create/update user in database
     if _users_service:
         tg_user = update.effective_user
@@ -40,15 +41,64 @@ async def start_command(update, context):
         logger.info(f"User {tg_user.id} ({tg_user.username}) - balance: ${balance:.2f}")
     
     telegram_service = TelegramService()
-    await telegram_service.send_welcome_message(update.effective_chat.id)
+    await telegram_service.send_welcome_message(update.effective_chat.id, balance)
 
-async def back_to_menu_callback(update, context):
-    """Handle back to menu button"""
+async def check_balance_callback(update, context):
+    """Handle balance check button"""
+    global _users_service
+    
     query = update.callback_query
     await query.answer()
     
+    user_id = str(update.effective_user.id)
+    balance = 0.0
+    total_orders = 0
+    total_spent = 0.0
+    
+    if _users_service:
+        user = await _users_service.get_user(user_id)
+        if user:
+            balance = user.get('balance', 0.0)
+            total_orders = user.get('total_orders', 0)
+            total_spent = user.get('total_spent', 0.0)
+    
+    text = (
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "💰 *ВАШ БАЛАНС*\n"
+        "━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"▫️ Доступно: *${balance:.2f}*\n"
+        f"▫️ Заказов: {total_orders}\n"
+        f"▫️ Потрачено: ${total_spent:.2f}\n\n"
+        "━━━━━━━━━━━━━━━━━━━━\n\n"
+        "Для пополнения баланса обратитесь к администратору."
+    )
+    
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+    keyboard = [
+        [InlineKeyboardButton("📦 Создать Label", callback_data="start_create")],
+        [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await query.edit_message_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+
+async def back_to_menu_callback(update, context):
+    """Handle back to menu button"""
+    global _users_service
+    
+    query = update.callback_query
+    await query.answer()
+    
+    user_id = str(update.effective_user.id)
+    balance = 0.0
+    
+    if _users_service:
+        user = await _users_service.get_user(user_id)
+        if user:
+            balance = user.get('balance', 0.0)
+    
     telegram_service = TelegramService()
-    await telegram_service.send_welcome_message(query.message.chat_id)
+    await telegram_service.send_welcome_message(query.message.chat_id, balance)
 
 async def help_command(update, context):
     """Handle /help command"""
