@@ -1164,6 +1164,18 @@ class TelegramConversationHandler:
         await update.message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
         return ConversationHandler.END
     
+    async def reset_and_start(self, update: Update, context) -> int:
+        """Reset conversation and show start menu"""
+        user_id = str(update.effective_user.id)
+        self.clear_user_data(user_id)
+        
+        # Import here to avoid circular import
+        from services.telegram_service import TelegramService
+        telegram_service = TelegramService()
+        await telegram_service.send_welcome_message(update.effective_chat.id)
+        
+        return ConversationHandler.END
+    
     def get_conversation_handler(self) -> ConversationHandler:
         """Get the conversation handler"""
         return ConversationHandler(
@@ -1209,5 +1221,8 @@ class TelegramConversationHandler:
                     CallbackQueryHandler(self.confirm_and_create, pattern="^(confirm_|back_to_rates)$")
                 ],
             },
-            fallbacks=[CommandHandler('cancel', self.cancel)],
+            fallbacks=[
+                CommandHandler('start', self.reset_and_start),
+                CommandHandler('cancel', self.cancel),
+            ],
         )
