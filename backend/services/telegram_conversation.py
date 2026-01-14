@@ -739,14 +739,20 @@ class TelegramConversationHandler:
                 SHIP_FROM_CITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.ship_from_city)],
                 SHIP_FROM_STATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.ship_from_state)],
                 SHIP_FROM_ZIP: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.ship_from_zip)],
-                SHIP_FROM_PHONE: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.ship_from_phone)],
+                SHIP_FROM_PHONE: [
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, self.ship_from_phone),
+                    CallbackQueryHandler(self.skip_from_phone_callback, pattern="^skip_from_phone$")
+                ],
                 
                 SHIP_TO_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.ship_to_name)],
                 SHIP_TO_ADDRESS: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.ship_to_address)],
                 SHIP_TO_CITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.ship_to_city)],
                 SHIP_TO_STATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.ship_to_state)],
                 SHIP_TO_ZIP: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.ship_to_zip)],
-                SHIP_TO_PHONE: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.ship_to_phone)],
+                SHIP_TO_PHONE: [
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, self.ship_to_phone),
+                    CallbackQueryHandler(self.skip_to_phone_callback, pattern="^skip_to_phone$")
+                ],
                 
                 PACKAGE_WEIGHT: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.package_weight)],
                 PACKAGE_DIMENSIONS: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.package_dimensions)],
