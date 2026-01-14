@@ -646,7 +646,10 @@ class TelegramConversationHandler:
     def get_conversation_handler(self) -> ConversationHandler:
         """Get the conversation handler"""
         return ConversationHandler(
-            entry_points=[CommandHandler('create', self.start_create)],
+            entry_points=[
+                CommandHandler('create', self.start_create),
+                CallbackQueryHandler(self.start_create_callback, pattern="^start_create$")
+            ],
             states={
                 SHIP_FROM_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.ship_from_name)],
                 SHIP_FROM_ADDRESS: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.ship_from_address)],
