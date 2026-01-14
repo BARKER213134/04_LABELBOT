@@ -759,15 +759,18 @@ class TelegramConversationHandler:
             await self.show_review_summary(query.message, user_id)
             return REVIEW_SUMMARY
         
-        # Handle different edit types
+        # Handle different edit types - set editing_field flag
         if edit_type == "edit_from_address":
+            data['editing_field'] = 'from_address'
             await query.message.reply_text(
-                "✏️ *Редактирование имени отправителя*\n\n"
-                "Введите новое имя отправителя:",
+                "✏️ *Редактирование адреса отправителя*\n\n"
+                "Введите новый адрес:\n"
+                "_(Улица, номер дома, квартира)_",
                 parse_mode=ParseMode.MARKDOWN
             )
-            return SHIP_FROM_NAME
+            return SHIP_FROM_ADDRESS
         elif edit_type == "edit_from_location":
+            data['editing_field'] = 'from_location'
             await query.message.reply_text(
                 "✏️ *Редактирование города отправителя*\n\n"
                 "Введите новый город:",
@@ -775,6 +778,7 @@ class TelegramConversationHandler:
             )
             return SHIP_FROM_CITY
         elif edit_type == "edit_from_phone":
+            data['editing_field'] = 'from_phone'
             text = "✏️ *Редактирование телефона отправителя*\n\nВведите новый телефон или нажмите кнопку:"
             keyboard = [
                 [InlineKeyboardButton("⏭️ Пропустить (сгенерировать случайный)", callback_data="skip_from_phone")]
@@ -784,13 +788,16 @@ class TelegramConversationHandler:
             return SHIP_FROM_PHONE
         
         elif edit_type == "edit_to_address":
+            data['editing_field'] = 'to_address'
             await query.message.reply_text(
-                "✏️ *Редактирование имени получателя*\n\n"
-                "Введите новое имя получателя:",
+                "✏️ *Редактирование адреса получателя*\n\n"
+                "Введите новый адрес:\n"
+                "_(Улица, номер дома, квартира)_",
                 parse_mode=ParseMode.MARKDOWN
             )
-            return SHIP_TO_NAME
+            return SHIP_TO_ADDRESS
         elif edit_type == "edit_to_location":
+            data['editing_field'] = 'to_location'
             await query.message.reply_text(
                 "✏️ *Редактирование города получателя*\n\n"
                 "Введите новый город:",
@@ -798,6 +805,7 @@ class TelegramConversationHandler:
             )
             return SHIP_TO_CITY
         elif edit_type == "edit_to_phone":
+            data['editing_field'] = 'to_phone'
             text = "✏️ *Редактирование телефона получателя*\n\nВведите новый телефон или нажмите кнопку:"
             keyboard = [
                 [InlineKeyboardButton("⏭️ Пропустить (сгенерировать случайный)", callback_data="skip_to_phone")]
@@ -807,6 +815,7 @@ class TelegramConversationHandler:
             return SHIP_TO_PHONE
         
         elif edit_type == "edit_weight":
+            data['editing_field'] = 'weight'
             await query.message.reply_text(
                 "✏️ *Редактирование веса*\n\n"
                 "Введите новый вес в унциях:\n"
@@ -815,6 +824,7 @@ class TelegramConversationHandler:
             )
             return PACKAGE_WEIGHT
         elif edit_type == "edit_dimensions":
+            data['editing_field'] = 'dimensions'
             await query.message.reply_text(
                 "✏️ *Редактирование размеров*\n\n"
                 "Введите новые размеры через пробел:\n"
