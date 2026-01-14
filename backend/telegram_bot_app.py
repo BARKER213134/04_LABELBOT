@@ -148,54 +148,62 @@ async def process_topup_amount(update, context):
     # Clear the waiting flag
     context.user_data['awaiting_topup_amount'] = False
     
-    # Delete the old message with "Отмена" button
-    try:
-        message_id = context.user_data.get('topup_message_id')
-        chat_id = context.user_data.get('topup_chat_id')
-        if message_id and chat_id:
-            await context.bot.delete_message(chat_id=chat_id, message_id=message_id)
-    except Exception as e:
-        logger.warning(f"Could not delete old message: {e}")
+    # Get stored message info for editing
+    message_id = context.user_data.get('topup_message_id')
+    chat_id = context.user_data.get('topup_chat_id')
     
     try:
         amount = float(text_input.replace('$', '').replace(',', '.'))
         
         if amount < 10:
-            await update.message.reply_text(
-                "❌ *Минимальная сумма: $10*\n\nПожалуйста, введите сумму от $10",
-                parse_mode="Markdown"
-            )
+            # Edit the existing message to show error
+            if message_id and chat_id:
+                from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+                keyboard = [[InlineKeyboardButton("❌ Отмена", callback_data="check_balance")]]
+                await context.bot.edit_message_text(
+                    chat_id=chat_id,
+                    message_id=message_id,
+                    text="❌ *Минимальная сумма: $10*\n\nПожалуйста, введите сумму от $10",
+                    reply_markup=InlineKeyboardMarkup(keyboard),
+                    parse_mode="Markdown"
+                )
             context.user_data['awaiting_topup_amount'] = True
             return True
         
         if amount > 10000:
-            await update.message.reply_text(
-                "❌ *Максимальная сумма: $10,000*\n\nПожалуйста, введите меньшую сумму",
-                parse_mode="Markdown"
-            )
+            if message_id and chat_id:
+                from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+                keyboard = [[InlineKeyboardButton("❌ Отмена", callback_data="check_balance")]]
+                await context.bot.edit_message_text(
+                    chat_id=chat_id,
+                    message_id=message_id,
+                    text="❌ *Максимальная сумма: $10,000*\n\nПожалуйста, введите меньшую сумму",
+                    reply_markup=InlineKeyboardMarkup(keyboard),
+                    parse_mode="Markdown"
+                )
             context.user_data['awaiting_topup_amount'] = True
             return True
         
-        # Delete user's input message for cleaner chat
-        try:
-            await update.message.delete()
-        except Exception:
-            pass
-        
-        # Create payment invoice
-        await create_crypto_invoice(update, context, user_id, amount)
+        # Create payment invoice - edit existing message
+        await create_crypto_invoice(update, context, user_id, amount, message_id, chat_id)
         return True
         
     except ValueError:
-        await update.message.reply_text(
-            "❌ *Некорректная сумма*\n\nВведите число, например: 25 или 50.00",
-            parse_mode="Markdown"
-        )
+        if message_id and chat_id:
+            from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+            keyboard = [[InlineKeyboardButton("❌ Отмена", callback_data="check_balance")]]
+            await context.bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=message_id,
+                text="❌ *Некорректная сумма*\n\nВведите число, например: 25 или 50.00",
+                reply_markup=InlineKeyboardMarkup(keyboard),
+                parse_mode="Markdown"
+            )
         context.user_data['awaiting_topup_amount'] = True
         return True
 
 
-async def create_crypto_invoice(update, context, user_id: str, amount: float):
+async def create_crypto_invoice(update, context, user_id: str, amount: float, message_id=None, chat_id=None):
     """Create OxaPay crypto invoice"""
     from database import Database
     from services.oxapay_service import OxaPayService
