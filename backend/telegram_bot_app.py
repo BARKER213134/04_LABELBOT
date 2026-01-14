@@ -364,7 +364,7 @@ async def check_payment_status_callback(update, context):
         await query.answer(f"❌ Ошибка: {str(e)}", show_alert=True)
 
 async def back_to_menu_callback(update, context):
-    """Handle back to menu button"""
+    """Handle back to menu button - works like /start command"""
     global _users_service
     
     query = update.callback_query
@@ -378,32 +378,19 @@ async def back_to_menu_callback(update, context):
         if user:
             balance = user.get('balance', 0.0)
     
-    # Edit message to show menu (replaces old buttons)
-    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+    # Remove buttons from the current message (keep text)
+    try:
+        await query.edit_message_reply_markup(reply_markup=None)
+    except Exception as e:
+        logger.debug(f"Could not remove buttons from message: {e}")
     
-    balance_text = f"💰 Баланс: *${balance:.2f}*\n\n"
+    # Send new welcome message with menu (like /start)
+    telegram_service = TelegramService()
+    sent_message = await telegram_service.send_welcome_message(query.message.chat_id, balance)
     
-    text = (
-        "━━━━━━━━━━━━━━━━━━━━\n"
-        "📦 *WHITE LABEL SHIPPING BOT*\n"
-        "━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"{balance_text}"
-        "Создавайте shipping labels для:\n"
-        "USPS • FedEx • UPS\n\n"
-        "━━━━━━━━━━━━━━━━━━━━"
-    )
-    
-    keyboard = [
-        [InlineKeyboardButton("📦 Создать Label", callback_data="start_create")],
-        [InlineKeyboardButton("📋 Шаблоны", callback_data="templates_menu")],
-        [InlineKeyboardButton("💰 Баланс", callback_data="check_balance")],
-        [InlineKeyboardButton("↩️ Refund Label", callback_data="refund_info")],
-        [InlineKeyboardButton("📖 FAQ", callback_data="faq_info")],
-        [InlineKeyboardButton("❓ Помощь", url="https://t.me/White_Label_Shipping_Bot_Agent")]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    
-    await query.edit_message_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+    # Store the new menu message id
+    if sent_message:
+        context.user_data['last_menu_message_id'] = sent_message.message_id
 
 async def templates_menu_callback(update, context):
     """Show templates menu"""
