@@ -29,10 +29,12 @@ logger = logging.getLogger(__name__)
     SHIP_TO_PHONE,
     PACKAGE_WEIGHT,
     PACKAGE_DIMENSIONS,
+    REVIEW_SUMMARY,
+    EDIT_SECTION,
     SELECT_CARRIER,
     SELECT_SERVICE,
     CONFIRM,
-) = range(17)
+) = range(19)
 
 class TelegramConversationHandler:
     """Handler for multi-step label creation conversation"""
