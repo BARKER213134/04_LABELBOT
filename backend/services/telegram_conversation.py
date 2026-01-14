@@ -1240,6 +1240,182 @@ class TelegramConversationHandler:
         self.clear_user_data(user_id)
         return ConversationHandler.END
     
+    async def save_template_prompt(self, update: Update, context) -> int:
+        """Ask for template name"""
+        query = update.callback_query
+        await query.answer()
+        
+        text = (
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "💾 *СОХРАНИТЬ ШАБЛОН*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Введите название для шаблона:\n"
+            "_Например: Мой офис → Склад_"
+        )
+        
+        await query.edit_message_text(text, parse_mode=ParseMode.MARKDOWN)
+        return TEMPLATE_SAVE_NAME
+    
+    async def save_template_name(self, update: Update, context) -> int:
+        """Save template with given name"""
+        user_id = str(update.effective_user.id)
+        template_name = update.message.text.strip()[:50]
+        
+        data = self.get_user_data(user_id)
+        order_data = data.get('last_order_data', data)
+        
+        if self.templates_service:
+            # Check limit
+            count = await self.templates_service.get_templates_count(user_id)
+            if count >= 10:
+                text = (
+                    "❌ *Достигнут лимит шаблонов*\n\n"
+                    "У вас уже 10 шаблонов. Удалите один из существующих, чтобы создать новый."
+                )
+                keyboard = [[InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")]]
+                reply_markup = InlineKeyboardMarkup(keyboard)
+                await update.message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+            else:
+                template = await self.templates_service.create_template(user_id, template_name, order_data)
+                if template:
+                    text = f"✅ Шаблон *{template_name}* сохранён!"
+                else:
+                    text = "❌ Ошибка сохранения шаблона"
+                
+                keyboard = [[InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")]]
+                reply_markup = InlineKeyboardMarkup(keyboard)
+                await update.message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+        
+        self.clear_user_data(user_id)
+        return ConversationHandler.END
+    
+    async def use_template(self, update: Update, context) -> int:
+        """Use a template to create a new label"""
+        query = update.callback_query
+        await query.answer()
+        
+        user_id = str(update.effective_user.id)
+        template_id = query.data.replace("tpl_use_", "")
+        
+        if not self.templates_service:
+            await query.edit_message_text("❌ Сервис шаблонов недоступен")
+            return ConversationHandler.END
+        
+        template = await self.templates_service.get_template(template_id)
+        if not template:
+            await query.edit_message_text("❌ Шаблон не найден")
+            return ConversationHandler.END
+        
+        # Load template data into user_data
+        template_data = self.templates_service.template_to_user_data(template)
+        data = self.get_user_data(user_id)
+        data.update(template_data)
+        data['using_template'] = template_id
+        
+        # Increment use count
+        await self.templates_service.increment_use_count(template_id)
+        
+        # Show review summary with template data
+        await self.show_review_summary(query.message, user_id, from_template=True)
+        return REVIEW_SUMMARY
+    
+    async def edit_template(self, update: Update, context) -> int:
+        """Edit a template"""
+        query = update.callback_query
+        await query.answer()
+        
+        user_id = str(update.effective_user.id)
+        template_id = query.data.replace("tpl_edit_", "")
+        
+        if not self.templates_service:
+            await query.edit_message_text("❌ Сервис шаблонов недоступен")
+            return ConversationHandler.END
+        
+        template = await self.templates_service.get_template(template_id)
+        if not template:
+            await query.edit_message_text("❌ Шаблон не найден")
+            return ConversationHandler.END
+        
+        # Load template data into user_data
+        template_data = self.templates_service.template_to_user_data(template)
+        data = self.get_user_data(user_id)
+        data.update(template_data)
+        data['editing_template_id'] = template_id
+        data['editing_template_name'] = template.get('name')
+        
+        # Show review summary for editing
+        text = (
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            f"✏️ *РЕДАКТИРОВАНИЕ: {template.get('name')}*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+        )
+        
+        text += self._format_summary_text(data)
+        
+        keyboard = [
+            [InlineKeyboardButton("✏️ Отправитель", callback_data="edit_from")],
+            [InlineKeyboardButton("✏️ Получатель", callback_data="edit_to")],
+            [InlineKeyboardButton("✏️ Посылка", callback_data="edit_package")],
+            [InlineKeyboardButton("💾 Сохранить изменения", callback_data="save_template_changes")],
+            [InlineKeyboardButton("◀️ Отмена", callback_data="templates_menu")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+        return TEMPLATE_EDIT
+    
+    async def save_template_changes(self, update: Update, context) -> int:
+        """Save template changes"""
+        query = update.callback_query
+        await query.answer()
+        
+        user_id = str(update.effective_user.id)
+        data = self.get_user_data(user_id)
+        template_id = data.get('editing_template_id')
+        template_name = data.get('editing_template_name', 'Шаблон')
+        
+        if self.templates_service and template_id:
+            await self.templates_service.update_template(template_id, data)
+            text = f"✅ Шаблон *{template_name}* обновлён!"
+        else:
+            text = "❌ Ошибка сохранения"
+        
+        keyboard = [[InlineKeyboardButton("📋 К шаблонам", callback_data="templates_menu")]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+        self.clear_user_data(user_id)
+        return ConversationHandler.END
+    
+    def _format_summary_text(self, data: Dict[str, Any]) -> str:
+        """Format summary text for display"""
+        text = (
+            "*Отправитель:*\n"
+            f"▫️ {data.get('shipFromName', '-')}\n"
+            f"▫️ {data.get('shipFromAddressLine1', '-')}\n"
+            f"▫️ {data.get('shipFromCity', '-')}, {data.get('shipFromState', '-')} {data.get('shipFromPostalCode', '-')}\n"
+        )
+        if data.get('shipFromPhone'):
+            text += f"▫️ ☎ {data.get('shipFromPhone')}\n"
+        
+        text += (
+            f"\n*Получатель:*\n"
+            f"▫️ {data.get('shipToName', '-')}\n"
+            f"▫️ {data.get('shipToAddressLine1', '-')}\n"
+            f"▫️ {data.get('shipToCity', '-')}, {data.get('shipToState', '-')} {data.get('shipToPostalCode', '-')}\n"
+        )
+        if data.get('shipToPhone'):
+            text += f"▫️ ☎ {data.get('shipToPhone')}\n"
+        
+        weight = data.get('packageWeight', 0)
+        text += (
+            f"\n*Посылка:*\n"
+            f"▫️ Вес: {weight} oz ({weight/16:.2f} lbs)\n"
+            f"▫️ Размеры: {data.get('packageLength', 0)}×{data.get('packageWidth', 0)}×{data.get('packageHeight', 0)} дюймов\n"
+        )
+        
+        return text
+    
     async def cancel(self, update: Update, context) -> int:
         """Cancel the conversation"""
         user_id = str(update.effective_user.id)
