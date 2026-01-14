@@ -102,6 +102,112 @@ async def back_to_menu_callback(update, context):
     telegram_service = TelegramService()
     await telegram_service.send_welcome_message(query.message.chat_id, balance)
 
+async def templates_menu_callback(update, context):
+    """Show templates menu"""
+    global _templates_service
+    
+    query = update.callback_query
+    await query.answer()
+    
+    user_id = str(update.effective_user.id)
+    
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+    
+    templates = []
+    if _templates_service:
+        templates = await _templates_service.get_user_templates(user_id)
+    
+    text = (
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "📋 *ШАБЛОНЫ*\n"
+        "━━━━━━━━━━━━━━━━━━━━\n\n"
+    )
+    
+    if templates:
+        text += f"У вас {len(templates)} из 10 шаблонов:\n\n"
+        keyboard = []
+        for t in templates:
+            from_city = t.get('ship_from_city', '?')
+            to_city = t.get('ship_to_city', '?')
+            btn_text = f"📋 {t['name']} ({from_city} → {to_city})"
+            keyboard.append([InlineKeyboardButton(btn_text, callback_data=f"tpl_view_{t['template_id']}")])
+    else:
+        text += "У вас пока нет сохранённых шаблонов.\n\n"
+        text += "_Шаблоны можно создать после оформления заказа._"
+        keyboard = []
+    
+    keyboard.append([InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")])
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await query.edit_message_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+
+async def template_view_callback(update, context):
+    """View a specific template"""
+    global _templates_service
+    
+    query = update.callback_query
+    await query.answer()
+    
+    template_id = query.data.replace("tpl_view_", "")
+    
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+    
+    template = None
+    if _templates_service:
+        template = await _templates_service.get_template(template_id)
+    
+    if not template:
+        await query.edit_message_text("❌ Шаблон не найден")
+        return
+    
+    text = (
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        f"📋 *{template['name']}*\n"
+        "━━━━━━━━━━━━━━━━━━━━\n\n"
+        "*Отправитель:*\n"
+        f"▫️ {template.get('ship_from_name', '-')}\n"
+        f"▫️ {template.get('ship_from_address', '-')}\n"
+        f"▫️ {template.get('ship_from_city', '-')}, {template.get('ship_from_state', '-')} {template.get('ship_from_zip', '-')}\n\n"
+        "*Получатель:*\n"
+        f"▫️ {template.get('ship_to_name', '-')}\n"
+        f"▫️ {template.get('ship_to_address', '-')}\n"
+        f"▫️ {template.get('ship_to_city', '-')}, {template.get('ship_to_state', '-')} {template.get('ship_to_zip', '-')}\n\n"
+        "*Посылка:*\n"
+        f"▫️ Вес: {template.get('package_weight', 0)} oz\n"
+        f"▫️ Размеры: {template.get('package_length', 0)}×{template.get('package_width', 0)}×{template.get('package_height', 0)}\n\n"
+        f"_Использован: {template.get('use_count', 0)} раз_"
+    )
+    
+    keyboard = [
+        [InlineKeyboardButton("✅ Использовать", callback_data=f"tpl_use_{template_id}")],
+        [InlineKeyboardButton("✏️ Редактировать", callback_data=f"tpl_edit_{template_id}")],
+        [InlineKeyboardButton("🗑 Удалить", callback_data=f"tpl_del_{template_id}")],
+        [InlineKeyboardButton("◀️ Назад к шаблонам", callback_data="templates_menu")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await query.edit_message_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+
+async def template_delete_callback(update, context):
+    """Delete a template"""
+    global _templates_service
+    
+    query = update.callback_query
+    await query.answer()
+    
+    template_id = query.data.replace("tpl_del_", "")
+    
+    if _templates_service:
+        await _templates_service.delete_template(template_id)
+    
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+    
+    text = "✅ Шаблон удалён"
+    keyboard = [[InlineKeyboardButton("◀️ К шаблонам", callback_data="templates_menu")]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await query.edit_message_text(text, reply_markup=reply_markup)
+
 async def help_command(update, context):
     """Handle /help command"""
     help_text = (
