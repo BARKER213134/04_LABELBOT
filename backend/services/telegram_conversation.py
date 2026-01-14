@@ -1286,8 +1286,8 @@ class TelegramConversationHandler:
                 ]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 await query.edit_message_text(error_message, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
-                # Don't clear data - allow user to try different rate
-                return SELECT_RATE
+                # Stay in CONFIRM state so back_to_rates button works
+                return CONFIRM
             else:
                 # Generic error
                 error_text = error_str.replace('*', '').replace('_', '').replace('[', '').replace(']', '')
@@ -1306,8 +1306,8 @@ class TelegramConversationHandler:
                 ]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 await query.edit_message_text(error_message, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
-                # Don't clear data - allow user to try again
-                return SELECT_RATE
+                # Stay in CONFIRM state so back_to_rates button works
+                return CONFIRM
         
         return ConversationHandler.END
     
