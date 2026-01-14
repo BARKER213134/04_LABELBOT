@@ -87,21 +87,10 @@ class OrdersService:
             shipengine = ShipEngineService(api_key=api_key)
             
             try:
-                label_response = None
-                
-                # Try to create label from rate_id first (more reliable for most carriers)
-                rate_id = order_data.get('rate_id')
-                if rate_id:
-                    try:
-                        logger.info(f"Creating label from rate_id: {rate_id}")
-                        label_response = await shipengine.create_label_from_rate(rate_id)
-                    except Exception as rate_error:
-                        logger.warning(f"Failed to create label from rate_id, trying regular method: {rate_error}")
-                        # Fallback to regular label creation
-                        label_response = await shipengine.create_label(order)
-                else:
-                    # Regular label creation
-                    label_response = await shipengine.create_label(order)
+                # Always use regular label creation to ensure company_name is empty
+                # rate_id method uses cached shipment data which may have default company
+                logger.info(f"Creating label with service_code: {order.serviceCode}")
+                label_response = await shipengine.create_label(order)
                 
                 # Update order with label information
                 update_data = {
