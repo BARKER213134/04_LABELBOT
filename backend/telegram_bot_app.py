@@ -12,6 +12,7 @@ from services.telegram_service import TelegramService
 from services.telegram_conversation import TelegramConversationHandler
 from services.orders_service import OrdersService
 from services.shipengine_service import ShipEngineService
+from services.users_service import UsersService
 
 logging.basicConfig(
     level=logging.INFO,
