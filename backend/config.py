@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     webhook_secret: str = "demo_secret"
     webhook_url: str = "https://demo.com"
     
+    # OxaPay
+    oxapay_merchant_api_key: str = ""
+    
     # CORS
     cors_origins: str = "*"
     
