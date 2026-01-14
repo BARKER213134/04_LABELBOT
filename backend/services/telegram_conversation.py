@@ -52,19 +52,32 @@ class TelegramConversationHandler:
         if user_id in self.user_data:
             del self.user_data[user_id]
     
+    def get_progress_bar(self, step: int) -> str:
+        """Generate progress bar for steps"""
+        total_steps = 4
+        filled = "🟦" * step
+        empty = "⬜" * (total_steps - step)
+        return f"{filled}{empty}"
+    
     async def start_create(self, update: Update, context) -> int:
         """Start the label creation process"""
         user_id = str(update.effective_user.id)
         self.clear_user_data(user_id)
         
-        await update.message.reply_text(
-            "🚀 *Создание нового лейбла*\\n\\n"
-            "Давайте начнем! Я проведу вас через все шаги.\n\n"
-            "📍 *Шаг 1 из 4: Адрес отправителя*\\n\\n"
-            "Введите имя отправителя:",
-            parse_mode=ParseMode.MARKDOWN
+        text = (
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "📦 *СОЗДАНИЕ SHIPPING LABEL*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Здравствуйте! Я помогу Вам создать shipping label.\n\n"
+            f"Прогресс: {self.get_progress_bar(1)} (Шаг 1/4)\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "📍 *ШАГ 1: АДРЕС ОТПРАВИТЕЛЯ*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "▫️ *Подшаг 1.1:* Полное имя\n\n"
+            "Пожалуйста, введите полное имя отправителя:"
         )
         
+        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
         return SHIP_FROM_NAME
     
     # ===== SHIP FROM ADDRESS =====
@@ -74,11 +87,14 @@ class TelegramConversationHandler:
         data = self.get_user_data(user_id)
         data['shipFromName'] = update.message.text
         
-        await update.message.reply_text(
-            "✅ Отлично!\n\n"
-            "Теперь введите адрес отправителя \\(улица, дом\\):",
-            parse_mode=ParseMode.MARKDOWN
+        text = (
+            "✅ *Имя отправителя сохранено*\n\n"
+            "▫️ *Подшаг 1.2:* Адрес\n\n"
+            "Введите адрес отправителя:\n"
+            "_(Улица, номер дома, квартира)_"
         )
+        
+        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
         return SHIP_FROM_ADDRESS
     
     async def ship_from_address(self, update: Update, context) -> int:
@@ -86,7 +102,13 @@ class TelegramConversationHandler:
         data = self.get_user_data(user_id)
         data['shipFromAddressLine1'] = update.message.text
         
-        await update.message.reply_text("Введите город:")
+        text = (
+            "✅ *Адрес сохранен*\n\n"
+            "▫️ *Подшаг 1.3:* Город\n\n"
+            "Введите название города:"
+        )
+        
+        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
         return SHIP_FROM_CITY
     
     async def ship_from_city(self, update: Update, context) -> int:
@@ -94,27 +116,41 @@ class TelegramConversationHandler:
         data = self.get_user_data(user_id)
         data['shipFromCity'] = update.message.text
         
-        await update.message.reply_text(
-            "Введите штат \\(2 буквы, например: CA, NY, TX\\):",
-            parse_mode=ParseMode.MARKDOWN
+        text = (
+            "✅ *Город сохранен*\n\n"
+            "▫️ *Подшаг 1.4:* Штат\n\n"
+            "Введите код штата (2 буквы):\n"
+            "_Например: CA, NY, TX, FL_"
         )
+        
+        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
         return SHIP_FROM_STATE
     
     async def ship_from_state(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
         state = update.message.text.strip().upper()
         
-        if len(state) != 2:
-            await update.message.reply_text(
-                "❌ Штат должен быть 2 буквы \\(например: CA\\). Попробуйте еще раз:",
-                parse_mode=ParseMode.MARKDOWN
+        if len(state) != 2 or not state.isalpha():
+            text = (
+                "❌ *Некорректный формат*\n\n"
+                "Код штата должен состоять из 2 букв.\n"
+                "_Например: CA, NY, TX_\n\n"
+                "Пожалуйста, попробуйте еще раз:"
             )
+            await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
             return SHIP_FROM_STATE
         
         data = self.get_user_data(user_id)
         data['shipFromState'] = state
         
-        await update.message.reply_text("Введите ZIP код:")
+        text = (
+            "✅ *Штат сохранен*\n\n"
+            "▫️ *Подшаг 1.5:* ZIP код\n\n"
+            "Введите почтовый индекс (5 цифр):\n"
+            "_Например: 94102, 10001, 78701_"
+        )
+        
+        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
         return SHIP_FROM_ZIP
     
     async def ship_from_zip(self, update: Update, context) -> int:
@@ -122,19 +158,26 @@ class TelegramConversationHandler:
         zip_code = update.message.text.strip()
         
         if not zip_code.isdigit() or len(zip_code) != 5:
-            await update.message.reply_text(
-                "❌ ZIP код должен быть 5 цифр. Попробуйте еще раз:",
-                parse_mode=ParseMode.MARKDOWN
+            text = (
+                "❌ *Некорректный формат*\n\n"
+                "ZIP код должен содержать ровно 5 цифр.\n"
+                "_Например: 94102_\n\n"
+                "Пожалуйста, попробуйте еще раз:"
             )
+            await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
             return SHIP_FROM_ZIP
         
         data = self.get_user_data(user_id)
         data['shipFromPostalCode'] = zip_code
         
-        await update.message.reply_text(
-            "Введите телефон отправителя \\(или напишите 'skip' чтобы пропустить\\):",
-            parse_mode=ParseMode.MARKDOWN
+        text = (
+            "✅ *ZIP код сохранен*\n\n"
+            "▫️ *Подшаг 1.6:* Телефон (опционально)\n\n"
+            "Введите контактный телефон отправителя:\n"
+            "_(Или напишите 'пропустить' для продолжения без телефона)_"
         )
+        
+        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
         return SHIP_FROM_PHONE
     
     async def ship_from_phone(self, update: Update, context) -> int:
@@ -142,15 +185,22 @@ class TelegramConversationHandler:
         data = self.get_user_data(user_id)
         
         phone = update.message.text.strip()
-        if phone.lower() != 'skip':
+        if phone.lower() not in ['пропустить', 'skip']:
             data['shipFromPhone'] = phone
         
-        await update.message.reply_text(
-            "✅ *Адрес отправителя сохранен!*\n\n"
-            "📍 *Шаг 2 из 4: Адрес получателя*\n\n"
-            "Введите имя получателя:",
-            parse_mode=ParseMode.MARKDOWN
+        text = (
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "✅ *ШАГ 1 ЗАВЕРШЕН*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"Прогресс: {self.get_progress_bar(2)} (Шаг 2/4)\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "📍 *ШАГ 2: АДРЕС ПОЛУЧАТЕЛЯ*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "▫️ *Подшаг 2.1:* Полное имя\n\n"
+            "Введите полное имя получателя:"
         )
+        
+        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
         return SHIP_TO_NAME
     
     # ===== SHIP TO ADDRESS =====
@@ -160,10 +210,14 @@ class TelegramConversationHandler:
         data = self.get_user_data(user_id)
         data['shipToName'] = update.message.text
         
-        await update.message.reply_text(
-            "Введите адрес получателя \\(улица, дом\\):",
-            parse_mode=ParseMode.MARKDOWN
+        text = (
+            "✅ *Имя получателя сохранено*\n\n"
+            "▫️ *Подшаг 2.2:* Адрес\n\n"
+            "Введите адрес получателя:\n"
+            "_(Улица, номер дома, квартира)_"
         )
+        
+        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
         return SHIP_TO_ADDRESS
     
     async def ship_to_address(self, update: Update, context) -> int:
@@ -171,7 +225,13 @@ class TelegramConversationHandler:
         data = self.get_user_data(user_id)
         data['shipToAddressLine1'] = update.message.text
         
-        await update.message.reply_text("Введите город:")
+        text = (
+            "✅ *Адрес сохранен*\n\n"
+            "▫️ *Подшаг 2.3:* Город\n\n"
+            "Введите название города:"
+        )
+        
+        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
         return SHIP_TO_CITY
     
     async def ship_to_city(self, update: Update, context) -> int:
@@ -179,27 +239,39 @@ class TelegramConversationHandler:
         data = self.get_user_data(user_id)
         data['shipToCity'] = update.message.text
         
-        await update.message.reply_text(
-            "Введите штат \\(2 буквы\\):",
-            parse_mode=ParseMode.MARKDOWN
+        text = (
+            "✅ *Город сохранен*\n\n"
+            "▫️ *Подшаг 2.4:* Штат\n\n"
+            "Введите код штата (2 буквы):\n"
+            "_Например: CA, NY, TX, FL_"
         )
+        
+        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
         return SHIP_TO_STATE
     
     async def ship_to_state(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
         state = update.message.text.strip().upper()
         
-        if len(state) != 2:
-            await update.message.reply_text(
-                "❌ Штат должен быть 2 буквы. Попробуйте еще раз:",
-                parse_mode=ParseMode.MARKDOWN
+        if len(state) != 2 or not state.isalpha():
+            text = (
+                "❌ *Некорректный формат*\n\n"
+                "Код штата должен состоять из 2 букв.\n\n"
+                "Пожалуйста, попробуйте еще раз:"
             )
+            await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
             return SHIP_TO_STATE
         
         data = self.get_user_data(user_id)
         data['shipToState'] = state
         
-        await update.message.reply_text("Введите ZIP код:")
+        text = (
+            "✅ *Штат сохранен*\n\n"
+            "▫️ *Подшаг 2.5:* ZIP код\n\n"
+            "Введите почтовый индекс (5 цифр):"
+        )
+        
+        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
         return SHIP_TO_ZIP
     
     async def ship_to_zip(self, update: Update, context) -> int:
@@ -207,19 +279,25 @@ class TelegramConversationHandler:
         zip_code = update.message.text.strip()
         
         if not zip_code.isdigit() or len(zip_code) != 5:
-            await update.message.reply_text(
-                "❌ ZIP код должен быть 5 цифр. Попробуйте еще раз:",
-                parse_mode=ParseMode.MARKDOWN
+            text = (
+                "❌ *Некорректный формат*\n\n"
+                "ZIP код должен содержать ровно 5 цифр.\n\n"
+                "Пожалуйста, попробуйте еще раз:"
             )
+            await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
             return SHIP_TO_ZIP
         
         data = self.get_user_data(user_id)
         data['shipToPostalCode'] = zip_code
         
-        await update.message.reply_text(
-            "Введите телефон получателя \\(или 'skip'\\):",
-            parse_mode=ParseMode.MARKDOWN
+        text = (
+            "✅ *ZIP код сохранен*\n\n"
+            "▫️ *Подшаг 2.6:* Телефон (опционально)\n\n"
+            "Введите контактный телефон получателя:\n"
+            "_(Или напишите 'пропустить')_"
         )
+        
+        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
         return SHIP_TO_PHONE
     
     async def ship_to_phone(self, update: Update, context) -> int:
@@ -227,15 +305,24 @@ class TelegramConversationHandler:
         data = self.get_user_data(user_id)
         
         phone = update.message.text.strip()
-        if phone.lower() != 'skip':
+        if phone.lower() not in ['пропустить', 'skip']:
             data['shipToPhone'] = phone
         
-        await update.message.reply_text(
-            "✅ *Адрес получателя сохранен!*\n\n"
-            "📦 *Шаг 3 из 4: Параметры посылки*\n\n"
-            "Введите вес в унциях \\(например: 16 для 1 фунта\\):",
-            parse_mode=ParseMode.MARKDOWN
+        text = (
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "✅ *ШАГ 2 ЗАВЕРШЕН*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"Прогресс: {self.get_progress_bar(3)} (Шаг 3/4)\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "📦 *ШАГ 3: ПАРАМЕТРЫ ПОСЫЛКИ*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "▫️ *Подшаг 3.1:* Вес посылки\n\n"
+            "Введите вес в унциях:\n"
+            "_(1 фунт = 16 унций)_\n"
+            "_Например: 16_"
         )
+        
+        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
         return PACKAGE_WEIGHT
     
     # ===== PACKAGE DETAILS =====
@@ -250,17 +337,25 @@ class TelegramConversationHandler:
                 raise ValueError()
             data['packageWeight'] = weight
         except ValueError:
-            await update.message.reply_text(
-                "❌ Введите корректный вес \\(число больше 0\\):",
-                parse_mode=ParseMode.MARKDOWN
+            text = (
+                "❌ *Некорректное значение*\n\n"
+                "Вес должен быть положительным числом.\n"
+                "_Например: 16 или 24.5_\n\n"
+                "Пожалуйста, попробуйте еще раз:"
             )
+            await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
             return PACKAGE_WEIGHT
         
-        await update.message.reply_text(
-            "Введите размеры посылки в дюймах через пробел:\n"
-            "Длина Ширина Высота \\(например: 12 8 6\\)",
-            parse_mode=ParseMode.MARKDOWN
+        pounds = weight / 16
+        text = (
+            f"✅ *Вес сохранен* ({weight} oz ≈ {pounds:.2f} lbs)\n\n"
+            "▫️ *Подшаг 3.2:* Размеры посылки\n\n"
+            "Введите размеры через пробел в дюймах:\n"
+            "*Длина Ширина Высота*\n\n"
+            "_Например: 12 8 6_"
         )
+        
+        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
         return PACKAGE_DIMENSIONS
     
     async def package_dimensions(self, update: Update, context) -> int:
@@ -280,24 +375,38 @@ class TelegramConversationHandler:
             data['packageWidth'] = width
             data['packageHeight'] = height
         except ValueError:
-            await update.message.reply_text(
-                "❌ Введите 3 числа через пробел \\(Длина Ширина Высота\\). Попробуйте еще раз:",
-                parse_mode=ParseMode.MARKDOWN
+            text = (
+                "❌ *Некорректный формат*\n\n"
+                "Введите 3 положительных числа через пробел.\n"
+                "_Формат: Длина Ширина Высота_\n"
+                "_Например: 12 8 6_\n\n"
+                "Пожалуйста, попробуйте еще раз:"
             )
+            await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
             return PACKAGE_DIMENSIONS
         
         # Show carrier selection
+        text = (
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "✅ *ШАГ 3 ЗАВЕРШЕН*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"Прогресс: {self.get_progress_bar(4)} (Шаг 4/4)\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "🚚 *ШАГ 4: ВЫБОР ПЕРЕВОЗЧИКА*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "▫️ *Подшаг 4.1:* Компания-перевозчик\n\n"
+            "Выберите компанию для доставки:"
+        )
+        
         keyboard = [
-            [InlineKeyboardButton("📦 USPS", callback_data="carrier_usps")],
+            [InlineKeyboardButton("📦 USPS (US Postal Service)", callback_data="carrier_usps")],
             [InlineKeyboardButton("✈️ FedEx", callback_data="carrier_fedex")],
             [InlineKeyboardButton("🚚 UPS", callback_data="carrier_ups")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         await update.message.reply_text(
-            "✅ *Параметры посылки сохранены!*\n\n"
-            "🚚 *Шаг 4 из 4: Выбор перевозчика*\n\n"
-            "Выберите перевозчика:",
+            text,
             reply_markup=reply_markup,
             parse_mode=ParseMode.MARKDOWN
         )
@@ -315,24 +424,36 @@ class TelegramConversationHandler:
         carrier = query.data.replace("carrier_", "")
         data['carrier'] = carrier
         
+        carrier_names = {
+            'usps': 'USPS (US Postal Service)',
+            'fedex': 'FedEx',
+            'ups': 'UPS'
+        }
+        
         # Service options based on carrier
         service_options = {
             'usps': [
-                ('Priority Mail', 'usps_priority_mail'),
-                ('First Class Mail', 'usps_first_class_mail'),
-                ('Ground Advantage', 'usps_ground_advantage'),
+                ('Priority Mail (2-3 дня)', 'usps_priority_mail'),
+                ('First Class Mail (3-5 дней)', 'usps_first_class_mail'),
+                ('Ground Advantage (2-5 дней)', 'usps_ground_advantage'),
             ],
             'fedex': [
-                ('FedEx Ground', 'fedex_ground'),
+                ('FedEx Ground (1-5 дней)', 'fedex_ground'),
                 ('FedEx 2Day', 'fedex_2_day'),
-                ('FedEx Overnight', 'fedex_priority_overnight'),
+                ('FedEx Priority Overnight', 'fedex_priority_overnight'),
             ],
             'ups': [
-                ('UPS Ground', 'ups_ground'),
+                ('UPS Ground (1-5 дней)', 'ups_ground'),
                 ('UPS 2nd Day Air', 'ups_2nd_day_air'),
                 ('UPS Next Day Air', 'ups_next_day_air'),
             ]
         }
+        
+        text = (
+            f"✅ *Выбрано:* {carrier_names[carrier]}\n\n"
+            "▫️ *Подшаг 4.2:* Тип доставки\n\n"
+            "Выберите скорость доставки:"
+        )
         
         keyboard = [
             [InlineKeyboardButton(label, callback_data=f"service_{code}")]
@@ -341,8 +462,7 @@ class TelegramConversationHandler:
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         await query.edit_message_text(
-            f"✅ Выбран: *{carrier.upper()}*\n\n"
-            f"Теперь выберите тип доставки:",
+            text,
             reply_markup=reply_markup,
             parse_mode=ParseMode.MARKDOWN
         )
@@ -358,24 +478,56 @@ class TelegramConversationHandler:
         service_code = query.data.replace("service_", "")
         data['serviceCode'] = service_code
         
+        # Service names for display
+        service_names = {
+            'usps_priority_mail': 'Priority Mail',
+            'usps_first_class_mail': 'First Class Mail',
+            'usps_ground_advantage': 'Ground Advantage',
+            'fedex_ground': 'FedEx Ground',
+            'fedex_2_day': 'FedEx 2Day',
+            'fedex_priority_overnight': 'FedEx Priority Overnight',
+            'ups_ground': 'UPS Ground',
+            'ups_2nd_day_air': 'UPS 2nd Day Air',
+            'ups_next_day_air': 'UPS Next Day Air',
+        }
+        
         # Show confirmation
         summary = (
-            "📋 *Подтверждение заказа*\n\n"
-            f"*От:* {data.get('shipFromName')}\n"
-            f"{data.get('shipFromAddressLine1')}\n"
-            f"{data.get('shipFromCity')}, {data.get('shipFromState')} {data.get('shipFromPostalCode')}\n\n"
-            f"*Кому:* {data.get('shipToName')}\n"
-            f"{data.get('shipToAddressLine1')}\n"
-            f"{data.get('shipToCity')}, {data.get('shipToState')} {data.get('shipToPostalCode')}\n\n"
-            f"*Посылка:*\n"
-            f"Вес: {data.get('packageWeight')} oz\n"
-            f"Размеры: {data.get('packageLength')}x{data.get('packageWidth')}x{data.get('packageHeight')} in\n\n"
-            f"*Перевозчик:* {data.get('carrier').upper()}\n"
-            f"*Сервис:* {service_code.replace('_', ' ').title()}"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "📋 *ПОДТВЕРЖДЕНИЕ ЗАКАЗА*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Пожалуйста, проверьте введенные данные:\n\n"
+            "📍 *ОТПРАВИТЕЛЬ*\n"
+            f"▫️ Имя: {data.get('shipFromName')}\n"
+            f"▫️ Адрес: {data.get('shipFromAddressLine1')}\n"
+            f"▫️ Город: {data.get('shipFromCity')}, {data.get('shipFromState')} {data.get('shipFromPostalCode')}\n"
+        )
+        
+        if data.get('shipFromPhone'):
+            summary += f"▫️ Телефон: {data.get('shipFromPhone')}\n"
+        
+        summary += (
+            f"\n📍 *ПОЛУЧАТЕЛЬ*\n"
+            f"▫️ Имя: {data.get('shipToName')}\n"
+            f"▫️ Адрес: {data.get('shipToAddressLine1')}\n"
+            f"▫️ Город: {data.get('shipToCity')}, {data.get('shipToState')} {data.get('shipToPostalCode')}\n"
+        )
+        
+        if data.get('shipToPhone'):
+            summary += f"▫️ Телефон: {data.get('shipToPhone')}\n"
+        
+        summary += (
+            f"\n📦 *ПОСЫЛКА*\n"
+            f"▫️ Вес: {data.get('packageWeight')} oz ({data.get('packageWeight')/16:.2f} lbs)\n"
+            f"▫️ Размеры: {data.get('packageLength')}×{data.get('packageWidth')}×{data.get('packageHeight')} дюймов\n"
+            f"\n🚚 *ДОСТАВКА*\n"
+            f"▫️ Перевозчик: {data.get('carrier').upper()}\n"
+            f"▫️ Сервис: {service_names.get(service_code, service_code)}\n\n"
+            "━━━━━━━━━━━━━━━━━━━━"
         )
         
         keyboard = [
-            [InlineKeyboardButton("✅ Создать лейбл", callback_data="confirm_yes")],
+            [InlineKeyboardButton("✅ Подтвердить и создать лейбл", callback_data="confirm_yes")],
             [InlineKeyboardButton("❌ Отменить", callback_data="confirm_no")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
@@ -395,16 +547,22 @@ class TelegramConversationHandler:
         username = update.effective_user.username
         
         if query.data == "confirm_no":
-            await query.edit_message_text(
-                "❌ Создание лейбла отменено.\n\n"
-                "Используйте /create чтобы начать заново.",
-                parse_mode=ParseMode.MARKDOWN
+            text = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "❌ *ЗАКАЗ ОТМЕНЕН*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "Создание лейбла отменено.\n\n"
+                "Используйте /create чтобы начать заново."
             )
+            await query.edit_message_text(text, parse_mode=ParseMode.MARKDOWN)
             self.clear_user_data(user_id)
             return ConversationHandler.END
         
         # Create the label
-        await query.edit_message_text("⏳ Создаю лейбл...", parse_mode=ParseMode.MARKDOWN)
+        await query.edit_message_text(
+            "⏳ *Создаю лейбл...*\n\nПожалуйста, подождите.",
+            parse_mode=ParseMode.MARKDOWN
+        )
         
         data = self.get_user_data(user_id)
         data['telegram_user_id'] = user_id
@@ -415,22 +573,32 @@ class TelegramConversationHandler:
             result = await self.orders_service.create_order(data)
             
             success_message = (
-                "✅ *Лейбл создан успешно!*\n\n"
-                f"📋 Tracking: `{result.get('trackingNumber', 'N/A')}`\n"
-                f"💰 Стоимость: ${result.get('cost', 0):.2f}\n"
-                f"🚚 Перевозчик: {data.get('carrier').upper()}\n\n"
-                f"🔗 Скачать лейбл можно в веб-дашборде"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "✅ *ЛЕЙБЛ СОЗДАН УСПЕШНО!*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "📋 *Информация о доставке:*\n\n"
+                f"▫️ Tracking номер:\n`{result.get('trackingNumber', 'N/A')}`\n\n"
+                f"▫️ Перевозчик: {data.get('carrier').upper()}\n"
+                f"▫️ Стоимость: ${result.get('cost', 0):.2f}\n\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "🔗 Скачать PDF лейбл можно в веб-дашборде:\n"
+                "https://shipbot-labels.preview.emergentagent.com\n\n"
+                "Спасибо за использование нашего сервиса!"
             )
             
             await query.edit_message_text(success_message, parse_mode=ParseMode.MARKDOWN)
             
         except Exception as e:
             logger.error(f"Error creating label: {e}", exc_info=True)
-            await query.edit_message_text(
-                f"❌ Ошибка при создании лейбла: {str(e)}\n\n"
-                f"Попробуйте еще раз: /create",
-                parse_mode=ParseMode.MARKDOWN
+            error_message = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "❌ *ОШИБКА*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"Не удалось создать лейбл.\n\n"
+                f"Причина: {str(e)}\n\n"
+                "Пожалуйста, попробуйте еще раз:\n/create"
             )
+            await query.edit_message_text(error_message, parse_mode=ParseMode.MARKDOWN)
         
         self.clear_user_data(user_id)
         return ConversationHandler.END
@@ -440,11 +608,15 @@ class TelegramConversationHandler:
         user_id = str(update.effective_user.id)
         self.clear_user_data(user_id)
         
-        await update.message.reply_text(
-            "❌ Создание лейбла отменено.\n\n"
-            "Используйте /create чтобы начать заново.",
-            parse_mode=ParseMode.MARKDOWN
+        text = (
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "❌ *СОЗДАНИЕ ОТМЕНЕНО*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Вы отменили создание лейбла.\n\n"
+            "Используйте /create чтобы начать заново."
         )
+        
+        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
         return ConversationHandler.END
     
     def get_conversation_handler(self) -> ConversationHandler:
