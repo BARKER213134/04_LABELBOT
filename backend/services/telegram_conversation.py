@@ -1087,6 +1087,13 @@ class TelegramConversationHandler:
                 PACKAGE_WEIGHT: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.package_weight)],
                 PACKAGE_DIMENSIONS: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.package_dimensions)],
                 
+                REVIEW_SUMMARY: [
+                    CallbackQueryHandler(self.handle_edit_choice, pattern="^(edit_from|edit_to|edit_package|continue_to_carrier)$")
+                ],
+                EDIT_SECTION: [
+                    CallbackQueryHandler(self.handle_specific_edit, pattern="^(edit_from_address|edit_from_location|edit_from_phone|edit_to_address|edit_to_location|edit_to_phone|edit_weight|edit_dimensions|back_to_review)$")
+                ],
+                
                 SELECT_CARRIER: [CallbackQueryHandler(self.select_carrier, pattern="^carrier_")],
                 SELECT_SERVICE: [CallbackQueryHandler(self.select_service, pattern="^service_")],
                 CONFIRM: [CallbackQueryHandler(self.confirm_and_create, pattern="^confirm_")],
