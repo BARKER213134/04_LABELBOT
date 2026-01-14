@@ -674,28 +674,48 @@ class TelegramConversationHandler:
         edit_choice = query.data
         
         if edit_choice == "continue_to_carrier":
-            # Continue to carrier selection
-            text = (
-                "━━━━━━━━━━━━━━━━━━━━\n"
-                "✅ *ДАННЫЕ ПОДТВЕРЖДЕНЫ*\n"
-                "━━━━━━━━━━━━━━━━━━━━\n\n"
-                f"Прогресс: {self.get_progress_bar(4)} (Шаг 4/4)\n\n"
-                "━━━━━━━━━━━━━━━━━━━━\n"
-                "🚚 *ШАГ 4: ВЫБОР ПЕРЕВОЗЧИКА*\n"
-                "━━━━━━━━━━━━━━━━━━━━\n\n"
-                "▫️ *Подшаг 4.1:* Компания-перевозчик\n\n"
-                "Выберите компанию для доставки:"
+            user_id = str(update.effective_user.id)
+            data = self.get_user_data(user_id)
+            
+            # Show loading message
+            await query.edit_message_text(
+                "⏳ *Получаю тарифы...*\n\nПожалуйста, подождите.",
+                parse_mode=ParseMode.MARKDOWN
             )
             
-            keyboard = [
-                [InlineKeyboardButton("📦 USPS (US Postal Service)", callback_data="carrier_usps")],
-                [InlineKeyboardButton("✈️ FedEx", callback_data="carrier_fedex")],
-                [InlineKeyboardButton("🚚 UPS", callback_data="carrier_ups")]
-            ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            
-            await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
-            return SELECT_CARRIER
+            # Fetch rates from ShipEngine
+            try:
+                rates = await self._fetch_rates(data)
+                
+                if not rates:
+                    text = (
+                        "❌ *Тарифы не найдены*\n\n"
+                        "К сожалению, не удалось получить тарифы для данного маршрута.\n"
+                        "Пожалуйста, проверьте адреса и попробуйте снова."
+                    )
+                    keyboard = [[InlineKeyboardButton("◀️ Назад к проверке", callback_data="back_to_review_from_rates")]]
+                    reply_markup = InlineKeyboardMarkup(keyboard)
+                    await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+                    return SELECT_RATE
+                
+                # Store rates in user data
+                data['available_rates'] = rates
+                
+                # Show rates
+                await self._show_rates(query, user_id, rates)
+                return SELECT_RATE
+                
+            except Exception as e:
+                logger.error(f"Error fetching rates: {e}")
+                text = (
+                    "❌ *Ошибка получения тарифов*\n\n"
+                    f"Причина: {str(e)}\n\n"
+                    "Попробуйте позже или проверьте данные."
+                )
+                keyboard = [[InlineKeyboardButton("◀️ Назад к проверке", callback_data="back_to_review_from_rates")]]
+                reply_markup = InlineKeyboardMarkup(keyboard)
+                await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+                return SELECT_RATE
         
         # Show edit options for the selected section
         if edit_choice == "edit_from":
@@ -752,6 +772,96 @@ class TelegramConversationHandler:
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
         return EDIT_SECTION
+    
+    async def _fetch_rates(self, data: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Fetch rates from ShipEngine"""
+        if not self.shipengine_service:
+            raise ValueError("ShipEngine service not configured")
+        
+        shipment_data = {
+            "ship_from": {
+                "name": data.get('shipFromName'),
+                "address_line1": data.get('shipFromAddressLine1'),
+                "city_locality": data.get('shipFromCity'),
+                "state_province": data.get('shipFromState'),
+                "postal_code": data.get('shipFromPostalCode'),
+                "country_code": "US",
+                "phone": data.get('shipFromPhone', ''),
+            },
+            "ship_to": {
+                "name": data.get('shipToName'),
+                "address_line1": data.get('shipToAddressLine1'),
+                "city_locality": data.get('shipToCity'),
+                "state_province": data.get('shipToState'),
+                "postal_code": data.get('shipToPostalCode'),
+                "country_code": "US",
+                "phone": data.get('shipToPhone', ''),
+            },
+            "packages": [{
+                "weight": {
+                    "value": data.get('packageWeight'),
+                    "unit": "ounce"
+                },
+                "dimensions": {
+                    "length": data.get('packageLength'),
+                    "width": data.get('packageWidth'),
+                    "height": data.get('packageHeight'),
+                    "unit": "inch"
+                }
+            }]
+        }
+        
+        return await self.shipengine_service.get_rates(shipment_data)
+    
+    async def _show_rates(self, query, user_id: str, rates: List[Dict[str, Any]]):
+        """Display available rates with prices"""
+        # Group rates by carrier
+        carrier_icons = {
+            'stamps_com': '📦 USPS',
+            'usps': '📦 USPS',
+            'fedex': '✈️ FedEx',
+            'ups': '🚚 UPS',
+        }
+        
+        text = (
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "💰 *ДОСТУПНЫЕ ТАРИФЫ*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"Прогресс: {self.get_progress_bar(4)} (Шаг 4/4)\n\n"
+            "Выберите тариф доставки:\n"
+            "_Цены включают все сборы_\n\n"
+        )
+        
+        keyboard = []
+        
+        # Sort rates by total price
+        sorted_rates = sorted(rates, key=lambda x: x.get('total_amount', 999))
+        
+        for i, rate in enumerate(sorted_rates[:8]):  # Limit to 8 options
+            carrier_code = rate.get('carrier_code', '').lower()
+            carrier_name = carrier_icons.get(carrier_code, rate.get('carrier_friendly_name', 'Unknown'))
+            service_type = rate.get('service_type', '')
+            total_price = rate.get('total_amount', 0)
+            delivery_days = rate.get('delivery_days', '')
+            
+            # Format delivery time
+            delivery_text = f" ({delivery_days} дн.)" if delivery_days else ""
+            
+            button_text = f"{carrier_name} {service_type}{delivery_text} - ${total_price:.2f}"
+            
+            # Store rate info for later use
+            rate_id = f"rate_{i}"
+            data = self.get_user_data(user_id)
+            if 'rate_map' not in data:
+                data['rate_map'] = {}
+            data['rate_map'][rate_id] = rate
+            
+            keyboard.append([InlineKeyboardButton(button_text, callback_data=rate_id)])
+        
+        keyboard.append([InlineKeyboardButton("◀️ Назад к проверке", callback_data="back_to_review_from_rates")])
+        
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
     
     async def handle_specific_edit(self, update: Update, context) -> int:
         """Handle specific field edit choice"""
