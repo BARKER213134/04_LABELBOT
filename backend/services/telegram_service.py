@@ -8,9 +8,15 @@ logger = logging.getLogger(__name__)
 class TelegramService:
     """Service for Telegram bot interactions"""
     
-    def __init__(self):
+    def __init__(self, use_production=False):
         settings = get_settings()
-        self.bot = Bot(token=settings.telegram_bot_token)
+        # Выбираем токен в зависимости от окружения
+        if use_production:
+            bot_token = settings.telegram_bot_token_prod
+        else:
+            bot_token = settings.telegram_bot_token
+        self.bot = Bot(token=bot_token)
+        self.is_production = use_production
     
     async def send_welcome_message(self, chat_id: int):
         """Send welcome message with instructions"""
