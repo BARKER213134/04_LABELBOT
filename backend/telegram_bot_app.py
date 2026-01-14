@@ -187,7 +187,6 @@ async def create_crypto_invoice(update, context, user_id: str, amount: float):
         
         if result.get("success"):
             payment_url = result.get("payment_url")
-            track_id = result.get("track_id")
             
             text = (
                 "━━━━━━━━━━━━━━━━━━━━\n"
@@ -203,7 +202,6 @@ async def create_crypto_invoice(update, context, user_id: str, amount: float):
             
             keyboard = [
                 [InlineKeyboardButton("💳 Оплатить криптой", url=payment_url)],
-                [InlineKeyboardButton("🔄 Проверить статус", callback_data=f"check_payment_{track_id}")],
                 [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
