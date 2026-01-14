@@ -241,6 +241,8 @@ async def refund_info_callback(update, context):
     query = update.callback_query
     await query.answer()
     
+    logger.info(f"refund_info_callback triggered by user {update.effective_user.id}")
+    
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
     
     text = (
