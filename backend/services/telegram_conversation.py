@@ -38,10 +38,11 @@ logger = logging.getLogger(__name__)
 class TelegramConversationHandler:
     """Handler for multi-step label creation conversation"""
     
-    def __init__(self, db, orders_service, shipengine_service=None):
+    def __init__(self, db, orders_service, shipengine_service=None, users_service=None):
         self.db = db
         self.orders_service = orders_service
         self.shipengine_service = shipengine_service
+        self.users_service = users_service
         self.user_data: Dict[str, Dict[str, Any]] = {}
     
     def get_user_data(self, user_id: str) -> Dict[str, Any]:
