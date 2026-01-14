@@ -7,6 +7,7 @@ import Dashboard from './components/Dashboard';
 import OrdersList from './components/OrdersList';
 import CreateOrder from './components/CreateOrder';
 import AdminPanel from './components/AdminPanel';
+import UsersManagement from './components/UsersManagement';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/orders" element={<OrdersList />} />
             <Route path="/create" element={<CreateOrder />} />
+            <Route path="/users" element={<UsersManagement />} />
             <Route path="/admin" element={<AdminPanel />} />
           </Routes>
         </div>
