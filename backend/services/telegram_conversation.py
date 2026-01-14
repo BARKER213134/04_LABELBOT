@@ -80,6 +80,30 @@ class TelegramConversationHandler:
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
         return SHIP_FROM_NAME
     
+    async def start_create_callback(self, update: Update, context) -> int:
+        """Start the label creation process from callback button"""
+        query = update.callback_query
+        await query.answer()
+        
+        user_id = str(update.effective_user.id)
+        self.clear_user_data(user_id)
+        
+        text = (
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "📦 *СОЗДАНИЕ SHIPPING LABEL*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Здравствуйте! Я помогу Вам создать shipping label.\n\n"
+            f"Прогресс: {self.get_progress_bar(1)} (Шаг 1/4)\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "📍 *ШАГ 1: АДРЕС ОТПРАВИТЕЛЯ*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "▫️ *Подшаг 1.1:* Полное имя\n\n"
+            "Пожалуйста, введите полное имя отправителя:"
+        )
+        
+        await query.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        return SHIP_FROM_NAME
+    
     # ===== SHIP FROM ADDRESS =====
     
     async def ship_from_name(self, update: Update, context) -> int:
