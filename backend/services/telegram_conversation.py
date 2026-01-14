@@ -1151,6 +1151,29 @@ class TelegramConversationHandler:
                     return CONFIRM
         
         # Create the label
+        total_cost = data.get('total_cost', 0)
+        
+        # Check balance before creating label
+        if self.users_service:
+            has_balance = await self.users_service.check_balance(user_id, total_cost)
+            if not has_balance:
+                db_user = await self.users_service.get_user(user_id)
+                current_balance = db_user.get('balance', 0) if db_user else 0
+                
+                text = (
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    "❌ *НЕДОСТАТОЧНО СРЕДСТВ*\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n\n"
+                    f"Стоимость лейбла: ${total_cost:.2f}\n"
+                    f"Ваш баланс: ${current_balance:.2f}\n\n"
+                    f"Необходимо пополнить: ${(total_cost - current_balance):.2f}\n\n"
+                    "Обратитесь к администратору для пополнения баланса."
+                )
+                keyboard = [[InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")]]
+                reply_markup = InlineKeyboardMarkup(keyboard)
+                await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+                return ConversationHandler.END
+        
         await query.edit_message_text(
             "⏳ *Создаю лейбл...*\n\nПожалуйста, подождите.",
             parse_mode=ParseMode.MARKDOWN
@@ -1163,7 +1186,14 @@ class TelegramConversationHandler:
             # Call orders service to create label
             result = await self.orders_service.create_order(data)
             
-            total_cost = data.get('total_cost', result.get('cost', 0))
+            # Deduct from user balance
+            if self.users_service:
+                await self.users_service.deduct_for_order(user_id, total_cost)
+                db_user = await self.users_service.get_user(user_id)
+                new_balance = db_user.get('balance', 0) if db_user else 0
+            else:
+                new_balance = 0
+            
             carrier_name = data.get('selected_rate', {}).get('carrier_friendly_name', data.get('carrier', ''))
             
             success_message = (
@@ -1173,7 +1203,8 @@ class TelegramConversationHandler:
                 "📋 *Информация о доставке:*\n\n"
                 f"▫️ Tracking номер:\n`{result.get('trackingNumber', 'N/A')}`\n\n"
                 f"▫️ Перевозчик: {carrier_name}\n"
-                f"▫️ Стоимость: ${total_cost:.2f}\n\n"
+                f"▫️ Стоимость: ${total_cost:.2f}\n"
+                f"▫️ Остаток на балансе: ${new_balance:.2f}\n\n"
                 "━━━━━━━━━━━━━━━━━━━━\n\n"
                 "🔗 Скачать PDF лейбл можно в веб-дашборде:\n"
                 "https://labelgen-4.preview.emergentagent.com\n\n"
