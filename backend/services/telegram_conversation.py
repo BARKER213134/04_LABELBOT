@@ -543,7 +543,8 @@ class TelegramConversationHandler:
         # Check if we're in edit mode
         if data.get('editing_field') == 'to_phone':
             data['editing_field'] = None
-            await query.message.reply_text(
+            # Edit the message to remove button and show confirmation
+            await query.edit_message_text(
                 f"✅ *Телефон сохранен:* {random_phone}\n_(сгенерирован автоматически)_",
                 parse_mode=ParseMode.MARKDOWN
             )
@@ -566,7 +567,8 @@ class TelegramConversationHandler:
             "_Например: 16_"
         )
         
-        await query.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        # Edit the message to remove the skip button
+        await query.edit_message_text(text, parse_mode=ParseMode.MARKDOWN)
         return PACKAGE_WEIGHT
     
     # ===== PACKAGE DETAILS =====
