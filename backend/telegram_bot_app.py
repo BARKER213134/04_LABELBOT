@@ -82,7 +82,6 @@ async def check_balance_callback(update, context):
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
     keyboard = [
         [InlineKeyboardButton("💳 Пополнить баланс", callback_data="topup_balance")],
-        [InlineKeyboardButton("📦 Создать Label", callback_data="start_create")],
         [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
