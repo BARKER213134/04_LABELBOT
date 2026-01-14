@@ -250,8 +250,9 @@ const UsersManagement = () => {
                     min="0"
                     value={balanceAmount}
                     onChange={(e) => setBalanceAmount(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
                     placeholder="0.00"
+                    style={{ color: '#111827', backgroundColor: '#ffffff' }}
                   />
                 </div>
                 <div>
@@ -262,8 +263,9 @@ const UsersManagement = () => {
                     type="text"
                     value={balanceReason}
                     onChange={(e) => setBalanceReason(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
                     placeholder="Причина изменения"
+                    style={{ color: '#111827', backgroundColor: '#ffffff' }}
                   />
                 </div>
                 <div className="flex gap-2">
