@@ -122,6 +122,12 @@ class TelegramConversationHandler:
         data = self.get_user_data(user_id)
         data['shipFromName'] = update.message.text
         
+        # Check if we're in edit mode - editing only name
+        if data.get('editing_field') == 'from_name_only':
+            data['editing_field'] = None
+            await self.show_review_summary(update.message, user_id)
+            return REVIEW_SUMMARY
+        
         text = (
             "✅ *Имя отправителя сохранено*\n\n"
             "▫️ *Подшаг 1.2:* Адрес\n\n"
@@ -137,6 +143,12 @@ class TelegramConversationHandler:
         data = self.get_user_data(user_id)
         data['shipFromAddressLine1'] = update.message.text
         
+        # Check if we're in edit mode - editing address chain
+        if data.get('editing_field') == 'from_address':
+            data['editing_field'] = None
+            await self.show_review_summary(update.message, user_id)
+            return REVIEW_SUMMARY
+        
         text = (
             "✅ *Адрес сохранен*\n\n"
             "▫️ *Подшаг 1.3:* Город\n\n"
@@ -150,6 +162,12 @@ class TelegramConversationHandler:
         user_id = str(update.effective_user.id)
         data = self.get_user_data(user_id)
         data['shipFromCity'] = update.message.text
+        
+        # Check if we're in edit mode - editing location chain
+        if data.get('editing_field') == 'from_city_only':
+            data['editing_field'] = None
+            await self.show_review_summary(update.message, user_id)
+            return REVIEW_SUMMARY
         
         text = (
             "✅ *Город сохранен*\n\n"
@@ -178,6 +196,16 @@ class TelegramConversationHandler:
         data = self.get_user_data(user_id)
         data['shipFromState'] = state
         
+        # Check if we're in edit mode - editing location chain (city -> state -> zip)
+        if data.get('editing_field') == 'from_location':
+            text = (
+                "✅ *Штат сохранен*\n\n"
+                "▫️ ZIP код\n\n"
+                "Введите почтовый индекс (5 цифр):"
+            )
+            await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+            return SHIP_FROM_ZIP
+        
         text = (
             "✅ *Штат сохранен*\n\n"
             "▫️ *Подшаг 1.5:* ZIP код\n\n"
@@ -205,6 +233,12 @@ class TelegramConversationHandler:
         data = self.get_user_data(user_id)
         data['shipFromPostalCode'] = zip_code
         
+        # Check if we're in edit mode - editing location chain
+        if data.get('editing_field') == 'from_location':
+            data['editing_field'] = None
+            await self.show_review_summary(update.message, user_id)
+            return REVIEW_SUMMARY
+        
         text = (
             "✅ *ZIP код сохранен*\n\n"
             "▫️ *Подшаг 1.6:* Телефон (опционально)\n\n"
@@ -231,8 +265,8 @@ class TelegramConversationHandler:
             data['shipFromPhone'] = self.generate_random_phone()
         
         # Check if we're in edit mode
-        if data.get('editing_mode'):
-            data['editing_mode'] = False
+        if data.get('editing_field') == 'from_phone':
+            data['editing_field'] = None
             await self.show_review_summary(update.message, user_id)
             return REVIEW_SUMMARY
         
@@ -262,6 +296,16 @@ class TelegramConversationHandler:
         # Generate random phone
         random_phone = self.generate_random_phone()
         data['shipFromPhone'] = random_phone
+        
+        # Check if we're in edit mode
+        if data.get('editing_field') == 'from_phone':
+            data['editing_field'] = None
+            await query.message.reply_text(
+                f"✅ *Телефон сохранен:* {random_phone}\n_(сгенерирован автоматически)_",
+                parse_mode=ParseMode.MARKDOWN
+            )
+            await self.show_review_summary(query.message, user_id)
+            return REVIEW_SUMMARY
         
         text = (
             f"✅ *Телефон сохранен:* {random_phone}\n"
