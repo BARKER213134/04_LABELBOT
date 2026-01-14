@@ -1364,7 +1364,8 @@ class TelegramConversationHandler:
         template_name = update.message.text.strip()[:50]
         
         data = self.get_user_data(user_id)
-        order_data = data.get('last_order_data', data)
+        # Use current data (not last_order_data) since we're saving before creating label
+        order_data = data
         
         if self.templates_service:
             # Check limit
@@ -1374,22 +1375,29 @@ class TelegramConversationHandler:
                     "❌ *Достигнут лимит шаблонов*\n\n"
                     "У вас уже 10 шаблонов. Удалите один из существующих, чтобы создать новый."
                 )
-                keyboard = [[InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")]]
+                keyboard = [
+                    [InlineKeyboardButton("◀️ Назад к данным", callback_data="back_to_review_after_save")],
+                    [InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")]
+                ]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 await update.message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+                return REVIEW_SUMMARY
             else:
                 template = await self.templates_service.create_template(user_id, template_name, order_data)
                 if template:
-                    text = f"✅ Шаблон *{template_name}* сохранён!"
+                    text = f"✅ Шаблон *{template_name}* сохранён!\n\nТеперь вы можете продолжить создание лейбла."
                 else:
                     text = "❌ Ошибка сохранения шаблона"
                 
-                keyboard = [[InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")]]
+                keyboard = [
+                    [InlineKeyboardButton("✅ Продолжить → Выбрать тариф", callback_data="continue_to_carrier")],
+                    [InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")]
+                ]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 await update.message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+                return REVIEW_SUMMARY
         
-        self.clear_user_data(user_id)
-        return ConversationHandler.END
+        return REVIEW_SUMMARY
     
     async def use_template(self, update: Update, context) -> int:
         """Use a template to create a new label"""
