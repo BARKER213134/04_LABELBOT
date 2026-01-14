@@ -137,31 +137,44 @@ class ShipEngineService:
     
     def _prepare_label_payload(self, order: Order) -> Dict[str, Any]:
         """Prepare request payload for ShipEngine label creation"""
+        # Ensure phone numbers are in correct format (required for FedEx/UPS)
+        ship_from_phone = order.shipFromAddress.phone or "555-555-5555"
+        ship_to_phone = order.shipToAddress.phone or "555-555-5555"
+        
+        # Clean phone format - remove non-digits except + and -
+        def clean_phone(phone):
+            if not phone:
+                return "555-555-5555"
+            # Keep only digits, +, -, spaces, parentheses
+            cleaned = ''.join(c for c in phone if c.isdigit() or c in '+-() ')
+            return cleaned if cleaned else "555-555-5555"
+        
+        ship_from_phone = clean_phone(ship_from_phone)
+        ship_to_phone = clean_phone(ship_to_phone)
+        
         return {
             "shipment": {
-                "validate_address": order.validateAddress,
+                "validate_address": "no_validation",  # Already validated in bot flow
                 "service_code": order.serviceCode,
                 "ship_from": {
                     "name": order.shipFromAddress.name,
                     "address_line1": order.shipFromAddress.addressLine1,
-                    "address_line2": order.shipFromAddress.addressLine2,
+                    "address_line2": order.shipFromAddress.addressLine2 or "",
                     "city_locality": order.shipFromAddress.city,
-                    "state_province": order.shipFromAddress.state,
+                    "state_province": order.shipFromAddress.state.upper()[:2],  # Ensure 2-letter state code
                     "postal_code": order.shipFromAddress.postalCode,
-                    "country_code": order.shipFromAddress.countryCode,
-                    "phone": order.shipFromAddress.phone,
-                    "email": order.shipFromAddress.email,
+                    "country_code": order.shipFromAddress.countryCode.upper()[:2],  # Ensure 2-letter country
+                    "phone": ship_from_phone,
                 },
                 "ship_to": {
                     "name": order.shipToAddress.name,
                     "address_line1": order.shipToAddress.addressLine1,
-                    "address_line2": order.shipToAddress.addressLine2,
+                    "address_line2": order.shipToAddress.addressLine2 or "",
                     "city_locality": order.shipToAddress.city,
-                    "state_province": order.shipToAddress.state,
+                    "state_province": order.shipToAddress.state.upper()[:2],  # Ensure 2-letter state code
                     "postal_code": order.shipToAddress.postalCode,
-                    "country_code": order.shipToAddress.countryCode,
-                    "phone": order.shipToAddress.phone,
-                    "email": order.shipToAddress.email,
+                    "country_code": order.shipToAddress.countryCode.upper()[:2],  # Ensure 2-letter country
+                    "phone": ship_to_phone,
                 },
                 "packages": [
                     {
