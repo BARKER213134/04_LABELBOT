@@ -312,6 +312,7 @@ async def setup_bot_application(environment='sandbox'):
     application.add_handler(CallbackQueryHandler(templates_menu_callback, pattern="^templates_menu$"))
     application.add_handler(CallbackQueryHandler(template_view_callback, pattern="^tpl_view_"))
     application.add_handler(CallbackQueryHandler(template_delete_callback, pattern="^tpl_del_"))
+    application.add_handler(CallbackQueryHandler(refund_info_callback, pattern="^refund_info$"))
     
     logger.info("Bot application setup complete")
     return application
