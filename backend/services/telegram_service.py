@@ -48,6 +48,7 @@ class TelegramService:
             [InlineKeyboardButton("📋 Шаблоны", callback_data="templates_menu")],
             [InlineKeyboardButton("💰 Баланс", callback_data="check_balance")],
             [InlineKeyboardButton("↩️ Refund Label", callback_data="refund_info")],
+            [InlineKeyboardButton("📖 FAQ", callback_data="faq_info")],
             [InlineKeyboardButton("❓ Помощь", url="https://t.me/White_Label_Shipping_Bot_Agent")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
