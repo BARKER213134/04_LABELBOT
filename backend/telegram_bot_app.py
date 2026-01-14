@@ -225,7 +225,8 @@ async def create_crypto_invoice(update, context, user_id: str, amount: float):
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
             
-            await update.message.reply_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+            # Edit loading message instead of sending new one
+            await loading_msg.edit_text(text, reply_markup=reply_markup, parse_mode="Markdown")
         else:
             raise Exception("Failed to create invoice")
             
