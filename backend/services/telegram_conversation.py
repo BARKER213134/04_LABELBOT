@@ -890,7 +890,8 @@ class TelegramConversationHandler:
             "💰 *ДОСТУПНЫЕ ТАРИФЫ*\n"
             "━━━━━━━━━━━━━━━━━━━━\n\n"
             f"Прогресс: {self.get_progress_bar(4)} (Шаг 4/4)\n\n"
-            "Выберите тариф доставки:\n\n"
+            "Выберите тариф доставки:\n"
+            "_(в sandbox режиме USPS работает стабильнее)_\n\n"
         )
         
         # Group rates by carrier
