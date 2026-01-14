@@ -6,7 +6,7 @@ import logging
 from pathlib import Path
 
 from database import connect_db, close_db
-from routes import orders, admin, telegram, statistics
+from routes import orders, admin, telegram, statistics, users
 from config import get_settings
 
 ROOT_DIR = Path(__file__).parent
@@ -57,6 +57,7 @@ api_router.include_router(orders.router)
 api_router.include_router(admin.router)
 api_router.include_router(telegram.router)
 api_router.include_router(statistics.router)
+api_router.include_router(users.router)
 
 app.include_router(api_router)
 
