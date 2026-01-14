@@ -105,6 +105,44 @@ class ShipEngineService:
             logger.error(f"Request error calling ShipEngine: {e}")
             raise ValueError(f"Network error: {str(e)}")
     
+    async def create_label_from_rate(self, rate_id: str) -> Dict[str, Any]:
+        """
+        Create a shipping label directly from a rate_id
+        This is more reliable than creating from scratch
+        """
+        try:
+            payload = {
+                "rate_id": rate_id,
+                "validate_address": "no_validation",
+                "label_format": "pdf",
+                "label_layout": "4x6"
+            }
+            
+            logger.info(f"Creating label from rate_id: {rate_id}")
+            
+            response = await self.client.post(
+                "/v1/labels/rates/" + rate_id,
+                json=payload
+            )
+            response.raise_for_status()
+            
+            label_data = response.json()
+            
+            logger.info(
+                f"Label created successfully from rate: {label_data.get('label_id')} "
+                f"for tracking {label_data.get('tracking_number')}"
+            )
+            
+            return label_data
+            
+        except httpx.HTTPStatusError as e:
+            error_detail = e.response.json() if e.response.text else str(e)
+            logger.error(f"ShipEngine API error creating label from rate: {error_detail}")
+            raise ValueError(f"Failed to create label: {error_detail}")
+        except httpx.RequestError as e:
+            logger.error(f"Request error calling ShipEngine: {e}")
+            raise ValueError(f"Network error: {str(e)}")
+
     async def create_label(self, order: Order) -> Dict[str, Any]:
         """
         Create a shipping label via ShipEngine API
