@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Setup webhooks for both Telegram bots (Sandbox and Production)
+Setup webhooks for both Telegram bots to use the same endpoint
+The backend will automatically switch between bots based on ShipEngine environment
 """
 import asyncio
 import os
@@ -13,11 +14,7 @@ load_dotenv(ROOT_DIR / '.env')
 
 SANDBOX_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 PRODUCTION_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN_PROD')
-BASE_WEBHOOK_URL = os.getenv('WEBHOOK_URL')
-
-# Разные эндпоинты для разных ботов
-SANDBOX_WEBHOOK = BASE_WEBHOOK_URL
-PRODUCTION_WEBHOOK = BASE_WEBHOOK_URL.replace('/webhook', '/webhook-prod')
+WEBHOOK_URL = os.getenv('WEBHOOK_URL')  # Одинаковый для обоих
 
 async def setup_bot_webhook(token: str, webhook_url: str, bot_name: str):
     """Setup webhook for a specific bot"""
@@ -68,35 +65,48 @@ async def setup_bot_webhook(token: str, webhook_url: str, bot_name: str):
 async def main():
     """Main function"""
     print("=" * 60)
-    print("ShipBot - Dual Telegram Bot Webhook Setup")
+    print("ShipBot - Unified Webhook Setup")
+    print("Both bots will use the same webhook endpoint")
+    print("Backend switches bots based on ShipEngine environment")
     print("=" * 60)
     
     # Setup Sandbox bot
     sandbox_success = await setup_bot_webhook(
         SANDBOX_TOKEN,
-        SANDBOX_WEBHOOK,
-        "SANDBOX BOT (Test)"
+        WEBHOOK_URL,
+        "SANDBOX BOT (Test) - for sandbox environment"
     )
     
     # Setup Production bot
     production_success = await setup_bot_webhook(
         PRODUCTION_TOKEN,
-        PRODUCTION_WEBHOOK,
-        "PRODUCTION BOT"
+        WEBHOOK_URL,  # Тот же endpoint!
+        "PRODUCTION BOT - for production environment"
     )
     
     print("\n" + "=" * 60)
-    print("SUMMARY")
+    print("CONFIGURATION")
     print("=" * 60)
+    print(f"Webhook endpoint: {WEBHOOK_URL}")
     print(f"Sandbox Bot: {'✅ Ready' if sandbox_success else '❌ Failed'}")
     print(f"Production Bot: {'✅ Ready' if production_success else '❌ Failed'}")
     
+    print("\n" + "=" * 60)
+    print("HOW IT WORKS")
+    print("=" * 60)
+    print("1. Both bots send updates to the same webhook")
+    print("2. Backend checks current ShipEngine environment")
+    print("3. If environment = 'sandbox' → uses test bot")
+    print("4. If environment = 'production' → uses production bot")
+    print("5. Switch environment in Admin Panel to change bot")
+    
     if sandbox_success:
-        print(f"\n📱 Test Sandbox: https://t.me/whitelabel_shipping_bot_test_bot")
+        print(f"\n📱 Test with Sandbox: https://t.me/whitelabel_shipping_bot_test_bot")
     
     if production_success:
-        print(f"📱 Production: https://t.me/whitelabel_shipping_bot")
+        print(f"📱 Test with Production: https://t.me/whitelabel_shipping_bot")
     
+    print("\n💡 Go to Admin Panel to switch between sandbox/production")
     print("=" * 60)
 
 if __name__ == "__main__":
