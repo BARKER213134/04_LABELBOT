@@ -1439,6 +1439,48 @@ class TelegramConversationHandler:
         
         return text
     
+    async def back_to_menu_fallback(self, update: Update, context) -> int:
+        """Handle back to menu button - works as fallback in conversation"""
+        query = update.callback_query
+        await query.answer()
+        
+        user_id = str(update.effective_user.id)
+        self.clear_user_data(user_id)
+        
+        logger.info(f"back_to_menu_fallback triggered by user {user_id} - ending conversation")
+        
+        # Get user balance
+        balance = 0.0
+        if self.users_service:
+            user = await self.users_service.get_user(user_id)
+            if user:
+                balance = user.get('balance', 0.0)
+        
+        balance_text = f"💰 Баланс: *${balance:.2f}*\n\n"
+        
+        text = (
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "📦 *WHITE LABEL SHIPPING BOT*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"{balance_text}"
+            "Создавайте shipping labels для:\n"
+            "USPS • FedEx • UPS\n\n"
+            "━━━━━━━━━━━━━━━━━━━━"
+        )
+        
+        keyboard = [
+            [InlineKeyboardButton("📦 Создать Label", callback_data="start_create")],
+            [InlineKeyboardButton("📋 Шаблоны", callback_data="templates_menu")],
+            [InlineKeyboardButton("💰 Баланс", callback_data="check_balance")],
+            [InlineKeyboardButton("↩️ Refund Label", callback_data="refund_info")],
+            [InlineKeyboardButton("📖 FAQ", callback_data="faq_info")],
+            [InlineKeyboardButton("❓ Помощь", url="https://t.me/White_Label_Shipping_Bot_Agent")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+        return ConversationHandler.END
+    
     async def cancel(self, update: Update, context) -> int:
         """Cancel the conversation"""
         user_id = str(update.effective_user.id)
