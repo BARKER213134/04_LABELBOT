@@ -659,9 +659,15 @@ class TelegramConversationHandler:
                 "❌ *ЗАКАЗ ОТМЕНЕН*\n"
                 "━━━━━━━━━━━━━━━━━━━━\n\n"
                 "Создание лейбла отменено.\n\n"
-                "Используйте /create чтобы начать заново."
+                "Нажмите кнопку ниже, чтобы вернуться в главное меню:"
             )
-            await query.edit_message_text(text, parse_mode=ParseMode.MARKDOWN)
+            
+            keyboard = [
+                [InlineKeyboardButton("🏠 Вернуться в главное меню", callback_data="back_to_menu")]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            
+            await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
             self.clear_user_data(user_id)
             return ConversationHandler.END
         
