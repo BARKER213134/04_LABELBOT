@@ -98,8 +98,10 @@ async def topup_balance_callback(update, context):
     user_id = str(update.effective_user.id)
     logger.info(f"topup_balance_callback triggered by user {user_id}")
     
-    # Store state in context
+    # Store state and message info in context
     context.user_data['awaiting_topup_amount'] = True
+    context.user_data['topup_message_id'] = query.message.message_id
+    context.user_data['topup_chat_id'] = query.message.chat_id
     
     text = (
         "━━━━━━━━━━━━━━━━━━━━\n"
