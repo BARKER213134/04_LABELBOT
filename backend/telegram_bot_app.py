@@ -554,6 +554,18 @@ async def help_command(update, context):
     )
     await update.message.reply_text(help_text, parse_mode="Markdown")
 
+
+async def handle_text_input(update, context):
+    """Handle text input for top-up amount"""
+    # Check if we're waiting for top-up amount
+    if context.user_data.get('awaiting_topup_amount'):
+        await process_topup_amount(update, context)
+        return
+    
+    # If not waiting for anything specific, ignore
+    # The ConversationHandler will handle text input during label creation
+
+
 async def setup_bot_application(environment='sandbox'):
     """Setup bot application with handlers"""
     settings = get_settings()
