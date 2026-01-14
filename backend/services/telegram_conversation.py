@@ -1272,14 +1272,13 @@ class TelegramConversationHandler:
             # Add download button if URL available
             if label_url:
                 keyboard.append([InlineKeyboardButton(f"📥 Скачать {tracking_number}.pdf", url=label_url)])
-            keyboard.append([InlineKeyboardButton("💾 Сохранить как шаблон", callback_data="save_template")])
             keyboard.append([InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")])
             reply_markup = InlineKeyboardMarkup(keyboard)
             
             await query.edit_message_text(success_message, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
-            # Don't clear data yet - user might want to save template
-            # Data will be cleared in save_template_prompt or back_to_menu
-            return CONFIRM
+            # Clear data after success
+            self.clear_user_data(user_id)
+            return ConversationHandler.END
             
         except Exception as e:
             logger.error(f"Error creating label: {e}", exc_info=True)
