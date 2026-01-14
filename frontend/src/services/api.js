@@ -10,7 +10,7 @@ export const ordersAPI = {
   },
   
   getOrders: async (params = {}) => {
-    const response = await axios.get(`${API}/orders`, { params });
+    const response = await axios.get(`${API}/orders/`, { params });
     return response.data;
   },
   
