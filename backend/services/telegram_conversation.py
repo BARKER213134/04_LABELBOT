@@ -1333,8 +1333,8 @@ class TelegramConversationHandler:
         # Increment use count
         await self.templates_service.increment_use_count(template_id)
         
-        # Show review summary with template data
-        await self.show_review_summary(query.message, user_id, from_template=True)
+        # Show review summary with template data (edit the message to remove buttons)
+        await self.show_review_summary(query.message, user_id, from_template=True, edit_message=True)
         return REVIEW_SUMMARY
     
     async def edit_template(self, update: Update, context) -> int:
