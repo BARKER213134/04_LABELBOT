@@ -45,6 +45,7 @@ class Order(BaseModel):
     shipToAddress: AddressInfo
     package: PackageInfo
     carrier: CarrierEnum
+    carrier_id: Optional[str] = None
     serviceCode: str
     validateAddress: str = "validate_and_clean"
     status: OrderStatus = OrderStatus.PENDING
