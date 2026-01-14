@@ -208,6 +208,32 @@ async def template_delete_callback(update, context):
     
     await query.edit_message_text(text, reply_markup=reply_markup)
 
+async def refund_info_callback(update, context):
+    """Show refund information"""
+    query = update.callback_query
+    await query.answer()
+    
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+    
+    text = (
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "↩️ *REFUND LABEL*\n"
+        "━━━━━━━━━━━━━━━━━━━━\n\n"
+        "⚠️ *Важная информация:*\n\n"
+        "Для оформления возврата средств за неиспользованный label должно пройти "
+        "*минимум 4 дня* с момента его создания.\n\n"
+        "Для оформления refund обратитесь к нашему агенту:\n\n"
+        "━━━━━━━━━━━━━━━━━━━━"
+    )
+    
+    keyboard = [
+        [InlineKeyboardButton("👤 Связаться с агентом", url="https://t.me/White_Label_Shipping_Bot_Agent")],
+        [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await query.edit_message_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+
 async def help_command(update, context):
     """Handle /help command"""
     help_text = (
