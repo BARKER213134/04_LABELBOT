@@ -86,3 +86,16 @@ class TelegramService:
             text=text,
             parse_mode=ParseMode.MARKDOWN_V2
         )
+    
+    async def send_message(self, chat_id: int, text: str, parse_mode: str = None):
+        """Send a message to a user"""
+        try:
+            await self.bot.send_message(
+                chat_id=chat_id,
+                text=text,
+                parse_mode=parse_mode or ParseMode.MARKDOWN
+            )
+            logger.info(f"Message sent to {chat_id}")
+        except Exception as e:
+            logger.error(f"Failed to send message to {chat_id}: {e}")
+            raise
