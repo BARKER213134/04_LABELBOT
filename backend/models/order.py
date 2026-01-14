@@ -26,6 +26,8 @@ class CarrierEnum(str, Enum):
     USPS = "usps"
     FEDEX = "fedex"
     UPS = "ups"
+    STAMPS_COM = "stampscom"
+    DHL = "dhl"
 
 class OrderStatus(str, Enum):
     PENDING = "pending"
