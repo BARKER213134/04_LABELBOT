@@ -1574,5 +1574,6 @@ class TelegramConversationHandler:
             fallbacks=[
                 CommandHandler('start', self.reset_and_start),
                 CommandHandler('cancel', self.cancel),
+                CallbackQueryHandler(self.back_to_menu_fallback, pattern="^back_to_menu$"),
             ],
         )
