@@ -8,7 +8,7 @@ from telegram.ext import (
 )
 from telegram.constants import ParseMode
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, List
 import random
 
 logger = logging.getLogger(__name__)
@@ -31,10 +31,9 @@ logger = logging.getLogger(__name__)
     PACKAGE_DIMENSIONS,
     REVIEW_SUMMARY,
     EDIT_SECTION,
-    SELECT_CARRIER,
-    SELECT_SERVICE,
+    SELECT_RATE,
     CONFIRM,
-) = range(19)
+) = range(18)
 
 class TelegramConversationHandler:
     """Handler for multi-step label creation conversation"""
