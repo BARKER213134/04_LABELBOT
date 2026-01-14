@@ -1465,7 +1465,9 @@ class TelegramConversationHandler:
         return ConversationHandler(
             entry_points=[
                 CommandHandler('create', self.start_create),
-                CallbackQueryHandler(self.start_create_callback, pattern="^start_create$")
+                CallbackQueryHandler(self.start_create_callback, pattern="^start_create$"),
+                CallbackQueryHandler(self.use_template, pattern="^tpl_use_"),
+                CallbackQueryHandler(self.edit_template, pattern="^tpl_edit_"),
             ],
             states={
                 SHIP_FROM_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.ship_from_name)],
@@ -1502,7 +1504,17 @@ class TelegramConversationHandler:
                     CallbackQueryHandler(self.select_rate, pattern="^(rate_|back_to_review_from_rates)")
                 ],
                 CONFIRM: [
-                    CallbackQueryHandler(self.confirm_and_create, pattern="^(confirm_|back_to_rates)$")
+                    CallbackQueryHandler(self.confirm_and_create, pattern="^(confirm_|back_to_rates)$"),
+                    CallbackQueryHandler(self.save_template_prompt, pattern="^save_template$")
+                ],
+                
+                TEMPLATE_SAVE_NAME: [
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, self.save_template_name)
+                ],
+                
+                TEMPLATE_EDIT: [
+                    CallbackQueryHandler(self.handle_edit_choice, pattern="^(edit_from|edit_to|edit_package)$"),
+                    CallbackQueryHandler(self.save_template_changes, pattern="^save_template_changes$")
                 ],
             },
             fallbacks=[
