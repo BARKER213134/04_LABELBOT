@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     # OxaPay
     oxapay_merchant_api_key: str = ""
     
+    # AI/LLM
+    emergent_llm_key: str = ""
+    
     # CORS
     cors_origins: str = "*"
     
