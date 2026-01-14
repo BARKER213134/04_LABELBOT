@@ -234,6 +234,52 @@ async def refund_info_callback(update, context):
     
     await query.edit_message_text(text, reply_markup=reply_markup, parse_mode="Markdown")
 
+async def faq_info_callback(update, context):
+    """Show FAQ and service description"""
+    query = update.callback_query
+    await query.answer()
+    
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+    
+    text = (
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "📖 *WHITE LABEL SHIPPING BOT*\n"
+        "━━━━━━━━━━━━━━━━━━━━\n\n"
+        "🚀 *О сервисе*\n\n"
+        "White Label Shipping Bot — это удобный инструмент для создания "
+        "shipping labels напрямую в Telegram. Экономьте время и деньги "
+        "на отправке посылок по США!\n\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "📦 *Перевозчики*\n\n"
+        "▫️ *USPS* — доступные цены, отличный выбор для небольших посылок\n"
+        "▫️ *FedEx* — быстрая доставка, надёжный трекинг\n"
+        "▫️ *UPS* — идеально для тяжёлых грузов\n\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "💡 *Преимущества*\n\n"
+        "✓ Мгновенное создание labels\n"
+        "✓ Выгодные тарифы\n"
+        "✓ Сохранение шаблонов\n"
+        "✓ Удобное управление балансом\n"
+        "✓ Возврат за неиспользованные labels\n\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "❓ *Частые вопросы*\n\n"
+        "*Как пополнить баланс?*\n"
+        "Обратитесь к нашему агенту для пополнения.\n\n"
+        "*Как получить refund?*\n"
+        "Refund возможен через 4 дня после создания label.\n\n"
+        "*Как использовать шаблон?*\n"
+        "Сохраните данные после создания label и используйте повторно.\n\n"
+        "━━━━━━━━━━━━━━━━━━━━"
+    )
+    
+    keyboard = [
+        [InlineKeyboardButton("👤 Связаться с агентом", url="https://t.me/White_Label_Shipping_Bot_Agent")],
+        [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await query.edit_message_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+
 async def help_command(update, context):
     """Handle /help command"""
     help_text = (
