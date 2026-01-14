@@ -22,6 +22,27 @@ class ShipEngineService:
             },
             timeout=30.0
         )
+        self._carrier_ids = None
+    
+    async def _get_carrier_ids(self) -> List[str]:
+        """Get list of connected carrier IDs"""
+        if self._carrier_ids is not None:
+            return self._carrier_ids
+        
+        try:
+            response = await self.client.get("/v1/carriers")
+            response.raise_for_status()
+            carriers_data = response.json()
+            
+            self._carrier_ids = [
+                carrier["carrier_id"] 
+                for carrier in carriers_data.get("carriers", [])
+            ]
+            logger.info(f"Found {len(self._carrier_ids)} carriers: {self._carrier_ids}")
+            return self._carrier_ids
+        except Exception as e:
+            logger.error(f"Error fetching carriers: {e}")
+            return []
     
     async def get_rates(self, shipment_data: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
@@ -29,9 +50,14 @@ class ShipEngineService:
         Automatically adds markup to each rate
         """
         try:
+            # Get carrier IDs first
+            carrier_ids = await self._get_carrier_ids()
+            if not carrier_ids:
+                raise ValueError("No carriers connected to ShipEngine account")
+            
             payload = {
                 "rate_options": {
-                    "carrier_ids": [],  # Will use all connected carriers
+                    "carrier_ids": carrier_ids,
                 },
                 "shipment": {
                     "validate_address": "no_validation",
