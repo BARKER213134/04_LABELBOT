@@ -703,15 +703,17 @@ class TelegramConversationHandler:
             
         except Exception as e:
             logger.error(f"Error creating label: {e}", exc_info=True)
+            # Use plain text for error messages to avoid Markdown parsing issues
+            error_text = str(e).replace('*', '').replace('_', '').replace('[', '').replace(']', '')
             error_message = (
                 "━━━━━━━━━━━━━━━━━━━━\n"
-                "❌ *ОШИБКА*\n"
+                "❌ ОШИБКА\n"
                 "━━━━━━━━━━━━━━━━━━━━\n\n"
                 f"Не удалось создать лейбл.\n\n"
-                f"Причина: {str(e)}\n\n"
+                f"Причина: {error_text}\n\n"
                 "Пожалуйста, попробуйте еще раз:\n/create"
             )
-            await query.edit_message_text(error_message, parse_mode=ParseMode.MARKDOWN)
+            await query.edit_message_text(error_message)
         
         self.clear_user_data(user_id)
         return ConversationHandler.END
