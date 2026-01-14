@@ -961,14 +961,14 @@ class TelegramConversationHandler:
         edit_type = query.data
         
         if edit_type == "back_to_review":
-            # Go back to review summary
-            await self.show_review_summary(query.message, user_id)
+            # Go back to review summary - edit message to show summary
+            await self.show_review_summary(query.message, user_id, edit_message=True)
             return REVIEW_SUMMARY
         
         # Handle different edit types - set editing_field flag
         if edit_type == "edit_from_address":
             data['editing_field'] = 'from_address'
-            await query.message.reply_text(
+            await query.edit_message_text(
                 "✏️ *Редактирование адреса отправителя*\n\n"
                 "Введите новый адрес:\n"
                 "_(Улица, номер дома, квартира)_",
@@ -977,7 +977,7 @@ class TelegramConversationHandler:
             return SHIP_FROM_ADDRESS
         elif edit_type == "edit_from_location":
             data['editing_field'] = 'from_location'
-            await query.message.reply_text(
+            await query.edit_message_text(
                 "✏️ *Редактирование города отправителя*\n\n"
                 "Введите новый город:",
                 parse_mode=ParseMode.MARKDOWN
@@ -990,12 +990,12 @@ class TelegramConversationHandler:
                 [InlineKeyboardButton("⏭️ Пропустить (сгенерировать случайный)", callback_data="skip_from_phone")]
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
-            await query.message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+            await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
             return SHIP_FROM_PHONE
         
         elif edit_type == "edit_to_address":
             data['editing_field'] = 'to_address'
-            await query.message.reply_text(
+            await query.edit_message_text(
                 "✏️ *Редактирование адреса получателя*\n\n"
                 "Введите новый адрес:\n"
                 "_(Улица, номер дома, квартира)_",
@@ -1004,7 +1004,7 @@ class TelegramConversationHandler:
             return SHIP_TO_ADDRESS
         elif edit_type == "edit_to_location":
             data['editing_field'] = 'to_location'
-            await query.message.reply_text(
+            await query.edit_message_text(
                 "✏️ *Редактирование города получателя*\n\n"
                 "Введите новый город:",
                 parse_mode=ParseMode.MARKDOWN
@@ -1017,12 +1017,12 @@ class TelegramConversationHandler:
                 [InlineKeyboardButton("⏭️ Пропустить (сгенерировать случайный)", callback_data="skip_to_phone")]
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
-            await query.message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+            await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
             return SHIP_TO_PHONE
         
         elif edit_type == "edit_weight":
             data['editing_field'] = 'weight'
-            await query.message.reply_text(
+            await query.edit_message_text(
                 "✏️ *Редактирование веса*\n\n"
                 "Введите новый вес в унциях:\n"
                 "_(1 фунт = 16 унций)_",
@@ -1031,7 +1031,7 @@ class TelegramConversationHandler:
             return PACKAGE_WEIGHT
         elif edit_type == "edit_dimensions":
             data['editing_field'] = 'dimensions'
-            await query.message.reply_text(
+            await query.edit_message_text(
                 "✏️ *Редактирование размеров*\n\n"
                 "Введите новые размеры через пробел:\n"
                 "*Длина Ширина Высота*\n"
