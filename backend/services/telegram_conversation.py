@@ -1576,4 +1576,6 @@ class TelegramConversationHandler:
                 CommandHandler('cancel', self.cancel),
                 CallbackQueryHandler(self.back_to_menu_fallback, pattern="^back_to_menu$"),
             ],
+            per_message=False,
+            allow_reentry=True,
         )
