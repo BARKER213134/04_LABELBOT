@@ -29,6 +29,8 @@ class TelegramService:
     
     async def send_welcome_message(self, chat_id: int):
         """Send welcome message with instructions"""
+        from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+        
         text = (
             "━━━━━━━━━━━━━━━━━━━━\n"
             "🚀 *SHIPBOT - SHIPPING LABELS*\n"
@@ -39,19 +41,19 @@ class TelegramService:
             "▫️ USPS (US Postal Service)\n"
             "▫️ FedEx\n"
             "▫️ UPS\n\n"
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "📋 *ДОСТУПНЫЕ КОМАНДЫ*\n"
             "━━━━━━━━━━━━━━━━━━━━\n\n"
-            "/create - Создать новый shipping label\n"
-            "/help - Справка по использованию\n\n"
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
-            "💡 *Веб-дашборд:*\n"
-            "Для расширенных возможностей используйте:\n"
-            "https://shipbot-labels.preview.emergentagent.com"
+            "Нажмите кнопку ниже, чтобы начать:"
         )
+        
+        keyboard = [
+            [InlineKeyboardButton("📦 Создать Shipping Label", callback_data="start_create")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
         await self.bot.send_message(
             chat_id=chat_id,
             text=text,
+            reply_markup=reply_markup,
             parse_mode=ParseMode.MARKDOWN
         )
     
