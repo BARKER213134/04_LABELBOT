@@ -89,7 +89,7 @@ TELEGRAM_BOT_TOKEN="8560388458:AAHxT-vYpImOpy49lMnaXpSHDM-vtnOn6ZE"
 TELEGRAM_BOT_TOKEN_PROD="8492458522:AAE3dLsl2blomb5WxP7w4S0bqvrs1M4WSsM"
 
 # Shared Webhook
-WEBHOOK_URL="https://labelgen-4.preview.emergentagent.com/api/telegram/webhook"
+WEBHOOK_URL="https://shipengine-tg.preview.emergentagent.com/api/telegram/webhook"
 ```
 
 ## Setup Script
@@ -159,7 +159,7 @@ else:
 ### Check Current Environment
 ```bash
 # Via API
-curl https://labelgen-4.preview.emergentagent.com/api/admin/api-config
+curl https://shipengine-tg.preview.emergentagent.com/api/admin/api-config
 
 # Via MongoDB
 mongosh
@@ -187,7 +187,7 @@ tail -f /var/log/supervisor/backend.out.log | grep "Telegram"
 
 1. **Check current environment:**
 ```bash
-curl https://labelgen-4.preview.emergentagent.com/api/admin/api-config
+curl https://shipengine-tg.preview.emergentagent.com/api/admin/api-config
 ```
 
 2. **Switch in Admin Panel:**

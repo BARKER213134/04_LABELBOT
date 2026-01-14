@@ -6,7 +6,7 @@
 - **Username**: @whitelabel_shipping_bot_test_bot
 - **Bot ID**: 8560388458
 - **Token**: `8560388458:AAHxT-vYpImOpy49lMnaXpSHDM-vtnOn6ZE`
-- **Webhook**: https://labelgen-4.preview.emergentagent.com/api/telegram/webhook
+- **Webhook**: https://shipengine-tg.preview.emergentagent.com/api/telegram/webhook
 - **Status**: ✅ Configured and Active
 
 ### Продакшн бот (Production)

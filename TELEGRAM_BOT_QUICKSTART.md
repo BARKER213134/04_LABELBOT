@@ -119,7 +119,7 @@
 ### Веб-дашборд:
 
 Для полного функционала используйте:
-https://labelgen-4.preview.emergentagent.com
+https://shipengine-tg.preview.emergentagent.com
 
 **В дашборде можно:**
 - Просмотреть все заказы
