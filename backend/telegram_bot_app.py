@@ -288,13 +288,13 @@ async def create_crypto_invoice(update, context, user_id: str, amount: float, me
 async def check_payment_status_callback(update, context):
     """Check crypto payment status"""
     query = update.callback_query
-    await query.answer()
     
     track_id = query.data.replace("check_payment_", "")
     
     from database import Database
     from services.oxapay_service import OxaPayService
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+    from telegram.error import BadRequest
     
     try:
         db = Database.db
@@ -303,7 +303,7 @@ async def check_payment_status_callback(update, context):
         invoice = await oxapay_service.get_invoice_status(track_id)
         
         if not invoice:
-            await query.edit_message_text("❌ Платёж не найден")
+            await query.answer("❌ Платёж не найден", show_alert=True)
             return
         
         status = invoice.get("status", "pending")
@@ -349,11 +349,19 @@ async def check_payment_status_callback(update, context):
         text += "━━━━━━━━━━━━━━━━━━━━"
         reply_markup = InlineKeyboardMarkup(keyboard)
         
-        await query.edit_message_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+        try:
+            await query.edit_message_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+            await query.answer()
+        except BadRequest as e:
+            # Message not modified - same content, just answer the callback
+            if "message is not modified" in str(e).lower():
+                await query.answer("Статус не изменился", show_alert=False)
+            else:
+                raise
         
     except Exception as e:
         logger.error(f"Failed to check payment status: {e}")
-        await query.edit_message_text(f"❌ Ошибка проверки статуса: {str(e)}")
+        await query.answer(f"❌ Ошибка: {str(e)}", show_alert=True)
 
 async def back_to_menu_callback(update, context):
     """Handle back to menu button"""
