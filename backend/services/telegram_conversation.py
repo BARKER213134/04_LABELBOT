@@ -224,6 +224,9 @@ class TelegramConversationHandler:
         phone = update.message.text.strip()
         if phone.lower() not in ['пропустить', 'skip']:
             data['shipFromPhone'] = phone
+        else:
+            # Generate random phone if user types skip
+            data['shipFromPhone'] = self.generate_random_phone()
         
         text = (
             "━━━━━━━━━━━━━━━━━━━━\n"
@@ -238,6 +241,35 @@ class TelegramConversationHandler:
         )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        return SHIP_TO_NAME
+    
+    async def skip_from_phone_callback(self, update: Update, context) -> int:
+        """Handle skip button for from phone"""
+        query = update.callback_query
+        await query.answer()
+        
+        user_id = str(update.effective_user.id)
+        data = self.get_user_data(user_id)
+        
+        # Generate random phone
+        random_phone = self.generate_random_phone()
+        data['shipFromPhone'] = random_phone
+        
+        text = (
+            f"✅ *Телефон сохранен:* {random_phone}\n"
+            "_(сгенерирован автоматически)_\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "✅ *ШАГ 1 ЗАВЕРШЕН*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"Прогресс: {self.get_progress_bar(2)} (Шаг 2/4)\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "📍 *ШАГ 2: АДРЕС ПОЛУЧАТЕЛЯ*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "▫️ *Подшаг 2.1:* Полное имя\n\n"
+            "Введите полное имя получателя:"
+        )
+        
+        await query.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
         return SHIP_TO_NAME
     
     # ===== SHIP TO ADDRESS =====
