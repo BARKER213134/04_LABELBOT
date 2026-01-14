@@ -555,6 +555,17 @@ class TelegramConversationHandler:
             await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
             return PACKAGE_WEIGHT
         
+        # Check if we're in edit mode
+        if data.get('editing_field') == 'weight':
+            data['editing_field'] = None
+            pounds = weight / 16
+            await update.message.reply_text(
+                f"✅ *Вес сохранен* ({weight} oz ≈ {pounds:.2f} lbs)",
+                parse_mode=ParseMode.MARKDOWN
+            )
+            await self.show_review_summary(update.message, user_id)
+            return REVIEW_SUMMARY
+        
         pounds = weight / 16
         text = (
             f"✅ *Вес сохранен* ({weight} oz ≈ {pounds:.2f} lbs)\n\n"
@@ -593,6 +604,14 @@ class TelegramConversationHandler:
             )
             await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
             return PACKAGE_DIMENSIONS
+        
+        # Check if we're in edit mode
+        if data.get('editing_field') == 'dimensions':
+            data['editing_field'] = None
+            await update.message.reply_text(
+                f"✅ *Размеры сохранены* ({length}×{width}×{height} дюймов)",
+                parse_mode=ParseMode.MARKDOWN
+            )
         
         # Show review summary
         await self.show_review_summary(update.message, user_id)
