@@ -197,11 +197,15 @@ class TelegramConversationHandler:
         text = (
             "✅ *ZIP код сохранен*\n\n"
             "▫️ *Подшаг 1.6:* Телефон (опционально)\n\n"
-            "Введите контактный телефон отправителя:\n"
-            "_(Или напишите 'пропустить' для продолжения без телефона)_"
+            "Введите контактный телефон отправителя или нажмите кнопку:"
         )
         
-        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        keyboard = [
+            [InlineKeyboardButton("⏭️ Пропустить (сгенерировать случайный)", callback_data="skip_from_phone")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        await update.message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
         return SHIP_FROM_PHONE
     
     async def ship_from_phone(self, update: Update, context) -> int:
