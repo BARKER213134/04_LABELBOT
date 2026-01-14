@@ -21,22 +21,33 @@ async def telegram_webhook(
     db: AsyncIOMotorDatabase = Depends(get_database)
 ):
     """
-    Webhook handler for Telegram bot
-    Handles both sandbox and production bots
+    Webhook handler for Telegram bot (Sandbox)
+    """
+    return await handle_telegram_update(request, db, use_production=False)
+
+@router.post("/webhook-prod")
+async def telegram_webhook_prod(
+    request: Request,
+    settings: Settings = Depends(get_settings),
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    """
+    Webhook handler for Telegram bot (Production)
+    """
+    return await handle_telegram_update(request, db, use_production=True)
+
+async def handle_telegram_update(
+    request: Request,
+    db: AsyncIOMotorDatabase,
+    use_production: bool = False
+):
+    """
+    Handle Telegram webhook update
     """
     try:
         update_data = await request.json()
-        logger.info(f"Received webhook: {json.dumps(update_data)}")
-        
-        # Определяем какой бот (по токену в заголовках или по данным)
-        # По умолчанию используем sandbox, если не указано иное
-        use_production = False
-        
-        # Можно определить по bot_id в update_data если нужно
-        if "message" in update_data and "from" in update_data["message"]:
-            # Bot ID 8492458522 = production, 8560388458 = sandbox
-            # Но проще использовать единый webhook для обоих
-            pass
+        bot_type = "PRODUCTION" if use_production else "SANDBOX"
+        logger.info(f"[{bot_type}] Received webhook: {json.dumps(update_data)}")
         
         telegram_service = TelegramService(use_production=use_production)
         
