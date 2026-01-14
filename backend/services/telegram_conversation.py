@@ -1091,6 +1091,7 @@ class TelegramConversationHandler:
             'dhl': 'dhl',
         }
         data['carrier'] = carrier_mapping.get(carrier_code, carrier_code)
+        data['carrier_id'] = selected_rate.get('carrier_id', '')
         data['serviceCode'] = selected_rate.get('service_code', '')
         data['rate_id'] = selected_rate.get('rate_id', '')
         data['total_cost'] = selected_rate.get('total_amount', 0)
