@@ -20,8 +20,25 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Global reference to users_service for use in handlers
+_users_service = None
+
 async def start_command(update, context):
     """Handle /start command"""
+    global _users_service
+    
+    # Create/update user in database
+    if _users_service:
+        tg_user = update.effective_user
+        user = await _users_service.get_or_create_user(
+            telegram_id=str(tg_user.id),
+            username=tg_user.username,
+            first_name=tg_user.first_name,
+            last_name=tg_user.last_name
+        )
+        balance = user.get('balance', 0.0)
+        logger.info(f"User {tg_user.id} ({tg_user.username}) - balance: ${balance:.2f}")
+    
     telegram_service = TelegramService()
     await telegram_service.send_welcome_message(update.effective_chat.id)
 
