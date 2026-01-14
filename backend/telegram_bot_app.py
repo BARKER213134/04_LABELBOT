@@ -262,13 +262,17 @@ async def setup_bot_application(environment='sandbox'):
     orders_service = OrdersService(db)
     shipengine_service = ShipEngineService(shipengine_key)
     users_service = UsersService(db)
+    templates_service = TemplatesService(db)
     
-    # Set global reference for use in handlers
-    global _users_service
+    # Set global references for use in handlers
+    global _users_service, _templates_service
     _users_service = users_service
+    _templates_service = templates_service
     
     # Add conversation handler (includes start_create button callback)
-    conversation_handler_instance = TelegramConversationHandler(db, orders_service, shipengine_service, users_service)
+    conversation_handler_instance = TelegramConversationHandler(
+        db, orders_service, shipengine_service, users_service, templates_service
+    )
     application.add_handler(conversation_handler_instance.get_conversation_handler())
     
     # Add command handlers
@@ -279,6 +283,9 @@ async def setup_bot_application(environment='sandbox'):
     from telegram.ext import CallbackQueryHandler
     application.add_handler(CallbackQueryHandler(check_balance_callback, pattern="^check_balance$"))
     application.add_handler(CallbackQueryHandler(back_to_menu_callback, pattern="^back_to_menu$"))
+    application.add_handler(CallbackQueryHandler(templates_menu_callback, pattern="^templates_menu$"))
+    application.add_handler(CallbackQueryHandler(template_view_callback, pattern="^tpl_view_"))
+    application.add_handler(CallbackQueryHandler(template_delete_callback, pattern="^tpl_del_"))
     
     logger.info("Bot application setup complete")
     return application
