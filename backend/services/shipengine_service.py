@@ -1,9 +1,12 @@
 import httpx
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, List
 from models.order import Order
 
 logger = logging.getLogger(__name__)
+
+# Markup to add to each rate (our profit)
+RATE_MARKUP = 10.0
 
 class ShipEngineService:
     """Service for handling ShipEngine API interactions"""
@@ -19,6 +22,51 @@ class ShipEngineService:
             },
             timeout=30.0
         )
+    
+    async def get_rates(self, shipment_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        Get shipping rates from ShipEngine API
+        Automatically adds markup to each rate
+        """
+        try:
+            payload = {
+                "rate_options": {
+                    "carrier_ids": [],  # Will use all connected carriers
+                },
+                "shipment": {
+                    "validate_address": "no_validation",
+                    "ship_from": shipment_data["ship_from"],
+                    "ship_to": shipment_data["ship_to"],
+                    "packages": shipment_data["packages"]
+                }
+            }
+            
+            response = await self.client.post(
+                "/v1/rates",
+                json=payload
+            )
+            response.raise_for_status()
+            
+            rates_data = response.json()
+            rates = rates_data.get("rate_response", {}).get("rates", [])
+            
+            # Add markup to each rate
+            for rate in rates:
+                original_amount = rate.get("shipping_amount", {}).get("amount", 0)
+                rate["original_amount"] = original_amount
+                rate["markup"] = RATE_MARKUP
+                rate["total_amount"] = original_amount + RATE_MARKUP
+            
+            logger.info(f"Got {len(rates)} rates from ShipEngine")
+            return rates
+            
+        except httpx.HTTPStatusError as e:
+            error_detail = e.response.json() if e.response.text else str(e)
+            logger.error(f"ShipEngine rates API error: {error_detail}")
+            raise ValueError(f"Failed to get rates: {error_detail}")
+        except httpx.RequestError as e:
+            logger.error(f"Request error calling ShipEngine: {e}")
+            raise ValueError(f"Network error: {str(e)}")
     
     async def create_label(self, order: Order) -> Dict[str, Any]:
         """
