@@ -71,16 +71,34 @@ class TelegramConversationHandler:
         number = random.randint(1000, 9999)
         return f"({area_code}) {exchange}-{number}"
     
+    async def _ensure_user(self, update: Update) -> Dict[str, Any]:
+        """Ensure user exists in database and return user data"""
+        if not self.users_service:
+            return {}
+        
+        tg_user = update.effective_user
+        user = await self.users_service.get_or_create_user(
+            telegram_id=str(tg_user.id),
+            username=tg_user.username,
+            first_name=tg_user.first_name,
+            last_name=tg_user.last_name
+        )
+        return user
+    
     async def start_create(self, update: Update, context) -> int:
         """Start the label creation process"""
         user_id = str(update.effective_user.id)
         self.clear_user_data(user_id)
         
+        # Ensure user exists
+        db_user = await self._ensure_user(update)
+        balance = db_user.get('balance', 0.0) if db_user else 0.0
+        
         text = (
             "━━━━━━━━━━━━━━━━━━━━\n"
             "📦 *СОЗДАНИЕ SHIPPING LABEL*\n"
             "━━━━━━━━━━━━━━━━━━━━\n\n"
-            "Здравствуйте! Я помогу Вам создать shipping label.\n\n"
+            f"💰 Ваш баланс: *${balance:.2f}*\n\n"
             f"Прогресс: {self.get_progress_bar(1)} (Шаг 1/4)\n\n"
             "━━━━━━━━━━━━━━━━━━━━\n"
             "📍 *ШАГ 1: АДРЕС ОТПРАВИТЕЛЯ*\n"
@@ -100,11 +118,15 @@ class TelegramConversationHandler:
         user_id = str(update.effective_user.id)
         self.clear_user_data(user_id)
         
+        # Ensure user exists
+        db_user = await self._ensure_user(update)
+        balance = db_user.get('balance', 0.0) if db_user else 0.0
+        
         text = (
             "━━━━━━━━━━━━━━━━━━━━\n"
             "📦 *СОЗДАНИЕ SHIPPING LABEL*\n"
             "━━━━━━━━━━━━━━━━━━━━\n\n"
-            "Здравствуйте! Я помогу Вам создать shipping label.\n\n"
+            f"💰 Ваш баланс: *${balance:.2f}*\n\n"
             f"Прогресс: {self.get_progress_bar(1)} (Шаг 1/4)\n\n"
             "━━━━━━━━━━━━━━━━━━━━\n"
             "📍 *ШАГ 1: АДРЕС ОТПРАВИТЕЛЯ*\n"
