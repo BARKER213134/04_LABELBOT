@@ -597,14 +597,19 @@ async def setup_bot_application(environment='sandbox'):
     application.add_handler(CommandHandler("help", help_command))
     
     # Add callback handlers for menu buttons (these work when user is NOT in conversation)
-    from telegram.ext import CallbackQueryHandler
+    from telegram.ext import CallbackQueryHandler, MessageHandler, filters
     application.add_handler(CallbackQueryHandler(check_balance_callback, pattern="^check_balance$"))
+    application.add_handler(CallbackQueryHandler(topup_balance_callback, pattern="^topup_balance$"))
+    application.add_handler(CallbackQueryHandler(check_payment_status_callback, pattern="^check_payment_"))
     application.add_handler(CallbackQueryHandler(back_to_menu_callback, pattern="^back_to_menu$"))
     application.add_handler(CallbackQueryHandler(templates_menu_callback, pattern="^templates_menu$"))
     application.add_handler(CallbackQueryHandler(template_view_callback, pattern="^tpl_view_"))
     application.add_handler(CallbackQueryHandler(template_delete_callback, pattern="^tpl_del_"))
     application.add_handler(CallbackQueryHandler(refund_info_callback, pattern="^refund_info$"))
     application.add_handler(CallbackQueryHandler(faq_info_callback, pattern="^faq_info$"))
+    
+    # Add message handler for top-up amount input
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text_input))
     
     logger.info("Bot application setup complete")
     return application
