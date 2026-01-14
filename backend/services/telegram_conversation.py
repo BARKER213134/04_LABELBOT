@@ -709,6 +709,7 @@ class TelegramConversationHandler:
             [InlineKeyboardButton("✏️ Редактировать отправителя", callback_data="edit_from")],
             [InlineKeyboardButton("✏️ Редактировать получателя", callback_data="edit_to")],
             [InlineKeyboardButton("✏️ Редактировать посылку", callback_data="edit_package")],
+            [InlineKeyboardButton("💾 Сохранить как шаблон", callback_data="save_template")],
             [InlineKeyboardButton("✅ Всё верно, продолжить", callback_data="continue_to_carrier")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
