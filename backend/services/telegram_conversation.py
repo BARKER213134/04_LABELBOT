@@ -645,7 +645,7 @@ class TelegramConversationHandler:
         await self.show_review_summary(update.message, user_id)
         return REVIEW_SUMMARY
     
-    async def show_review_summary(self, message, user_id: str, from_template: bool = False):
+    async def show_review_summary(self, message, user_id: str, from_template: bool = False, edit_message: bool = False):
         """Show summary with edit options"""
         data = self.get_user_data(user_id)
         
@@ -686,10 +686,11 @@ class TelegramConversationHandler:
         if data.get('shipToPhone'):
             text += f"▫️ Телефон: {data.get('shipToPhone')}\n"
         
+        weight = data.get('packageWeight', 0) or 0
         text += (
             f"\n━━━━━━━━━━━━━━━━━━━━\n"
             "📦 *ПОСЫЛКА*\n"
-            f"▫️ Вес: {data.get('packageWeight')} oz ({data.get('packageWeight')/16:.2f} lbs)\n"
+            f"▫️ Вес: {weight} oz ({weight/16:.2f} lbs)\n"
             f"▫️ Размеры: {data.get('packageLength')}×{data.get('packageWidth')}×{data.get('packageHeight')} дюймов\n\n"
             "━━━━━━━━━━━━━━━━━━━━\n\n"
             "Выберите действие:"
@@ -703,7 +704,12 @@ class TelegramConversationHandler:
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
-        await message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+        if edit_message:
+            # Edit existing message (for callbacks)
+            await message.edit_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+        else:
+            # Send new message (for text input handlers)
+            await message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
     
     async def handle_edit_choice(self, update: Update, context) -> int:
         """Handle edit section choice"""
