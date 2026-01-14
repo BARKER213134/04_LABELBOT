@@ -23,6 +23,23 @@ async def start_command(update, context):
     telegram_service = TelegramService()
     await telegram_service.send_welcome_message(update.effective_chat.id)
 
+async def button_callback(update, context):
+    """Handle button callbacks"""
+    query = update.callback_query
+    await query.answer()
+    
+    if query.data == "start_create":
+        # Redirect to /create command
+        from telegram import Update
+        # Create a fake message update to trigger /create
+        await query.message.reply_text(
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "📦 *СОЗДАНИЕ SHIPPING LABEL*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Запускаю процесс создания...\n\n"
+            "Используйте команду: /create"
+        )
+
 async def help_command(update, context):
     """Handle /help command"""
     help_text = (
