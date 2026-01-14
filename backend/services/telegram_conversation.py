@@ -120,6 +120,7 @@ class TelegramConversationHandler:
         await query.answer()
         
         user_id = str(update.effective_user.id)
+        logger.info(f"start_create_callback triggered by user {user_id}")
         self.clear_user_data(user_id)
         
         # Ensure user exists
@@ -140,7 +141,11 @@ class TelegramConversationHandler:
         )
         
         # Edit message to remove old buttons
-        await query.edit_message_text(text, parse_mode=ParseMode.MARKDOWN)
+        try:
+            await query.edit_message_text(text, parse_mode=ParseMode.MARKDOWN)
+            logger.info(f"Successfully edited message for user {user_id}")
+        except Exception as e:
+            logger.error(f"Failed to edit message for user {user_id}: {e}")
         return SHIP_FROM_NAME
     
     # ===== SHIP FROM ADDRESS =====
