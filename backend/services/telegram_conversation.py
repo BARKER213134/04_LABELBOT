@@ -672,7 +672,6 @@ class TelegramConversationHandler:
         await query.answer()
         
         user_id = str(update.effective_user.id)
-        data = self.get_user_data(user_id)
         
         edit_choice = query.data
         
