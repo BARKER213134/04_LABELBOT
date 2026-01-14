@@ -8,15 +8,24 @@ logger = logging.getLogger(__name__)
 class TelegramService:
     """Service for Telegram bot interactions"""
     
-    def __init__(self, use_production=False):
+    def __init__(self, environment='sandbox'):
+        """
+        Initialize Telegram service with appropriate bot based on environment
+        
+        Args:
+            environment: 'sandbox' or 'production'
+        """
         settings = get_settings()
-        # Выбираем токен в зависимости от окружения
-        if use_production:
+        # Выбираем токен в зависимости от ShipEngine environment
+        if environment == 'production':
             bot_token = settings.telegram_bot_token_prod
+            logger.info("Using PRODUCTION Telegram bot")
         else:
             bot_token = settings.telegram_bot_token
+            logger.info("Using SANDBOX Telegram bot")
+        
         self.bot = Bot(token=bot_token)
-        self.is_production = use_production
+        self.environment = environment
     
     async def send_welcome_message(self, chat_id: int):
         """Send welcome message with instructions"""
