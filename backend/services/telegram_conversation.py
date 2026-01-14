@@ -62,7 +62,7 @@ class TelegramConversationHandler:
             "Давайте начнем\\! Я проведу вас через все шаги\\.\n\n"
             "📍 *Шаг 1 из 4: Адрес отправителя*\\n\\n"
             "Введите имя отправителя:",
-            parse_mode=ParseMode.MARKDOWN_V2
+            parse_mode=ParseMode.MARKDOWN
         )
         
         return SHIP_FROM_NAME
@@ -77,7 +77,7 @@ class TelegramConversationHandler:
         await update.message.reply_text(
             "✅ Отлично\\!\n\n"
             "Теперь введите адрес отправителя \\(улица, дом\\):",
-            parse_mode=ParseMode.MARKDOWN_V2
+            parse_mode=ParseMode.MARKDOWN
         )
         return SHIP_FROM_ADDRESS
     
@@ -96,7 +96,7 @@ class TelegramConversationHandler:
         
         await update.message.reply_text(
             "Введите штат \\(2 буквы, например: CA, NY, TX\\):",
-            parse_mode=ParseMode.MARKDOWN_V2
+            parse_mode=ParseMode.MARKDOWN
         )
         return SHIP_FROM_STATE
     
@@ -107,7 +107,7 @@ class TelegramConversationHandler:
         if len(state) != 2:
             await update.message.reply_text(
                 "❌ Штат должен быть 2 буквы \\(например: CA\\)\\. Попробуйте еще раз:",
-                parse_mode=ParseMode.MARKDOWN_V2
+                parse_mode=ParseMode.MARKDOWN
             )
             return SHIP_FROM_STATE
         
@@ -124,7 +124,7 @@ class TelegramConversationHandler:
         if not zip_code.isdigit() or len(zip_code) != 5:
             await update.message.reply_text(
                 "❌ ZIP код должен быть 5 цифр\\. Попробуйте еще раз:",
-                parse_mode=ParseMode.MARKDOWN_V2
+                parse_mode=ParseMode.MARKDOWN
             )
             return SHIP_FROM_ZIP
         
@@ -133,7 +133,7 @@ class TelegramConversationHandler:
         
         await update.message.reply_text(
             "Введите телефон отправителя \\(или напишите 'skip' чтобы пропустить\\):",
-            parse_mode=ParseMode.MARKDOWN_V2
+            parse_mode=ParseMode.MARKDOWN
         )
         return SHIP_FROM_PHONE
     
@@ -149,7 +149,7 @@ class TelegramConversationHandler:
             "✅ *Адрес отправителя сохранен\\!*\n\n"
             "📍 *Шаг 2 из 4: Адрес получателя*\n\n"
             "Введите имя получателя:",
-            parse_mode=ParseMode.MARKDOWN_V2
+            parse_mode=ParseMode.MARKDOWN
         )
         return SHIP_TO_NAME
     
@@ -162,7 +162,7 @@ class TelegramConversationHandler:
         
         await update.message.reply_text(
             "Введите адрес получателя \\(улица, дом\\):",
-            parse_mode=ParseMode.MARKDOWN_V2
+            parse_mode=ParseMode.MARKDOWN
         )
         return SHIP_TO_ADDRESS
     
@@ -181,7 +181,7 @@ class TelegramConversationHandler:
         
         await update.message.reply_text(
             "Введите штат \\(2 буквы\\):",
-            parse_mode=ParseMode.MARKDOWN_V2
+            parse_mode=ParseMode.MARKDOWN
         )
         return SHIP_TO_STATE
     
@@ -192,7 +192,7 @@ class TelegramConversationHandler:
         if len(state) != 2:
             await update.message.reply_text(
                 "❌ Штат должен быть 2 буквы\\. Попробуйте еще раз:",
-                parse_mode=ParseMode.MARKDOWN_V2
+                parse_mode=ParseMode.MARKDOWN
             )
             return SHIP_TO_STATE
         
@@ -209,7 +209,7 @@ class TelegramConversationHandler:
         if not zip_code.isdigit() or len(zip_code) != 5:
             await update.message.reply_text(
                 "❌ ZIP код должен быть 5 цифр\\. Попробуйте еще раз:",
-                parse_mode=ParseMode.MARKDOWN_V2
+                parse_mode=ParseMode.MARKDOWN
             )
             return SHIP_TO_ZIP
         
@@ -218,7 +218,7 @@ class TelegramConversationHandler:
         
         await update.message.reply_text(
             "Введите телефон получателя \\(или 'skip'\\):",
-            parse_mode=ParseMode.MARKDOWN_V2
+            parse_mode=ParseMode.MARKDOWN
         )
         return SHIP_TO_PHONE
     
@@ -234,7 +234,7 @@ class TelegramConversationHandler:
             "✅ *Адрес получателя сохранен\\!*\n\n"
             "📦 *Шаг 3 из 4: Параметры посылки*\n\n"
             "Введите вес в унциях \\(например: 16 для 1 фунта\\):",
-            parse_mode=ParseMode.MARKDOWN_V2
+            parse_mode=ParseMode.MARKDOWN
         )
         return PACKAGE_WEIGHT
     
@@ -252,14 +252,14 @@ class TelegramConversationHandler:
         except ValueError:
             await update.message.reply_text(
                 "❌ Введите корректный вес \\(число больше 0\\):",
-                parse_mode=ParseMode.MARKDOWN_V2
+                parse_mode=ParseMode.MARKDOWN
             )
             return PACKAGE_WEIGHT
         
         await update.message.reply_text(
             "Введите размеры посылки в дюймах через пробел\\:\n"
             "Длина Ширина Высота \\(например: 12 8 6\\)",
-            parse_mode=ParseMode.MARKDOWN_V2
+            parse_mode=ParseMode.MARKDOWN
         )
         return PACKAGE_DIMENSIONS
     
@@ -282,7 +282,7 @@ class TelegramConversationHandler:
         except ValueError:
             await update.message.reply_text(
                 "❌ Введите 3 числа через пробел \\(Длина Ширина Высота\\)\\. Попробуйте еще раз:",
-                parse_mode=ParseMode.MARKDOWN_V2
+                parse_mode=ParseMode.MARKDOWN
             )
             return PACKAGE_DIMENSIONS
         
@@ -299,7 +299,7 @@ class TelegramConversationHandler:
             "🚚 *Шаг 4 из 4: Выбор перевозчика*\n\n"
             "Выберите перевозчика:",
             reply_markup=reply_markup,
-            parse_mode=ParseMode.MARKDOWN_V2
+            parse_mode=ParseMode.MARKDOWN
         )
         return SELECT_CARRIER
     
@@ -344,7 +344,7 @@ class TelegramConversationHandler:
             f"✅ Выбран: *{carrier.upper()}*\n\n"
             f"Теперь выберите тип доставки:",
             reply_markup=reply_markup,
-            parse_mode=ParseMode.MARKDOWN_V2
+            parse_mode=ParseMode.MARKDOWN
         )
         return SELECT_SERVICE
     
@@ -383,7 +383,7 @@ class TelegramConversationHandler:
         await query.edit_message_text(
             summary,
             reply_markup=reply_markup,
-            parse_mode=ParseMode.MARKDOWN_V2
+            parse_mode=ParseMode.MARKDOWN
         )
         return CONFIRM
     
@@ -398,13 +398,13 @@ class TelegramConversationHandler:
             await query.edit_message_text(
                 "❌ Создание лейбла отменено\\.\n\n"
                 "Используйте /create чтобы начать заново\\.",
-                parse_mode=ParseMode.MARKDOWN_V2
+                parse_mode=ParseMode.MARKDOWN
             )
             self.clear_user_data(user_id)
             return ConversationHandler.END
         
         # Create the label
-        await query.edit_message_text("⏳ Создаю лейбл\\.\\.\\.", parse_mode=ParseMode.MARKDOWN_V2)
+        await query.edit_message_text("⏳ Создаю лейбл\\.\\.\\.", parse_mode=ParseMode.MARKDOWN)
         
         data = self.get_user_data(user_id)
         data['telegram_user_id'] = user_id
@@ -422,14 +422,14 @@ class TelegramConversationHandler:
                 f"🔗 Скачать лейбл можно в веб\\-дашборде"
             )
             
-            await query.edit_message_text(success_message, parse_mode=ParseMode.MARKDOWN_V2)
+            await query.edit_message_text(success_message, parse_mode=ParseMode.MARKDOWN)
             
         except Exception as e:
             logger.error(f"Error creating label: {e}", exc_info=True)
             await query.edit_message_text(
                 f"❌ Ошибка при создании лейбла\\: {str(e)}\n\n"
                 f"Попробуйте еще раз: /create",
-                parse_mode=ParseMode.MARKDOWN_V2
+                parse_mode=ParseMode.MARKDOWN
             )
         
         self.clear_user_data(user_id)
@@ -443,7 +443,7 @@ class TelegramConversationHandler:
         await update.message.reply_text(
             "❌ Создание лейбла отменено\\.\n\n"
             "Используйте /create чтобы начать заново\\.",
-            parse_mode=ParseMode.MARKDOWN_V2
+            parse_mode=ParseMode.MARKDOWN
         )
         return ConversationHandler.END
     
