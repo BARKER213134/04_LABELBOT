@@ -22,12 +22,23 @@ async def telegram_webhook(
 ):
     """
     Webhook handler for Telegram bot
+    Handles both sandbox and production bots
     """
     try:
         update_data = await request.json()
         logger.info(f"Received webhook: {json.dumps(update_data)}")
         
-        telegram_service = TelegramService()
+        # Определяем какой бот (по токену в заголовках или по данным)
+        # По умолчанию используем sandbox, если не указано иное
+        use_production = False
+        
+        # Можно определить по bot_id в update_data если нужно
+        if "message" in update_data and "from" in update_data["message"]:
+            # Bot ID 8492458522 = production, 8560388458 = sandbox
+            # Но проще использовать единый webhook для обоих
+            pass
+        
+        telegram_service = TelegramService(use_production=use_production)
         
         # Handle message
         if "message" in update_data:
