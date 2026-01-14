@@ -1647,11 +1647,11 @@ class TelegramConversationHandler:
                 ],
                 CONFIRM: [
                     CallbackQueryHandler(self.confirm_and_create, pattern="^(confirm_yes|back_to_rates)$"),
-                    CallbackQueryHandler(self.save_template_prompt, pattern="^save_template$")
                 ],
                 
                 TEMPLATE_SAVE_NAME: [
-                    MessageHandler(filters.TEXT & ~filters.COMMAND, self.save_template_name)
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, self.save_template_name),
+                    CallbackQueryHandler(self.handle_edit_choice, pattern="^continue_to_carrier$")
                 ],
                 
                 TEMPLATE_EDIT: [
