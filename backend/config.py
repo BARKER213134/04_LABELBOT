@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     
     # Telegram
     telegram_bot_token: str = "demo_token"
+    telegram_bot_token_prod: str = "demo_token_prod"
     webhook_secret: str = "demo_secret"
     webhook_url: str = "https://demo.com"
     
