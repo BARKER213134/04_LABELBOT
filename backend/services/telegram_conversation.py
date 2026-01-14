@@ -1271,9 +1271,12 @@ class TelegramConversationHandler:
             )
             
             keyboard = []
-            # Add download button if URL available
+            # Add download button if URL available - use callback to send via Telegram
             if label_url:
-                keyboard.append([InlineKeyboardButton(f"📥 Скачать {tracking_number}.pdf", url=label_url)])
+                # Store label URL for download
+                data['label_url'] = label_url
+                data['tracking_number'] = tracking_number
+                keyboard.append([InlineKeyboardButton(f"📥 Скачать {tracking_number}.pdf", callback_data="download_label")])
             keyboard.append([InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")])
             reply_markup = InlineKeyboardMarkup(keyboard)
             
