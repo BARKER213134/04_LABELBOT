@@ -209,12 +209,14 @@ async def create_crypto_invoice(update, context, user_id: str, amount: float, me
     from services.oxapay_service import OxaPayService
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
     
-    # Send loading message
-    loading_msg = await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text="⏳ *Создаю платёж...*",
-        parse_mode="Markdown"
-    )
+    # Edit existing message to show loading
+    if message_id and chat_id:
+        await context.bot.edit_message_text(
+            chat_id=chat_id,
+            message_id=message_id,
+            text="⏳ *Создаю платёж...*",
+            parse_mode="Markdown"
+        )
     
     try:
         db = Database.db
@@ -248,8 +250,15 @@ async def create_crypto_invoice(update, context, user_id: str, amount: float, me
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
             
-            # Edit loading message instead of sending new one
-            await loading_msg.edit_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+            # Edit the same message with result
+            if message_id and chat_id:
+                await context.bot.edit_message_text(
+                    chat_id=chat_id,
+                    message_id=message_id,
+                    text=text,
+                    reply_markup=reply_markup,
+                    parse_mode="Markdown"
+                )
         else:
             raise Exception("Failed to create invoice")
             
