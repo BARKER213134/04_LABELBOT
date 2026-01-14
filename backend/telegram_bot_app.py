@@ -79,10 +79,14 @@ async def get_or_create_app(environment='sandbox'):
     if environment == 'production':
         if production_app is None:
             production_app = await setup_bot_application('production')
+            await production_app.initialize()
+            logger.info("Production bot initialized")
         return production_app
     else:
         if sandbox_app is None:
             sandbox_app = await setup_bot_application('sandbox')
+            await sandbox_app.initialize()
+            logger.info("Sandbox bot initialized")
         return sandbox_app
 
 if __name__ == "__main__":
