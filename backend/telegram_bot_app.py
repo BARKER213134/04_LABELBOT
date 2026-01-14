@@ -74,17 +74,230 @@ async def check_balance_callback(update, context):
         f"▫️ Заказов: {total_orders}\n"
         f"▫️ Потрачено: ${total_spent:.2f}\n\n"
         "━━━━━━━━━━━━━━━━━━━━\n\n"
-        "Для пополнения баланса обратитесь к администратору."
+        "💳 *Способы оплаты:*\n"
+        "▫️ BTC, ETH, USDT, LTC\n"
+        "▫️ Минимум: $10"
     )
     
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
     keyboard = [
+        [InlineKeyboardButton("💳 Пополнить баланс", callback_data="topup_balance")],
         [InlineKeyboardButton("📦 Создать Label", callback_data="start_create")],
         [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await query.edit_message_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+
+
+async def topup_balance_callback(update, context):
+    """Handle balance top-up request - ask for amount"""
+    query = update.callback_query
+    await query.answer()
+    
+    user_id = str(update.effective_user.id)
+    logger.info(f"topup_balance_callback triggered by user {user_id}")
+    
+    # Store state in context
+    context.user_data['awaiting_topup_amount'] = True
+    
+    text = (
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "💳 *ПОПОЛНЕНИЕ БАЛАНСА*\n"
+        "━━━━━━━━━━━━━━━━━━━━\n\n"
+        "💰 *Введите сумму пополнения в USD*\n\n"
+        "▫️ Минимум: $10\n"
+        "▫️ Криптовалюты: BTC, ETH, USDT, LTC\n\n"
+        "_Например: 25 или 50.00_"
+    )
+    
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+    keyboard = [
+        [InlineKeyboardButton("❌ Отмена", callback_data="check_balance")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await query.edit_message_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+
+
+async def process_topup_amount(update, context):
+    """Process the entered top-up amount"""
+    if not context.user_data.get('awaiting_topup_amount'):
+        return False
+    
+    user_id = str(update.effective_user.id)
+    text_input = update.message.text.strip()
+    
+    # Clear the waiting flag
+    context.user_data['awaiting_topup_amount'] = False
+    
+    try:
+        amount = float(text_input.replace('$', '').replace(',', '.'))
+        
+        if amount < 10:
+            await update.message.reply_text(
+                "❌ *Минимальная сумма: $10*\n\nПожалуйста, введите сумму от $10",
+                parse_mode="Markdown"
+            )
+            context.user_data['awaiting_topup_amount'] = True
+            return True
+        
+        if amount > 10000:
+            await update.message.reply_text(
+                "❌ *Максимальная сумма: $10,000*\n\nПожалуйста, введите меньшую сумму",
+                parse_mode="Markdown"
+            )
+            context.user_data['awaiting_topup_amount'] = True
+            return True
+        
+        # Create payment invoice
+        await create_crypto_invoice(update, context, user_id, amount)
+        return True
+        
+    except ValueError:
+        await update.message.reply_text(
+            "❌ *Некорректная сумма*\n\nВведите число, например: 25 или 50.00",
+            parse_mode="Markdown"
+        )
+        context.user_data['awaiting_topup_amount'] = True
+        return True
+
+
+async def create_crypto_invoice(update, context, user_id: str, amount: float):
+    """Create OxaPay crypto invoice"""
+    from database import Database
+    from services.oxapay_service import OxaPayService
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+    
+    await update.message.reply_text(
+        "⏳ *Создаю платёж...*",
+        parse_mode="Markdown"
+    )
+    
+    try:
+        db = Database.db
+        oxapay_service = OxaPayService(db)
+        
+        result = await oxapay_service.create_invoice(
+            user_id=user_id,
+            telegram_id=user_id,
+            amount=amount,
+            currency="USD"
+        )
+        
+        if result.get("success"):
+            payment_url = result.get("payment_url")
+            track_id = result.get("track_id")
+            
+            text = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "💳 *ОПЛАТА СОЗДАНА*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"💰 Сумма: *${amount:.2f}*\n\n"
+                "▫️ Нажмите кнопку ниже для оплаты\n"
+                "▫️ Принимаем: BTC, ETH, USDT, LTC\n"
+                "▫️ После оплаты баланс обновится автоматически\n\n"
+                "⏰ *Срок оплаты: 60 минут*\n\n"
+                "━━━━━━━━━━━━━━━━━━━━"
+            )
+            
+            keyboard = [
+                [InlineKeyboardButton("💳 Оплатить криптой", url=payment_url)],
+                [InlineKeyboardButton("🔄 Проверить статус", callback_data=f"check_payment_{track_id}")],
+                [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            
+            await update.message.reply_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+        else:
+            raise Exception("Failed to create invoice")
+            
+    except Exception as e:
+        logger.error(f"Failed to create crypto invoice: {e}")
+        
+        from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+        keyboard = [
+            [InlineKeyboardButton("🔄 Попробовать снова", callback_data="topup_balance")],
+            [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        await update.message.reply_text(
+            f"❌ *Ошибка создания платежа*\n\n{str(e)}\n\nПопробуйте позже.",
+            reply_markup=reply_markup,
+            parse_mode="Markdown"
+        )
+
+
+async def check_payment_status_callback(update, context):
+    """Check crypto payment status"""
+    query = update.callback_query
+    await query.answer()
+    
+    track_id = query.data.replace("check_payment_", "")
+    
+    from database import Database
+    from services.oxapay_service import OxaPayService
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+    
+    try:
+        db = Database.db
+        oxapay_service = OxaPayService(db)
+        
+        invoice = await oxapay_service.get_invoice_status(track_id)
+        
+        if not invoice:
+            await query.edit_message_text("❌ Платёж не найден")
+            return
+        
+        status = invoice.get("status", "pending")
+        amount = invoice.get("amount", 0)
+        
+        status_text = {
+            "pending": "⏳ Ожидает оплаты",
+            "confirming": "🔄 Подтверждается...",
+            "paid": "✅ Оплачено",
+            "expired": "❌ Истёк срок",
+            "failed": "❌ Ошибка оплаты"
+        }.get(status, f"📋 {status}")
+        
+        text = (
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "📋 *СТАТУС ПЛАТЕЖА*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"💰 Сумма: *${amount:.2f}*\n"
+            f"📊 Статус: *{status_text}*\n\n"
+        )
+        
+        if status == "paid":
+            text += "✅ Баланс пополнен!\n\n"
+            keyboard = [
+                [InlineKeyboardButton("💰 Проверить баланс", callback_data="check_balance")],
+                [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+            ]
+        elif status in ["expired", "failed"]:
+            text += "Попробуйте создать новый платёж.\n\n"
+            keyboard = [
+                [InlineKeyboardButton("🔄 Новый платёж", callback_data="topup_balance")],
+                [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+            ]
+        else:
+            text += "Ожидаем подтверждение оплаты...\n\n"
+            payment_url = invoice.get("payment_url", "")
+            keyboard = []
+            if payment_url:
+                keyboard.append([InlineKeyboardButton("💳 Оплатить", url=payment_url)])
+            keyboard.append([InlineKeyboardButton("🔄 Обновить статус", callback_data=f"check_payment_{track_id}")])
+            keyboard.append([InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")])
+        
+        text += "━━━━━━━━━━━━━━━━━━━━"
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        await query.edit_message_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+        
+    except Exception as e:
+        logger.error(f"Failed to check payment status: {e}")
+        await query.edit_message_text(f"❌ Ошибка проверки статуса: {str(e)}")
 
 async def back_to_menu_callback(update, context):
     """Handle back to menu button"""
