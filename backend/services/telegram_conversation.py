@@ -380,6 +380,9 @@ class TelegramConversationHandler:
         phone = update.message.text.strip()
         if phone.lower() not in ['пропустить', 'skip']:
             data['shipToPhone'] = phone
+        else:
+            # Generate random phone if user types skip
+            data['shipToPhone'] = self.generate_random_phone()
         
         text = (
             "━━━━━━━━━━━━━━━━━━━━\n"
@@ -396,6 +399,37 @@ class TelegramConversationHandler:
         )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        return PACKAGE_WEIGHT
+    
+    async def skip_to_phone_callback(self, update: Update, context) -> int:
+        """Handle skip button for to phone"""
+        query = update.callback_query
+        await query.answer()
+        
+        user_id = str(update.effective_user.id)
+        data = self.get_user_data(user_id)
+        
+        # Generate random phone
+        random_phone = self.generate_random_phone()
+        data['shipToPhone'] = random_phone
+        
+        text = (
+            f"✅ *Телефон сохранен:* {random_phone}\n"
+            "_(сгенерирован автоматически)_\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "✅ *ШАГ 2 ЗАВЕРШЕН*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"Прогресс: {self.get_progress_bar(3)} (Шаг 3/4)\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "📦 *ШАГ 3: ПАРАМЕТРЫ ПОСЫЛКИ*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "▫️ *Подшаг 3.1:* Вес посылки\n\n"
+            "Введите вес в унциях:\n"
+            "_(1 фунт = 16 унций)_\n"
+            "_Например: 16_"
+        )
+        
+        await query.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
         return PACKAGE_WEIGHT
     
     # ===== PACKAGE DETAILS =====
