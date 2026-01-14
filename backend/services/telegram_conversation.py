@@ -1276,8 +1276,9 @@ class TelegramConversationHandler:
             reply_markup = InlineKeyboardMarkup(keyboard)
             
             await query.edit_message_text(success_message, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
-            # Clear data after success
-            self.clear_user_data(user_id)
+            # Don't clear data yet - user might want to save template
+            # Data will be cleared in save_template_prompt or back_to_menu
+            return CONFIRM
             
         except Exception as e:
             logger.error(f"Error creating label: {e}", exc_info=True)
