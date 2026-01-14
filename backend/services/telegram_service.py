@@ -53,7 +53,7 @@ class TelegramService:
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
-        await self.bot.send_message(
+        return await self.bot.send_message(
             chat_id=chat_id,
             text=text,
             reply_markup=reply_markup,
