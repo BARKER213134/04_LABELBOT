@@ -1513,6 +1513,53 @@ class TelegramConversationHandler:
         self.clear_user_data(user_id)
         return ConversationHandler.END
     
+    async def download_label(self, update: Update, context) -> int:
+        """Download label PDF and send via Telegram"""
+        query = update.callback_query
+        await query.answer("📥 Загрузка лейбла...")
+        
+        user_id = str(update.effective_user.id)
+        data = self.get_user_data(user_id)
+        
+        label_url = data.get('label_url')
+        tracking_number = data.get('tracking_number', 'label')
+        
+        if not label_url:
+            await query.message.reply_text("❌ Ссылка на лейбл не найдена")
+            return ConversationHandler.END
+        
+        try:
+            import aiohttp
+            import io
+            
+            # Download PDF from ShipEngine
+            async with aiohttp.ClientSession() as session:
+                async with session.get(label_url) as response:
+                    if response.status == 200:
+                        pdf_data = await response.read()
+                        
+                        # Send as document via Telegram
+                        pdf_file = io.BytesIO(pdf_data)
+                        pdf_file.name = f"{tracking_number}.pdf"
+                        
+                        await query.message.reply_document(
+                            document=pdf_file,
+                            filename=f"{tracking_number}.pdf",
+                            caption=f"📦 Shipping Label\nTracking: {tracking_number}"
+                        )
+                        
+                        logger.info(f"Label sent to user {user_id}: {tracking_number}")
+                    else:
+                        await query.message.reply_text(f"❌ Ошибка загрузки: HTTP {response.status}")
+                        
+        except Exception as e:
+            logger.error(f"Error downloading label: {e}")
+            await query.message.reply_text(f"❌ Ошибка: {str(e)}")
+        
+        # Clear data after download
+        self.clear_user_data(user_id)
+        return ConversationHandler.END
+    
     def _format_summary_text(self, data: Dict[str, Any]) -> str:
         """Format summary text for display"""
         text = (
