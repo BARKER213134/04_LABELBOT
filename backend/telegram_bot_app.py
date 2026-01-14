@@ -167,8 +167,9 @@ async def setup_bot_application(environment='sandbox'):
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(CommandHandler("help", help_command))
     
-    # Add callback handler for back to menu button
+    # Add callback handlers
     from telegram.ext import CallbackQueryHandler
+    application.add_handler(CallbackQueryHandler(check_balance_callback, pattern="^check_balance$"))
     application.add_handler(CallbackQueryHandler(back_to_menu_callback, pattern="^back_to_menu$"))
     
     logger.info("Bot application setup complete")
