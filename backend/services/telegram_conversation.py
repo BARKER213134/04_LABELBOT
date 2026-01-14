@@ -10,6 +10,7 @@ from telegram.constants import ParseMode
 import logging
 from typing import Dict, Any, List
 import random
+from services.ai_messages import generate_thank_you_message
 
 logger = logging.getLogger(__name__)
 
