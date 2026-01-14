@@ -1337,6 +1337,13 @@ class TelegramConversationHandler:
         query = update.callback_query
         await query.answer()
         
+        user_id = str(update.effective_user.id)
+        logger.info(f"save_template_prompt called for user {user_id}")
+        
+        # Check if we have data
+        data = self.get_user_data(user_id)
+        logger.info(f"User data keys: {list(data.keys())}")
+        
         text = (
             "━━━━━━━━━━━━━━━━━━━━\n"
             "💾 *СОХРАНИТЬ ШАБЛОН*\n"
@@ -1345,7 +1352,10 @@ class TelegramConversationHandler:
             "_Например: Мой офис → Склад_"
         )
         
-        await query.edit_message_text(text, parse_mode=ParseMode.MARKDOWN)
+        keyboard = [[InlineKeyboardButton("❌ Отмена", callback_data="back_to_menu")]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
         return TEMPLATE_SAVE_NAME
     
     async def save_template_name(self, update: Update, context) -> int:
