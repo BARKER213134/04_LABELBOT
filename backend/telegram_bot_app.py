@@ -505,11 +505,13 @@ async def faq_info_callback(update, context):
         "✓ Выгодные тарифы\n"
         "✓ Сохранение шаблонов\n"
         "✓ Удобное управление балансом\n"
-        "✓ Возврат за неиспользованные labels\n\n"
+        "✓ Возврат за неиспользованные labels\n"
+        "✓ Оплата криптовалютой\n\n"
         "━━━━━━━━━━━━━━━━━━━━\n"
         "❓ *Частые вопросы*\n\n"
         "*Как пополнить баланс?*\n"
-        "Обратитесь к нашему агенту для пополнения.\n\n"
+        "Нажмите 💰 Баланс → 💳 Пополнить баланс\n"
+        "Принимаем: BTC, ETH, USDT, LTC\n\n"
         "*Как получить refund?*\n"
         "Refund возможен через 4 дня после создания label.\n\n"
         "*Как использовать шаблон?*\n"
@@ -518,6 +520,7 @@ async def faq_info_callback(update, context):
     )
     
     keyboard = [
+        [InlineKeyboardButton("💳 Пополнить баланс", callback_data="topup_balance")],
         [InlineKeyboardButton("👤 Связаться с агентом", url="https://t.me/White_Label_Shipping_Bot_Agent")],
         [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
     ]
