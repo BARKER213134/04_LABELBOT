@@ -955,91 +955,53 @@ class TelegramConversationHandler:
         
         return EDIT_SECTION
     
-    # ===== CARRIER SELECTION =====
+    # ===== RATE SELECTION =====
     
-    async def select_carrier(self, update: Update, context) -> int:
+    async def select_rate(self, update: Update, context) -> int:
+        """Handle rate selection"""
         query = update.callback_query
         await query.answer()
         
         user_id = str(update.effective_user.id)
         data = self.get_user_data(user_id)
         
-        carrier = query.data.replace("carrier_", "")
-        data['carrier'] = carrier
+        callback_data = query.data
         
-        carrier_names = {
-            'usps': 'USPS (US Postal Service)',
-            'fedex': 'FedEx',
-            'ups': 'UPS'
-        }
+        # Handle back to review
+        if callback_data == "back_to_review_from_rates":
+            await self.show_review_summary(query.message, user_id)
+            return REVIEW_SUMMARY
         
-        # Service options based on carrier
-        service_options = {
-            'usps': [
-                ('Priority Mail (2-3 дня)', 'usps_priority_mail'),
-                ('First Class Mail (3-5 дней)', 'usps_first_class_mail'),
-                ('Ground Advantage (2-5 дней)', 'usps_ground_advantage'),
-            ],
-            'fedex': [
-                ('FedEx Ground (1-5 дней)', 'fedex_ground'),
-                ('FedEx 2Day', 'fedex_2_day'),
-                ('FedEx Priority Overnight', 'fedex_priority_overnight'),
-            ],
-            'ups': [
-                ('UPS Ground (1-5 дней)', 'ups_ground'),
-                ('UPS 2nd Day Air', 'ups_2nd_day_air'),
-                ('UPS Next Day Air', 'ups_next_day_air'),
-            ]
-        }
+        # Get selected rate
+        rate_map = data.get('rate_map', {})
+        selected_rate = rate_map.get(callback_data)
         
-        text = (
-            f"✅ *Выбрано:* {carrier_names[carrier]}\n\n"
-            "▫️ *Подшаг 4.2:* Тип доставки\n\n"
-            "Выберите скорость доставки:"
-        )
+        if not selected_rate:
+            text = "❌ Тариф не найден. Попробуйте снова."
+            keyboard = [[InlineKeyboardButton("◀️ Назад", callback_data="back_to_review_from_rates")]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+            return SELECT_RATE
         
-        keyboard = [
-            [InlineKeyboardButton(label, callback_data=f"service_{code}")]
-            for label, code in service_options[carrier]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        
-        await query.edit_message_text(
-            text,
-            reply_markup=reply_markup,
-            parse_mode=ParseMode.MARKDOWN
-        )
-        return SELECT_SERVICE
-    
-    async def select_service(self, update: Update, context) -> int:
-        query = update.callback_query
-        await query.answer()
-        
-        user_id = str(update.effective_user.id)
-        data = self.get_user_data(user_id)
-        
-        service_code = query.data.replace("service_", "")
-        data['serviceCode'] = service_code
-        
-        # Service names for display
-        service_names = {
-            'usps_priority_mail': 'Priority Mail',
-            'usps_first_class_mail': 'First Class Mail',
-            'usps_ground_advantage': 'Ground Advantage',
-            'fedex_ground': 'FedEx Ground',
-            'fedex_2_day': 'FedEx 2Day',
-            'fedex_priority_overnight': 'FedEx Priority Overnight',
-            'ups_ground': 'UPS Ground',
-            'ups_2nd_day_air': 'UPS 2nd Day Air',
-            'ups_next_day_air': 'UPS Next Day Air',
-        }
+        # Store selected rate
+        data['selected_rate'] = selected_rate
+        data['carrier'] = selected_rate.get('carrier_code', '')
+        data['serviceCode'] = selected_rate.get('service_code', '')
+        data['rate_id'] = selected_rate.get('rate_id', '')
+        data['total_cost'] = selected_rate.get('total_amount', 0)
         
         # Show confirmation
+        carrier_name = selected_rate.get('carrier_friendly_name', selected_rate.get('carrier_code', ''))
+        service_type = selected_rate.get('service_type', '')
+        delivery_days = selected_rate.get('delivery_days', '')
+        total_price = selected_rate.get('total_amount', 0)
+        
+        delivery_text = f" ({delivery_days} дней)" if delivery_days else ""
+        
         summary = (
             "━━━━━━━━━━━━━━━━━━━━\n"
             "📋 *ПОДТВЕРЖДЕНИЕ ЗАКАЗА*\n"
             "━━━━━━━━━━━━━━━━━━━━\n\n"
-            "Пожалуйста, проверьте введенные данные:\n\n"
             "📍 *ОТПРАВИТЕЛЬ*\n"
             f"▫️ Имя: {data.get('shipFromName')}\n"
             f"▫️ Адрес: {data.get('shipFromAddressLine1')}\n"
@@ -1064,13 +1026,15 @@ class TelegramConversationHandler:
             f"▫️ Вес: {data.get('packageWeight')} oz ({data.get('packageWeight')/16:.2f} lbs)\n"
             f"▫️ Размеры: {data.get('packageLength')}×{data.get('packageWidth')}×{data.get('packageHeight')} дюймов\n"
             f"\n🚚 *ДОСТАВКА*\n"
-            f"▫️ Перевозчик: {data.get('carrier').upper()}\n"
-            f"▫️ Сервис: {service_names.get(service_code, service_code)}\n\n"
+            f"▫️ Перевозчик: {carrier_name}\n"
+            f"▫️ Сервис: {service_type}{delivery_text}\n"
+            f"\n💰 *СТОИМОСТЬ: ${total_price:.2f}*\n\n"
             "━━━━━━━━━━━━━━━━━━━━"
         )
         
         keyboard = [
-            [InlineKeyboardButton("✅ Подтвердить и создать лейбл", callback_data="confirm_yes")],
+            [InlineKeyboardButton(f"✅ Оплатить ${total_price:.2f} и создать лейбл", callback_data="confirm_yes")],
+            [InlineKeyboardButton("◀️ Выбрать другой тариф", callback_data="back_to_rates")],
             [InlineKeyboardButton("❌ Отменить", callback_data="confirm_no")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
