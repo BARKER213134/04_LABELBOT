@@ -1292,9 +1292,9 @@ class TelegramConversationHandler:
             except Exception as ai_err:
                 logger.warning(f"Failed to send AI thank you message: {ai_err}")
             
-            # Clear data after success
-            self.clear_user_data(user_id)
-            return ConversationHandler.END
+            # Don't clear data yet - user might want to download label
+            # Data will be cleared after download or going to menu
+            return CONFIRM
             
         except Exception as e:
             logger.error(f"Error creating label: {e}", exc_info=True)
