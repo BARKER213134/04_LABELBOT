@@ -33,7 +33,10 @@ logger = logging.getLogger(__name__)
     EDIT_SECTION,
     SELECT_RATE,
     CONFIRM,
-) = range(18)
+    TEMPLATE_USE,
+    TEMPLATE_EDIT,
+    TEMPLATE_SAVE_NAME,
+) = range(21)
 
 class TelegramConversationHandler:
     """Handler for multi-step label creation conversation"""
