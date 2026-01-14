@@ -52,6 +52,8 @@ async def check_balance_callback(update, context):
     query = update.callback_query
     await query.answer()
     
+    logger.info(f"check_balance_callback triggered by user {update.effective_user.id}")
+    
     user_id = str(update.effective_user.id)
     balance = 0.0
     total_orders = 0
