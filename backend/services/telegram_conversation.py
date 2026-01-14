@@ -139,7 +139,8 @@ class TelegramConversationHandler:
             "Пожалуйста, введите полное имя отправителя:"
         )
         
-        await query.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        # Edit message to remove old buttons
+        await query.edit_message_text(text, parse_mode=ParseMode.MARKDOWN)
         return SHIP_FROM_NAME
     
     # ===== SHIP FROM ADDRESS =====
