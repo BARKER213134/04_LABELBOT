@@ -76,6 +76,17 @@ class ShipEngineService:
             rates_data = response.json()
             rates = rates_data.get("rate_response", {}).get("rates", [])
             
+            # Log carriers in response
+            carriers_in_rates = set()
+            for rate in rates:
+                carriers_in_rates.add(rate.get("carrier_code", "unknown"))
+            logger.info(f"Carriers in rates response: {carriers_in_rates}")
+            
+            # Check for rate errors
+            rate_errors = rates_data.get("rate_response", {}).get("errors", [])
+            if rate_errors:
+                logger.warning(f"Rate errors from carriers: {rate_errors}")
+            
             # Add markup to each rate
             for rate in rates:
                 original_amount = rate.get("shipping_amount", {}).get("amount", 0)
