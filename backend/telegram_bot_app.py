@@ -11,6 +11,7 @@ from database import Database, connect_db
 from services.telegram_service import TelegramService
 from services.telegram_conversation import TelegramConversationHandler
 from services.orders_service import OrdersService
+from services.shipengine_service import ShipEngineService
 
 logging.basicConfig(
     level=logging.INFO,
@@ -50,7 +51,7 @@ async def help_command(update, context):
         "*Шаг 1:* Адрес отправителя (6 полей)\n"
         "*Шаг 2:* Адрес получателя (6 полей)\n"
         "*Шаг 3:* Параметры посылки (2 поля)\n"
-        "*Шаг 4:* Выбор перевозчика и сервиса\n\n"
+        "*Шаг 4:* Выбор тарифа доставки\n\n"
         "━━━━━━━━━━━━━━━━━━━━\n\n"
         "💡 *Веб-дашборд для управления:*\n"
         "https://labelgen-4.preview.emergentagent.com\n\n"
@@ -64,12 +65,14 @@ async def setup_bot_application(environment='sandbox'):
     """Setup bot application with handlers"""
     settings = get_settings()
     
-    # Select bot token based on environment
+    # Select bot token and API key based on environment
     if environment == 'production':
         bot_token = settings.telegram_bot_token_prod
+        shipengine_key = settings.shipengine_production_key
         logger.info("Setting up PRODUCTION bot")
     else:
         bot_token = settings.telegram_bot_token
+        shipengine_key = settings.shipengine_sandbox_key
         logger.info("Setting up SANDBOX bot")
     
     # Create application
@@ -81,9 +84,10 @@ async def setup_bot_application(environment='sandbox'):
     
     # Create services
     orders_service = OrdersService(db)
+    shipengine_service = ShipEngineService(shipengine_key)
     
     # Add conversation handler (includes start_create button callback)
-    conversation_handler_instance = TelegramConversationHandler(db, orders_service)
+    conversation_handler_instance = TelegramConversationHandler(db, orders_service, shipengine_service)
     application.add_handler(conversation_handler_instance.get_conversation_handler())
     
     # Add command handlers
