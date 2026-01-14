@@ -1282,7 +1282,7 @@ class TelegramConversationHandler:
             try:
                 thank_you_msg = await generate_thank_you_message(carrier_name, tracking_number)
                 await query.message.reply_text(
-                    f"💬 {thank_you_msg}",
+                    thank_you_msg,
                     parse_mode=None  # Plain text, no formatting
                 )
             except Exception as ai_err:
