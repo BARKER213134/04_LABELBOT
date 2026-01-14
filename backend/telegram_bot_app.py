@@ -393,7 +393,7 @@ async def back_to_menu_callback(update, context):
         context.user_data['last_menu_message_id'] = sent_message.message_id
 
 async def templates_menu_callback(update, context):
-    """Show templates menu"""
+    """Show templates menu - sends new message"""
     global _templates_service
     
     query = update.callback_query
@@ -404,6 +404,12 @@ async def templates_menu_callback(update, context):
     user_id = str(update.effective_user.id)
     
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+    
+    # Remove buttons from old message
+    try:
+        await query.edit_message_reply_markup(reply_markup=None)
+    except Exception:
+        pass
     
     templates = []
     if _templates_service:
@@ -425,16 +431,17 @@ async def templates_menu_callback(update, context):
             keyboard.append([InlineKeyboardButton(btn_text, callback_data=f"tpl_view_{t['template_id']}")])
     else:
         text += "У вас пока нет сохранённых шаблонов.\n\n"
-        text += "_Шаблоны можно создать после оформления заказа._"
+        text += "_Шаблоны можно создать при проверке данных перед оплатой._"
         keyboard = []
     
     keyboard.append([InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")])
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    await query.edit_message_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+    # Send new message
+    await query.message.reply_text(text, reply_markup=reply_markup, parse_mode="Markdown")
 
 async def template_view_callback(update, context):
-    """View a specific template"""
+    """View a specific template - sends new message"""
     global _templates_service
     
     query = update.callback_query
@@ -444,12 +451,18 @@ async def template_view_callback(update, context):
     
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
     
+    # Remove buttons from old message
+    try:
+        await query.edit_message_reply_markup(reply_markup=None)
+    except Exception:
+        pass
+    
     template = None
     if _templates_service:
         template = await _templates_service.get_template(template_id)
     
     if not template:
-        await query.edit_message_text("❌ Шаблон не найден")
+        await query.message.reply_text("❌ Шаблон не найден")
         return
     
     text = (
