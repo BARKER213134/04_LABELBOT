@@ -494,32 +494,218 @@ class TelegramConversationHandler:
             await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
             return PACKAGE_DIMENSIONS
         
-        # Show carrier selection
+        # Show review summary
+        await self.show_review_summary(update.message, user_id)
+        return REVIEW_SUMMARY
+    
+    async def show_review_summary(self, message, user_id: str):
+        """Show summary with edit options"""
+        data = self.get_user_data(user_id)
+        
         text = (
             "━━━━━━━━━━━━━━━━━━━━\n"
-            "✅ *ШАГ 3 ЗАВЕРШЕН*\n"
+            "📋 *ПРОВЕРКА ДАННЫХ*\n"
             "━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"Прогресс: {self.get_progress_bar(4)} (Шаг 4/4)\n\n"
+            "Пожалуйста, проверьте введенные данные перед выбором перевозчика.\n\n"
             "━━━━━━━━━━━━━━━━━━━━\n"
-            "🚚 *ШАГ 4: ВЫБОР ПЕРЕВОЗЧИКА*\n"
+            "📍 *ОТПРАВИТЕЛЬ*\n"
+            f"▫️ Имя: {data.get('shipFromName')}\n"
+            f"▫️ Адрес: {data.get('shipFromAddressLine1')}\n"
+            f"▫️ Город: {data.get('shipFromCity')}, {data.get('shipFromState')} {data.get('shipFromPostalCode')}\n"
+        )
+        
+        if data.get('shipFromPhone'):
+            text += f"▫️ Телефон: {data.get('shipFromPhone')}\n"
+        
+        text += (
+            f"\n━━━━━━━━━━━━━━━━━━━━\n"
+            "📍 *ПОЛУЧАТЕЛЬ*\n"
+            f"▫️ Имя: {data.get('shipToName')}\n"
+            f"▫️ Адрес: {data.get('shipToAddressLine1')}\n"
+            f"▫️ Город: {data.get('shipToCity')}, {data.get('shipToState')} {data.get('shipToPostalCode')}\n"
+        )
+        
+        if data.get('shipToPhone'):
+            text += f"▫️ Телефон: {data.get('shipToPhone')}\n"
+        
+        text += (
+            f"\n━━━━━━━━━━━━━━━━━━━━\n"
+            "📦 *ПОСЫЛКА*\n"
+            f"▫️ Вес: {data.get('packageWeight')} oz ({data.get('packageWeight')/16:.2f} lbs)\n"
+            f"▫️ Размеры: {data.get('packageLength')}×{data.get('packageWidth')}×{data.get('packageHeight')} дюймов\n\n"
             "━━━━━━━━━━━━━━━━━━━━\n\n"
-            "▫️ *Подшаг 4.1:* Компания-перевозчик\n\n"
-            "Выберите компанию для доставки:"
+            "Выберите действие:"
         )
         
         keyboard = [
-            [InlineKeyboardButton("📦 USPS (US Postal Service)", callback_data="carrier_usps")],
-            [InlineKeyboardButton("✈️ FedEx", callback_data="carrier_fedex")],
-            [InlineKeyboardButton("🚚 UPS", callback_data="carrier_ups")]
+            [InlineKeyboardButton("✏️ Редактировать отправителя", callback_data="edit_from")],
+            [InlineKeyboardButton("✏️ Редактировать получателя", callback_data="edit_to")],
+            [InlineKeyboardButton("✏️ Редактировать посылку", callback_data="edit_package")],
+            [InlineKeyboardButton("✅ Всё верно, продолжить", callback_data="continue_to_carrier")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
-        await update.message.reply_text(
-            text,
-            reply_markup=reply_markup,
-            parse_mode=ParseMode.MARKDOWN
-        )
-        return SELECT_CARRIER
+        await message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+    
+    async def handle_edit_choice(self, update: Update, context) -> int:
+        """Handle edit section choice"""
+        query = update.callback_query
+        await query.answer()
+        
+        user_id = str(update.effective_user.id)
+        data = self.get_user_data(user_id)
+        
+        edit_choice = query.data
+        
+        if edit_choice == "continue_to_carrier":
+            # Continue to carrier selection
+            text = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "✅ *ДАННЫЕ ПОДТВЕРЖДЕНЫ*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"Прогресс: {self.get_progress_bar(4)} (Шаг 4/4)\n\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "🚚 *ШАГ 4: ВЫБОР ПЕРЕВОЗЧИКА*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "▫️ *Подшаг 4.1:* Компания-перевозчик\n\n"
+                "Выберите компанию для доставки:"
+            )
+            
+            keyboard = [
+                [InlineKeyboardButton("📦 USPS (US Postal Service)", callback_data="carrier_usps")],
+                [InlineKeyboardButton("✈️ FedEx", callback_data="carrier_fedex")],
+                [InlineKeyboardButton("🚚 UPS", callback_data="carrier_ups")]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            
+            await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+            return SELECT_CARRIER
+        
+        # Show edit options for the selected section
+        if edit_choice == "edit_from":
+            text = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "✏️ *РЕДАКТИРОВАНИЕ ОТПРАВИТЕЛЯ*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "Что хотите изменить?"
+            )
+            keyboard = [
+                [InlineKeyboardButton("📝 Имя и адрес", callback_data="edit_from_address")],
+                [InlineKeyboardButton("📍 Город и штат", callback_data="edit_from_location")],
+                [InlineKeyboardButton("📞 Телефон", callback_data="edit_from_phone")],
+                [InlineKeyboardButton("◀️ Назад к проверке", callback_data="back_to_review")]
+            ]
+        elif edit_choice == "edit_to":
+            text = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "✏️ *РЕДАКТИРОВАНИЕ ПОЛУЧАТЕЛЯ*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "Что хотите изменить?"
+            )
+            keyboard = [
+                [InlineKeyboardButton("📝 Имя и адрес", callback_data="edit_to_address")],
+                [InlineKeyboardButton("📍 Город и штат", callback_data="edit_to_location")],
+                [InlineKeyboardButton("📞 Телефон", callback_data="edit_to_phone")],
+                [InlineKeyboardButton("◀️ Назад к проверке", callback_data="back_to_review")]
+            ]
+        elif edit_choice == "edit_package":
+            text = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "✏️ *РЕДАКТИРОВАНИЕ ПОСЫЛКИ*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "Что хотите изменить?"
+            )
+            keyboard = [
+                [InlineKeyboardButton("⚖️ Вес", callback_data="edit_weight")],
+                [InlineKeyboardButton("📏 Размеры", callback_data="edit_dimensions")],
+                [InlineKeyboardButton("◀️ Назад к проверке", callback_data="back_to_review")]
+            ]
+        
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+        return EDIT_SECTION
+    
+    async def handle_specific_edit(self, update: Update, context) -> int:
+        """Handle specific field edit choice"""
+        query = update.callback_query
+        await query.answer()
+        
+        user_id = str(update.effective_user.id)
+        data = self.get_user_data(user_id)
+        
+        edit_type = query.data
+        
+        if edit_type == "back_to_review":
+            # Go back to review summary
+            await self.show_review_summary(query.message, user_id)
+            return REVIEW_SUMMARY
+        
+        # Handle different edit types
+        if edit_type == "edit_from_address":
+            await query.message.reply_text(
+                "✏️ *Редактирование имени отправителя*\n\n"
+                "Введите новое имя отправителя:",
+                parse_mode=ParseMode.MARKDOWN
+            )
+            return SHIP_FROM_NAME
+        elif edit_type == "edit_from_location":
+            await query.message.reply_text(
+                "✏️ *Редактирование города отправителя*\n\n"
+                "Введите новый город:",
+                parse_mode=ParseMode.MARKDOWN
+            )
+            return SHIP_FROM_CITY
+        elif edit_type == "edit_from_phone":
+            text = "✏️ *Редактирование телефона отправителя*\n\nВведите новый телефон или нажмите кнопку:"
+            keyboard = [
+                [InlineKeyboardButton("⏭️ Пропустить (сгенерировать случайный)", callback_data="skip_from_phone")]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await query.message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+            return SHIP_FROM_PHONE
+        
+        elif edit_type == "edit_to_address":
+            await query.message.reply_text(
+                "✏️ *Редактирование имени получателя*\n\n"
+                "Введите новое имя получателя:",
+                parse_mode=ParseMode.MARKDOWN
+            )
+            return SHIP_TO_NAME
+        elif edit_type == "edit_to_location":
+            await query.message.reply_text(
+                "✏️ *Редактирование города получателя*\n\n"
+                "Введите новый город:",
+                parse_mode=ParseMode.MARKDOWN
+            )
+            return SHIP_TO_CITY
+        elif edit_type == "edit_to_phone":
+            text = "✏️ *Редактирование телефона получателя*\n\nВведите новый телефон или нажмите кнопку:"
+            keyboard = [
+                [InlineKeyboardButton("⏭️ Пропустить (сгенерировать случайный)", callback_data="skip_to_phone")]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await query.message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+            return SHIP_TO_PHONE
+        
+        elif edit_type == "edit_weight":
+            await query.message.reply_text(
+                "✏️ *Редактирование веса*\n\n"
+                "Введите новый вес в унциях:\n"
+                "_(1 фунт = 16 унций)_",
+                parse_mode=ParseMode.MARKDOWN
+            )
+            return PACKAGE_WEIGHT
+        elif edit_type == "edit_dimensions":
+            await query.message.reply_text(
+                "✏️ *Редактирование размеров*\n\n"
+                "Введите новые размеры через пробел:\n"
+                "*Длина Ширина Высота*\n"
+                "_Например: 12 8 6_",
+                parse_mode=ParseMode.MARKDOWN
+            )
+            return PACKAGE_DIMENSIONS
+        
+        return EDIT_SECTION
     
     # ===== CARRIER SELECTION =====
     
