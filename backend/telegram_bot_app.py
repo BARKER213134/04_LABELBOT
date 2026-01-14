@@ -74,17 +74,13 @@ async def setup_bot_application(environment='sandbox'):
     # Create services
     orders_service = OrdersService(db)
     
-    # Add conversation handler
+    # Add conversation handler (includes start_create button callback)
     conversation_handler_instance = TelegramConversationHandler(db, orders_service)
     application.add_handler(conversation_handler_instance.get_conversation_handler())
     
     # Add command handlers
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(CommandHandler("help", help_command))
-    
-    # Add callback query handler for start_create button
-    from telegram.ext import CallbackQueryHandler
-    application.add_handler(CallbackQueryHandler(conversation_handler_instance.start_create_callback, pattern="^start_create$"))
     
     logger.info("Bot application setup complete")
     return application
