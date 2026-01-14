@@ -902,6 +902,11 @@ class TelegramConversationHandler:
                 rates_by_carrier[carrier_code] = []
             rates_by_carrier[carrier_code].append(rate)
         
+        # Log available carriers for debugging
+        logger.info(f"Available carriers in rates: {list(rates_by_carrier.keys())}")
+        for carrier, carrier_rates in rates_by_carrier.items():
+            logger.info(f"  {carrier}: {len(carrier_rates)} rates")
+        
         keyboard = []
         rate_index = 0
         data = self.get_user_data(user_id)
