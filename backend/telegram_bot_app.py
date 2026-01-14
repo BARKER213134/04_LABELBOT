@@ -272,12 +272,15 @@ async def create_crypto_invoice(update, context, user_id: str, amount: float, me
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
-        # Edit loading message to show error
-        await loading_msg.edit_text(
-            f"❌ *Ошибка создания платежа*\n\n{str(e)}\n\nПопробуйте позже.",
-            reply_markup=reply_markup,
-            parse_mode="Markdown"
-        )
+        # Edit message to show error
+        if message_id and chat_id:
+            await context.bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=message_id,
+                text=f"❌ *Ошибка создания платежа*\n\n{str(e)}\n\nПопробуйте позже.",
+                reply_markup=reply_markup,
+                parse_mode="Markdown"
+            )
 
 
 async def check_payment_status_callback(update, context):
