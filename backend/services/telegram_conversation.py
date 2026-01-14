@@ -60,6 +60,14 @@ class TelegramConversationHandler:
         empty = "⬜" * (total_steps - step)
         return f"{filled}{empty}"
     
+    def generate_random_phone(self) -> str:
+        """Generate random US phone number"""
+        # Generate phone in format: (XXX) XXX-XXXX
+        area_code = random.randint(200, 999)
+        exchange = random.randint(200, 999)
+        number = random.randint(1000, 9999)
+        return f"({area_code}) {exchange}-{number}"
+    
     async def start_create(self, update: Update, context) -> int:
         """Start the label creation process"""
         user_id = str(update.effective_user.id)
