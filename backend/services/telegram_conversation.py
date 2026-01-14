@@ -1052,6 +1052,7 @@ class TelegramConversationHandler:
         
         user_id = str(update.effective_user.id)
         username = update.effective_user.username
+        data = self.get_user_data(user_id)
         
         if query.data == "confirm_no":
             text = (
