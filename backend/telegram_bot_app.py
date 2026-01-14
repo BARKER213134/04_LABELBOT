@@ -53,7 +53,7 @@ async def help_command(update, context):
         "*Шаг 4:* Выбор перевозчика и сервиса\n\n"
         "━━━━━━━━━━━━━━━━━━━━\n\n"
         "💡 *Веб-дашборд для управления:*\n"
-        "https://shipbot-labels.preview.emergentagent.com\n\n"
+        "https://labelgen-4.preview.emergentagent.com\n\n"
         "▫️ Просмотр всех заказов\n"
         "▫️ Скачивание PDF лейблов\n"
         "▫️ Статистика доставок"

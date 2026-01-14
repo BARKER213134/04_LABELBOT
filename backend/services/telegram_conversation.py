@@ -889,7 +889,7 @@ class TelegramConversationHandler:
                 f"▫️ Стоимость: ${result.get('cost', 0):.2f}\n\n"
                 "━━━━━━━━━━━━━━━━━━━━\n\n"
                 "🔗 Скачать PDF лейбл можно в веб-дашборде:\n"
-                "https://shipbot-labels.preview.emergentagent.com\n\n"
+                "https://labelgen-4.preview.emergentagent.com\n\n"
                 "Спасибо за использование нашего сервиса!"
             )
             
