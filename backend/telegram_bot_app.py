@@ -133,6 +133,15 @@ async def process_topup_amount(update, context):
     # Clear the waiting flag
     context.user_data['awaiting_topup_amount'] = False
     
+    # Delete the old message with "Отмена" button
+    try:
+        message_id = context.user_data.get('topup_message_id')
+        chat_id = context.user_data.get('topup_chat_id')
+        if message_id and chat_id:
+            await context.bot.delete_message(chat_id=chat_id, message_id=message_id)
+    except Exception as e:
+        logger.warning(f"Could not delete old message: {e}")
+    
     try:
         amount = float(text_input.replace('$', '').replace(',', '.'))
         
@@ -151,6 +160,12 @@ async def process_topup_amount(update, context):
             )
             context.user_data['awaiting_topup_amount'] = True
             return True
+        
+        # Delete user's input message for cleaner chat
+        try:
+            await update.message.delete()
+        except Exception:
+            pass
         
         # Create payment invoice
         await create_crypto_invoice(update, context, user_id, amount)
@@ -171,8 +186,10 @@ async def create_crypto_invoice(update, context, user_id: str, amount: float):
     from services.oxapay_service import OxaPayService
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
     
-    await update.message.reply_text(
-        "⏳ *Создаю платёж...*",
+    # Send loading message
+    loading_msg = await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text="⏳ *Создаю платёж...*",
         parse_mode="Markdown"
     )
     
