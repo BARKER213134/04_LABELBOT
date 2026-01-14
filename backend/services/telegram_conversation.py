@@ -230,6 +230,12 @@ class TelegramConversationHandler:
             # Generate random phone if user types skip
             data['shipFromPhone'] = self.generate_random_phone()
         
+        # Check if we're in edit mode
+        if data.get('editing_mode'):
+            data['editing_mode'] = False
+            await self.show_review_summary(update.message, user_id)
+            return REVIEW_SUMMARY
+        
         text = (
             "━━━━━━━━━━━━━━━━━━━━\n"
             "✅ *ШАГ 1 ЗАВЕРШЕН*\n"
