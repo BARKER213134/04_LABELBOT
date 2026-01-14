@@ -1,0 +1,110 @@
+{
+  "identity": {
+    "persona": "E1: The Anti-AI Designer",
+    "theme_name": "Neo-Industrial Logistics",
+    "core_philosophy": "Precision, Speed, Authority. A fusion of Swiss Design clarity and Cyberpunk utility.",
+    "emotional_tone": "Efficient, Reliable, Technical, Premium",
+    "visual_style": "Dark Mode First, High Contrast, Data-Dense, Glassmorphic Overlays"
+  },
+  "typography": {
+    "headings": {
+      "family": "Outfit, sans-serif",
+      "weights": ["500", "700"],
+      "usage": "Main headers, Section titles. Use tight tracking (-0.02em).",
+      "import_url": "https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap"
+    },
+    "body": {
+      "family": "DM Sans, sans-serif",
+      "weights": ["400", "500"],
+      "usage": "Paragraphs, UI labels, Inputs.",
+      "import_url": "https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;500;700&display=swap"
+    },
+    "mono": {
+      "family": "JetBrains Mono, monospace",
+      "weights": ["400"],
+      "usage": "Tracking Numbers, API Keys, IDs, Data Tables.",
+      "import_url": "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
+    }
+  },
+  "colors": {
+    "mode": "dark",
+    "palette": {
+      "background": "#020617",
+      "surface": "#0F172A",
+      "surface_highlight": "#1E293B",
+      "border": "#1E293B",
+      "primary": "#F97316",
+      "primary_foreground": "#FFFFFF",
+      "secondary": "#334155",
+      "secondary_foreground": "#F8FAFC",
+      "accent": "#0EA5E9",
+      "text_main": "#F8FAFC",
+      "text_muted": "#94A3B8",
+      "success": "#10B981",
+      "error": "#EF4444",
+      "warning": "#F59E0B"
+    },
+    "gradients": {
+      "hero_glow": "radial-gradient(circle at 50% 0%, rgba(249, 115, 22, 0.15) 0%, transparent 70%)",
+      "card_shimmer": "linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.05) 40%, transparent 50%)"
+    }
+  },
+  "layout": {
+    "spacing_scale": "Generous. Use p-6, p-8, p-12 for containers. Gap-6 for grids.",
+    "container_width": "max-w-7xl",
+    "radius": "rounded-none or rounded-sm (max 4px). Sharp edges prefered for 'Industrial' look.",
+    "grids": {
+      "dashboard": "Control Room Grid: grid-cols-12 gap-4. Sidebar col-span-2, Main col-span-10.",
+      "landing": "Tetris Grid: Asymmetrical bento box layout for features."
+    }
+  },
+  "components": {
+    "buttons": {
+      "style": "Sharp edges or minimal radius (2px). Uppercase text for primary actions. Tracking-wide.",
+      "variants": {
+        "primary": "bg-primary text-white hover:bg-primary/90 shadow-[0_0_15px_rgba(249,115,22,0.3)]",
+        "secondary": "border border-border bg-transparent hover:bg-secondary/50 text-white",
+        "ghost": "hover:bg-white/5 text-muted-foreground hover:text-white"
+      }
+    },
+    "cards": {
+      "style": "bg-surface/50 backdrop-blur-md border border-white/5 hover:border-primary/30 transition-colors duration-300",
+      "shadow": "shadow-none hover:shadow-lg"
+    },
+    "inputs": {
+      "style": "bg-background/50 border-border focus:border-primary focus:ring-1 focus:ring-primary/50 h-12"
+    },
+    "sidebar": {
+      "style": "Fixed left, border-r border-border bg-background/95 backdrop-blur. Links: flex items-center gap-3 px-4 py-3 text-sm font-medium text-muted-foreground hover:text-white hover:bg-white/5 transition-all"
+    }
+  },
+  "visual_enhancers": {
+    "glassmorphism": "Use backdrop-blur-xl and bg-black/40 for modals and sticky headers.",
+    "borders": "1px solid rgba(255,255,255,0.08). Active elements get 1px solid primary.",
+    "textures": "Subtle noise overlay on the main background to reduce digital flatness.",
+    "icons": "Lucide React (default). Use thin strokes (1.5px)."
+  },
+  "motion": {
+    "transitions": "transition-all duration-200 ease-out",
+    "hover_effects": "Slight lift (-2px) for cards. Glow intensification for buttons.",
+    "page_load": "Staggered fade-in-up for dashboard widgets."
+  },
+  "assets": {
+    "images": {
+      "hero_bg": "https://images.unsplash.com/photo-1761195696590-3490ea770aa1?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzh8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjB3YXJlaG91c2UlMjBhdXRvbWF0aW9uJTIwdGVjaG5vbG9neXxlbnwwfHx8fDE3Njg0MTU0MzJ8MA&ixlib=rb-4.1.0&q=85",
+      "package_mockup": "https://images.unsplash.com/photo-1758351507026-71ad3645cb43?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDF8MHwxfHNlYXJjaHwyfHxzaGlwcGluZyUyMGxvZ2lzdGljcyUyMHBhY2thZ2UlMjBkZWxpdmVyeXxlbnwwfHx8fDE3Njg0MTU0MzB8MA&ixlib=rb-4.1.0&q=85",
+      "map_placeholder": "https://images.unsplash.com/photo-1738573626155-56c83aafe7ba?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NjZ8MHwxfHNlYXJjaHwzfHxnbG9iYWwlMjBzaGlwcGluZyUyMG1hcCUyMG5ldHdvcmt8ZW58MHx8fHwxNzY4NDE1NDMzfDA&ixlib=rb-4.1.0&q=85"
+    }
+  },
+  "universal_guidelines": [
+    "DO NOT use gradients for text.",
+    "DO NOT use 'Inter' font for headings.",
+    "DO NOT center-align dashboard content. Use left-align for data.",
+    "ALWAYS use 'data-testid' for interactive elements.",
+    "Use 'sonner' for toasts.",
+    "Use 'recharts' for charts.",
+    "Ensure all text has sufficient contrast (APCA standards).",
+    "Dark mode is the default. Light mode is secondary."
+  ],
+  "instructions_to_main_agent": "You are building a ShipEngine integration. Focus on the 'Create Label' flow. It must be a step-by-step wizard in the dashboard, mirroring the Telegram bot flow. Use the 'Control Room' grid for the main dashboard view. Use the provided image URLs for the landing page and empty states."
+}
