@@ -1249,6 +1249,8 @@ class TelegramConversationHandler:
                 new_balance = 0
             
             carrier_name = data.get('selected_rate', {}).get('carrier_friendly_name', data.get('carrier', ''))
+            tracking_number = result.get('trackingNumber', 'N/A')
+            label_url = result.get('labelDownloadUrl', '')
             
             # Store data for potential template save
             self.get_user_data(user_id)['last_order_data'] = data.copy()
@@ -1258,17 +1260,19 @@ class TelegramConversationHandler:
                 "✅ *ЛЕЙБЛ СОЗДАН УСПЕШНО!*\n"
                 "━━━━━━━━━━━━━━━━━━━━\n\n"
                 "📋 *Информация о доставке:*\n\n"
-                f"▫️ Tracking номер:\n`{result.get('trackingNumber', 'N/A')}`\n\n"
+                f"▫️ Tracking номер:\n`{tracking_number}`\n\n"
                 f"▫️ Перевозчик: {carrier_name}\n"
                 f"▫️ Стоимость: ${total_cost:.2f}\n"
                 f"▫️ Остаток на балансе: ${new_balance:.2f}\n\n"
                 "━━━━━━━━━━━━━━━━━━━━"
             )
             
-            keyboard = [
-                [InlineKeyboardButton("💾 Сохранить как шаблон", callback_data="save_template")],
-                [InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")]
-            ]
+            keyboard = []
+            # Add download button if URL available
+            if label_url:
+                keyboard.append([InlineKeyboardButton(f"📥 Скачать {tracking_number}.pdf", url=label_url)])
+            keyboard.append([InlineKeyboardButton("💾 Сохранить как шаблон", callback_data="save_template")])
+            keyboard.append([InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")])
             reply_markup = InlineKeyboardMarkup(keyboard)
             
             await query.edit_message_text(success_message, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
