@@ -1360,6 +1360,10 @@ class TelegramConversationHandler:
         data = self.get_user_data(user_id)
         logger.info(f"User data keys: {list(data.keys())}")
         
+        # Store message info for later editing
+        data['template_prompt_message_id'] = query.message.message_id
+        data['template_prompt_chat_id'] = query.message.chat_id
+        
         text = (
             "━━━━━━━━━━━━━━━━━━━━\n"
             "💾 *СОХРАНИТЬ ШАБЛОН*\n"
@@ -1368,7 +1372,7 @@ class TelegramConversationHandler:
             "_Например: Мой офис → Склад_"
         )
         
-        keyboard = [[InlineKeyboardButton("❌ Отмена", callback_data="back_to_menu")]]
+        keyboard = [[InlineKeyboardButton("❌ Отмена", callback_data="back_to_review_after_save")]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
@@ -1380,6 +1384,19 @@ class TelegramConversationHandler:
         template_name = update.message.text.strip()[:50]
         
         data = self.get_user_data(user_id)
+        
+        # Remove the old message with cancel button
+        try:
+            msg_id = data.get('template_prompt_message_id')
+            chat_id = data.get('template_prompt_chat_id')
+            if msg_id and chat_id:
+                await context.bot.edit_message_reply_markup(
+                    chat_id=chat_id,
+                    message_id=msg_id,
+                    reply_markup=None
+                )
+        except Exception as e:
+            logger.debug(f"Could not remove cancel button: {e}")
         # Use current data (not last_order_data) since we're saving before creating label
         order_data = data
         
