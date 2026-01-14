@@ -29,16 +29,17 @@ async def start_command(update, context):
     """Handle /start command"""
     global _users_service
     
-    # Delete the previous menu message if exists
+    # Remove buttons from the previous menu message (keep the message text)
     try:
         last_menu_msg_id = context.user_data.get('last_menu_message_id')
         if last_menu_msg_id:
-            await context.bot.delete_message(
+            await context.bot.edit_message_reply_markup(
                 chat_id=update.effective_chat.id,
-                message_id=last_menu_msg_id
+                message_id=last_menu_msg_id,
+                reply_markup=None
             )
     except Exception as e:
-        logger.debug(f"Could not delete previous menu message: {e}")
+        logger.debug(f"Could not remove buttons from previous menu: {e}")
     
     balance = 0.0
     # Create/update user in database
