@@ -21,35 +21,21 @@ async def telegram_webhook(
     db: AsyncIOMotorDatabase = Depends(get_database)
 ):
     """
-    Webhook handler for Telegram bot (Sandbox)
-    """
-    return await handle_telegram_update(request, db, use_production=False)
-
-@router.post("/webhook-prod")
-async def telegram_webhook_prod(
-    request: Request,
-    settings: Settings = Depends(get_settings),
-    db: AsyncIOMotorDatabase = Depends(get_database)
-):
-    """
-    Webhook handler for Telegram bot (Production)
-    """
-    return await handle_telegram_update(request, db, use_production=True)
-
-async def handle_telegram_update(
-    request: Request,
-    db: AsyncIOMotorDatabase,
-    use_production: bool = False
-):
-    """
-    Handle Telegram webhook update
+    Unified webhook handler for Telegram bot
+    Automatically uses correct bot based on ShipEngine environment
     """
     try:
         update_data = await request.json()
-        bot_type = "PRODUCTION" if use_production else "SANDBOX"
-        logger.info(f"[{bot_type}] Received webhook: {json.dumps(update_data)}")
+        logger.info(f"Received Telegram webhook: {json.dumps(update_data)}")
         
-        telegram_service = TelegramService(use_production=use_production)
+        # Получаем текущий ShipEngine environment из базы данных
+        env_config = await db.api_config.find_one({"_id": "api_config"})
+        current_env = env_config.get("environment", "sandbox") if env_config else "sandbox"
+        
+        logger.info(f"Using {current_env.upper()} environment for Telegram bot")
+        
+        # Создаем сервис с правильным ботом
+        telegram_service = TelegramService(environment=current_env)
         
         # Handle message
         if "message" in update_data:
