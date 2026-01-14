@@ -190,7 +190,7 @@ class ShipEngineService:
         ship_from_phone = clean_phone(ship_from_phone)
         ship_to_phone = clean_phone(ship_to_phone)
         
-        return {
+        payload = {
             "shipment": {
                 "validate_address": "no_validation",  # Already validated in bot flow
                 "service_code": order.serviceCode,
@@ -230,6 +230,12 @@ class ShipEngineService:
                 ]
             }
         }
+        
+        # Add carrier_id if available
+        if order.carrier_id:
+            payload["shipment"]["carrier_id"] = order.carrier_id
+        
+        return payload
     
     async def close(self):
         """Close the HTTP client connection"""
