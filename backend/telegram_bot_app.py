@@ -27,13 +27,13 @@ async def help_command(update, context):
     """Handle /help command"""
     help_text = (
         "📚 *Команды:*\n\n"
-        "/create \\- Создать новый лейбл\n"
-        "/cancel \\- Отменить текущее создание\n"
-        "/help \\- Показать эту справку\n\n"
-        "💡 Используйте веб\\-дашборд для полного управления:\n"
-        "https://shipbot\\-labels\\.preview\\.emergentagent\\.com"
+        "/create - Создать новый лейбл\n"
+        "/cancel - Отменить текущее создание\n"
+        "/help - Показать эту справку\n\n"
+        "💡 Используйте веб-дашборд для полного управления:\n"
+        "https://shipbot-labels.preview.emergentagent.com"
     )
-    await update.message.reply_text(help_text, parse_mode="MarkdownV2")
+    await update.message.reply_text(help_text, parse_mode="Markdown")
 
 async def setup_bot_application(environment='sandbox'):
     """Setup bot application with handlers"""
