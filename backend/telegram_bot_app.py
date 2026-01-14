@@ -23,6 +23,14 @@ async def start_command(update, context):
     telegram_service = TelegramService()
     await telegram_service.send_welcome_message(update.effective_chat.id)
 
+async def back_to_menu_callback(update, context):
+    """Handle back to menu button"""
+    query = update.callback_query
+    await query.answer()
+    
+    telegram_service = TelegramService()
+    await telegram_service.send_welcome_message(query.message.chat_id)
+
 async def help_command(update, context):
     """Handle /help command"""
     help_text = (
