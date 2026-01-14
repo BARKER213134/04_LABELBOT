@@ -1277,6 +1277,17 @@ class TelegramConversationHandler:
             reply_markup = InlineKeyboardMarkup(keyboard)
             
             await query.edit_message_text(success_message, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+            
+            # Send AI-generated thank you message as a separate message
+            try:
+                thank_you_msg = await generate_thank_you_message(carrier_name, tracking_number)
+                await query.message.reply_text(
+                    f"💬 {thank_you_msg}",
+                    parse_mode=None  # Plain text, no formatting
+                )
+            except Exception as ai_err:
+                logger.warning(f"Failed to send AI thank you message: {ai_err}")
+            
             # Clear data after success
             self.clear_user_data(user_id)
             return ConversationHandler.END
