@@ -1072,7 +1072,18 @@ class TelegramConversationHandler:
         
         # Store selected rate
         data['selected_rate'] = selected_rate
-        data['carrier'] = selected_rate.get('carrier_code', '')
+        
+        # Normalize carrier code for our enum
+        carrier_code = selected_rate.get('carrier_code', '').lower()
+        carrier_mapping = {
+            'stamps_com': 'stampscom',
+            'stamps.com': 'stampscom',
+            'usps': 'usps',
+            'fedex': 'fedex',
+            'ups': 'ups',
+            'dhl': 'dhl',
+        }
+        data['carrier'] = carrier_mapping.get(carrier_code, carrier_code)
         data['serviceCode'] = selected_rate.get('service_code', '')
         data['rate_id'] = selected_rate.get('rate_id', '')
         data['total_cost'] = selected_rate.get('total_amount', 0)
