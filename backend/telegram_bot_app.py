@@ -105,6 +105,10 @@ async def setup_bot_application(environment='sandbox'):
     shipengine_service = ShipEngineService(shipengine_key)
     users_service = UsersService(db)
     
+    # Set global reference for use in handlers
+    global _users_service
+    _users_service = users_service
+    
     # Add conversation handler (includes start_create button callback)
     conversation_handler_instance = TelegramConversationHandler(db, orders_service, shipengine_service, users_service)
     application.add_handler(conversation_handler_instance.get_conversation_handler())
