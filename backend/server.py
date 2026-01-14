@@ -34,7 +34,8 @@ app = FastAPI(
     title="ShipBot API",
     version="1.0.0",
     description="Shipping label management with Telegram bot integration",
-    lifespan=lifespan
+    lifespan=lifespan,
+    redirect_slashes=False
 )
 
 # Create API router
