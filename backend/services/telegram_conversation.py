@@ -1071,13 +1071,34 @@ class TelegramConversationHandler:
             self.clear_user_data(user_id)
             return ConversationHandler.END
         
+        if query.data == "back_to_rates":
+            # Go back to rate selection
+            rates = data.get('available_rates', [])
+            if rates:
+                await self._show_rates(query, user_id, rates)
+                return SELECT_RATE
+            else:
+                # Refetch rates if not available
+                await query.edit_message_text(
+                    "⏳ *Получаю тарифы...*\n\nПожалуйста, подождите.",
+                    parse_mode=ParseMode.MARKDOWN
+                )
+                try:
+                    rates = await self._fetch_rates(data)
+                    data['available_rates'] = rates
+                    await self._show_rates(query, user_id, rates)
+                    return SELECT_RATE
+                except Exception as e:
+                    text = f"❌ Ошибка: {str(e)}"
+                    await query.edit_message_text(text)
+                    return CONFIRM
+        
         # Create the label
         await query.edit_message_text(
             "⏳ *Создаю лейбл...*\n\nПожалуйста, подождите.",
             parse_mode=ParseMode.MARKDOWN
         )
         
-        data = self.get_user_data(user_id)
         data['telegram_user_id'] = user_id
         data['telegram_username'] = username
         
@@ -1085,14 +1106,17 @@ class TelegramConversationHandler:
             # Call orders service to create label
             result = await self.orders_service.create_order(data)
             
+            total_cost = data.get('total_cost', result.get('cost', 0))
+            carrier_name = data.get('selected_rate', {}).get('carrier_friendly_name', data.get('carrier', ''))
+            
             success_message = (
                 "━━━━━━━━━━━━━━━━━━━━\n"
                 "✅ *ЛЕЙБЛ СОЗДАН УСПЕШНО!*\n"
                 "━━━━━━━━━━━━━━━━━━━━\n\n"
                 "📋 *Информация о доставке:*\n\n"
                 f"▫️ Tracking номер:\n`{result.get('trackingNumber', 'N/A')}`\n\n"
-                f"▫️ Перевозчик: {data.get('carrier').upper()}\n"
-                f"▫️ Стоимость: ${result.get('cost', 0):.2f}\n\n"
+                f"▫️ Перевозчик: {carrier_name}\n"
+                f"▫️ Стоимость: ${total_cost:.2f}\n\n"
                 "━━━━━━━━━━━━━━━━━━━━\n\n"
                 "🔗 Скачать PDF лейбл можно в веб-дашборде:\n"
                 "https://labelgen-4.preview.emergentagent.com\n\n"
