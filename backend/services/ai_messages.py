@@ -5,9 +5,23 @@ Generates unique business-style thank you messages after label creation
 import os
 import logging
 import uuid
+import random
 from emergentintegrations.llm.chat import LlmChat, UserMessage
 
 logger = logging.getLogger(__name__)
+
+# Fun emojis for thank you messages
+THANK_YOU_EMOJIS = [
+    "🎉", "✨", "🌟", "💫", "🚀", "📦", "🎁", "💝", "🙏", "👏",
+    "🤝", "💪", "🔥", "⭐", "🌈", "☀️", "🎊", "💯", "👍", "😊",
+    "🤩", "🥳", "💐", "🌺", "🍀", "🎯", "💎", "🏆", "🎈", "🌻"
+]
+
+
+def get_random_emojis(count: int = 3) -> str:
+    """Get random emojis for the message"""
+    selected = random.sample(THANK_YOU_EMOJIS, min(count, len(THANK_YOU_EMOJIS)))
+    return " ".join(selected)
 
 
 async def generate_thank_you_message(carrier_name: str = "", tracking_number: str = "") -> str:
@@ -19,7 +33,7 @@ async def generate_thank_you_message(carrier_name: str = "", tracking_number: st
         tracking_number: Tracking number for the shipment
     
     Returns:
-        Generated thank you message
+        Generated thank you message with emojis
     """
     try:
         api_key = os.environ.get("EMERGENT_LLM_KEY")
@@ -36,10 +50,10 @@ async def generate_thank_you_message(carrier_name: str = "", tracking_number: st
             system_message=(
                 "Ты - вежливый бизнес-ассистент сервиса доставки White Label Shipping. "
                 "Твоя задача - написать короткое благодарственное сообщение клиенту после создания shipping label. "
-                "Стиль: деловой, но дружелюбный. Язык: русский. "
+                "Стиль: деловой, но дружелюбный и позитивный. Язык: русский. "
                 "Сообщение должно быть 1-2 предложения + пожелание хорошего дня/удачи. "
                 "Каждый раз генерируй уникальное сообщение, используй разные формулировки. "
-                "НЕ используй emoji. НЕ используй markdown форматирование."
+                "НЕ используй emoji - они будут добавлены автоматически. НЕ используй markdown."
             )
         ).with_model("openai", "gpt-4o-mini")
         
@@ -49,8 +63,12 @@ async def generate_thank_you_message(carrier_name: str = "", tracking_number: st
         response = await chat.send_message(user_message)
         
         if response:
-            logger.info(f"Generated thank you message: {response[:50]}...")
-            return response.strip()
+            # Add random emojis
+            emojis_start = get_random_emojis(2)
+            emojis_end = get_random_emojis(2)
+            message = f"{emojis_start} {response.strip()} {emojis_end}"
+            logger.info(f"Generated thank you message: {message[:50]}...")
+            return message
         else:
             return get_default_message()
             
@@ -61,7 +79,6 @@ async def generate_thank_you_message(carrier_name: str = "", tracking_number: st
 
 def get_default_message() -> str:
     """Return default thank you message if AI fails"""
-    import random
     messages = [
         "Благодарим вас за использование нашего сервиса! Желаем вам отличного дня и успешной доставки.",
         "Спасибо за ваш заказ! Надеемся, что доставка пройдёт быстро и без проблем. Хорошего дня!",
@@ -69,4 +86,6 @@ def get_default_message() -> str:
         "Спасибо, что выбрали нас! Желаем вам продуктивного дня и быстрой доставки.",
         "Благодарим вас за заказ! Пусть этот день принесёт вам только хорошие новости. До встречи!"
     ]
-    return random.choice(messages)
+    emojis_start = get_random_emojis(2)
+    emojis_end = get_random_emojis(2)
+    return f"{emojis_start} {random.choice(messages)} {emojis_end}"
