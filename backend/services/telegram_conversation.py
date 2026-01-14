@@ -1710,6 +1710,7 @@ class TelegramConversationHandler:
                 ],
                 CONFIRM: [
                     CallbackQueryHandler(self.confirm_and_create, pattern="^(confirm_yes|back_to_rates)$"),
+                    CallbackQueryHandler(self.download_label, pattern="^download_label$"),
                 ],
                 
                 TEMPLATE_SAVE_NAME: [
