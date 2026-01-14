@@ -706,7 +706,7 @@ class TelegramConversationHandler:
                 "Что хотите изменить?"
             )
             keyboard = [
-                [InlineKeyboardButton("📝 Имя и адрес", callback_data="edit_from_address")],
+                [InlineKeyboardButton("📝 Адрес", callback_data="edit_from_address")],
                 [InlineKeyboardButton("📍 Город и штат", callback_data="edit_from_location")],
                 [InlineKeyboardButton("📞 Телефон", callback_data="edit_from_phone")],
                 [InlineKeyboardButton("◀️ Назад к проверке", callback_data="back_to_review")]
@@ -719,7 +719,7 @@ class TelegramConversationHandler:
                 "Что хотите изменить?"
             )
             keyboard = [
-                [InlineKeyboardButton("📝 Имя и адрес", callback_data="edit_to_address")],
+                [InlineKeyboardButton("📝 Адрес", callback_data="edit_to_address")],
                 [InlineKeyboardButton("📍 Город и штат", callback_data="edit_to_location")],
                 [InlineKeyboardButton("📞 Телефон", callback_data="edit_to_phone")],
                 [InlineKeyboardButton("◀️ Назад к проверке", callback_data="back_to_review")]
@@ -736,6 +736,18 @@ class TelegramConversationHandler:
                 [InlineKeyboardButton("📏 Размеры", callback_data="edit_dimensions")],
                 [InlineKeyboardButton("◀️ Назад к проверке", callback_data="back_to_review")]
             ]
+        else:
+            # Fallback for unknown edit choice
+            text = (
+                "❌ Сессия устарела.\n\n"
+                "Пожалуйста, начните создание лейбла заново:"
+            )
+            keyboard = [
+                [InlineKeyboardButton("📦 Создать лейбл", callback_data="start_create")]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+            return ConversationHandler.END
         
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
