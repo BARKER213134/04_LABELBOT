@@ -671,8 +671,6 @@ class TelegramConversationHandler:
         query = update.callback_query
         await query.answer()
         
-        user_id = str(update.effective_user.id)
-        
         edit_choice = query.data
         
         if edit_choice == "continue_to_carrier":
