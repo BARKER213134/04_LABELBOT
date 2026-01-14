@@ -1200,6 +1200,9 @@ class TelegramConversationHandler:
             
             carrier_name = data.get('selected_rate', {}).get('carrier_friendly_name', data.get('carrier', ''))
             
+            # Store data for potential template save
+            self.get_user_data(user_id)['last_order_data'] = data.copy()
+            
             success_message = (
                 "━━━━━━━━━━━━━━━━━━━━\n"
                 "✅ *ЛЕЙБЛ СОЗДАН УСПЕШНО!*\n"
@@ -1209,13 +1212,16 @@ class TelegramConversationHandler:
                 f"▫️ Перевозчик: {carrier_name}\n"
                 f"▫️ Стоимость: ${total_cost:.2f}\n"
                 f"▫️ Остаток на балансе: ${new_balance:.2f}\n\n"
-                "━━━━━━━━━━━━━━━━━━━━\n\n"
-                "🔗 Скачать PDF лейбл можно в веб-дашборде:\n"
-                "https://labelgen-4.preview.emergentagent.com\n\n"
-                "Спасибо за использование нашего сервиса!"
+                "━━━━━━━━━━━━━━━━━━━━"
             )
             
-            await query.edit_message_text(success_message, parse_mode=ParseMode.MARKDOWN)
+            keyboard = [
+                [InlineKeyboardButton("💾 Сохранить как шаблон", callback_data="save_template")],
+                [InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            
+            await query.edit_message_text(success_message, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
             
         except Exception as e:
             logger.error(f"Error creating label: {e}", exc_info=True)
