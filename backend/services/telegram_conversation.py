@@ -1190,17 +1190,24 @@ class TelegramConversationHandler:
             if not has_balance:
                 db_user = await self.users_service.get_user(user_id)
                 current_balance = db_user.get('balance', 0) if db_user else 0
+                needed = total_cost - current_balance
                 
                 text = (
                     "━━━━━━━━━━━━━━━━━━━━\n"
                     "❌ *НЕДОСТАТОЧНО СРЕДСТВ*\n"
                     "━━━━━━━━━━━━━━━━━━━━\n\n"
-                    f"Стоимость лейбла: ${total_cost:.2f}\n"
-                    f"Ваш баланс: ${current_balance:.2f}\n\n"
-                    f"Необходимо пополнить: ${(total_cost - current_balance):.2f}\n\n"
-                    "Обратитесь к администратору для пополнения баланса."
+                    f"💵 Стоимость лейбла: *${total_cost:.2f}*\n"
+                    f"💰 Ваш баланс: *${current_balance:.2f}*\n\n"
+                    f"📊 Необходимо пополнить: *${needed:.2f}*\n\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    "💳 *Пополните баланс криптой:*\n"
+                    "▫️ BTC, ETH, USDT, LTC\n"
+                    "▫️ Минимум: $10"
                 )
-                keyboard = [[InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")]]
+                keyboard = [
+                    [InlineKeyboardButton("💳 Пополнить баланс", callback_data="topup_balance")],
+                    [InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")]
+                ]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
                 return ConversationHandler.END
