@@ -34,7 +34,7 @@ export const adminAPI = {
 
 export const statisticsAPI = {
   getStatistics: async () => {
-    const response = await axios.get(`${API}/statistics`);
+    const response = await axios.get(`${API}/statistics/`);
     return response.data;
   },
 };
