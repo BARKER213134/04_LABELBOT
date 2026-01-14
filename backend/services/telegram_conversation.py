@@ -59,7 +59,7 @@ class TelegramConversationHandler:
         
         await update.message.reply_text(
             "🚀 *Создание нового лейбла*\\n\\n"
-            "Давайте начнем\\! Я проведу вас через все шаги\\.\n\n"
+            "Давайте начнем! Я проведу вас через все шаги.\n\n"
             "📍 *Шаг 1 из 4: Адрес отправителя*\\n\\n"
             "Введите имя отправителя:",
             parse_mode=ParseMode.MARKDOWN
@@ -75,7 +75,7 @@ class TelegramConversationHandler:
         data['shipFromName'] = update.message.text
         
         await update.message.reply_text(
-            "✅ Отлично\\!\n\n"
+            "✅ Отлично!\n\n"
             "Теперь введите адрес отправителя \\(улица, дом\\):",
             parse_mode=ParseMode.MARKDOWN
         )
@@ -106,7 +106,7 @@ class TelegramConversationHandler:
         
         if len(state) != 2:
             await update.message.reply_text(
-                "❌ Штат должен быть 2 буквы \\(например: CA\\)\\. Попробуйте еще раз:",
+                "❌ Штат должен быть 2 буквы \\(например: CA\\). Попробуйте еще раз:",
                 parse_mode=ParseMode.MARKDOWN
             )
             return SHIP_FROM_STATE
@@ -123,7 +123,7 @@ class TelegramConversationHandler:
         
         if not zip_code.isdigit() or len(zip_code) != 5:
             await update.message.reply_text(
-                "❌ ZIP код должен быть 5 цифр\\. Попробуйте еще раз:",
+                "❌ ZIP код должен быть 5 цифр. Попробуйте еще раз:",
                 parse_mode=ParseMode.MARKDOWN
             )
             return SHIP_FROM_ZIP
@@ -146,7 +146,7 @@ class TelegramConversationHandler:
             data['shipFromPhone'] = phone
         
         await update.message.reply_text(
-            "✅ *Адрес отправителя сохранен\\!*\n\n"
+            "✅ *Адрес отправителя сохранен!*\n\n"
             "📍 *Шаг 2 из 4: Адрес получателя*\n\n"
             "Введите имя получателя:",
             parse_mode=ParseMode.MARKDOWN
@@ -191,7 +191,7 @@ class TelegramConversationHandler:
         
         if len(state) != 2:
             await update.message.reply_text(
-                "❌ Штат должен быть 2 буквы\\. Попробуйте еще раз:",
+                "❌ Штат должен быть 2 буквы. Попробуйте еще раз:",
                 parse_mode=ParseMode.MARKDOWN
             )
             return SHIP_TO_STATE
@@ -208,7 +208,7 @@ class TelegramConversationHandler:
         
         if not zip_code.isdigit() or len(zip_code) != 5:
             await update.message.reply_text(
-                "❌ ZIP код должен быть 5 цифр\\. Попробуйте еще раз:",
+                "❌ ZIP код должен быть 5 цифр. Попробуйте еще раз:",
                 parse_mode=ParseMode.MARKDOWN
             )
             return SHIP_TO_ZIP
@@ -231,7 +231,7 @@ class TelegramConversationHandler:
             data['shipToPhone'] = phone
         
         await update.message.reply_text(
-            "✅ *Адрес получателя сохранен\\!*\n\n"
+            "✅ *Адрес получателя сохранен!*\n\n"
             "📦 *Шаг 3 из 4: Параметры посылки*\n\n"
             "Введите вес в унциях \\(например: 16 для 1 фунта\\):",
             parse_mode=ParseMode.MARKDOWN
@@ -257,7 +257,7 @@ class TelegramConversationHandler:
             return PACKAGE_WEIGHT
         
         await update.message.reply_text(
-            "Введите размеры посылки в дюймах через пробел\\:\n"
+            "Введите размеры посылки в дюймах через пробел:\n"
             "Длина Ширина Высота \\(например: 12 8 6\\)",
             parse_mode=ParseMode.MARKDOWN
         )
@@ -281,7 +281,7 @@ class TelegramConversationHandler:
             data['packageHeight'] = height
         except ValueError:
             await update.message.reply_text(
-                "❌ Введите 3 числа через пробел \\(Длина Ширина Высота\\)\\. Попробуйте еще раз:",
+                "❌ Введите 3 числа через пробел \\(Длина Ширина Высота\\). Попробуйте еще раз:",
                 parse_mode=ParseMode.MARKDOWN
             )
             return PACKAGE_DIMENSIONS
@@ -295,7 +295,7 @@ class TelegramConversationHandler:
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         await update.message.reply_text(
-            "✅ *Параметры посылки сохранены\\!*\n\n"
+            "✅ *Параметры посылки сохранены!*\n\n"
             "🚚 *Шаг 4 из 4: Выбор перевозчика*\n\n"
             "Выберите перевозчика:",
             reply_markup=reply_markup,
@@ -396,15 +396,15 @@ class TelegramConversationHandler:
         
         if query.data == "confirm_no":
             await query.edit_message_text(
-                "❌ Создание лейбла отменено\\.\n\n"
-                "Используйте /create чтобы начать заново\\.",
+                "❌ Создание лейбла отменено.\n\n"
+                "Используйте /create чтобы начать заново.",
                 parse_mode=ParseMode.MARKDOWN
             )
             self.clear_user_data(user_id)
             return ConversationHandler.END
         
         # Create the label
-        await query.edit_message_text("⏳ Создаю лейбл\\.\\.\\.", parse_mode=ParseMode.MARKDOWN)
+        await query.edit_message_text("⏳ Создаю лейбл...", parse_mode=ParseMode.MARKDOWN)
         
         data = self.get_user_data(user_id)
         data['telegram_user_id'] = user_id
@@ -415,11 +415,11 @@ class TelegramConversationHandler:
             result = await self.orders_service.create_order(data)
             
             success_message = (
-                "✅ *Лейбл создан успешно\\!*\n\n"
+                "✅ *Лейбл создан успешно!*\n\n"
                 f"📋 Tracking: `{result.get('trackingNumber', 'N/A')}`\n"
                 f"💰 Стоимость: ${result.get('cost', 0):.2f}\n"
                 f"🚚 Перевозчик: {data.get('carrier').upper()}\n\n"
-                f"🔗 Скачать лейбл можно в веб\\-дашборде"
+                f"🔗 Скачать лейбл можно в веб-дашборде"
             )
             
             await query.edit_message_text(success_message, parse_mode=ParseMode.MARKDOWN)
@@ -427,7 +427,7 @@ class TelegramConversationHandler:
         except Exception as e:
             logger.error(f"Error creating label: {e}", exc_info=True)
             await query.edit_message_text(
-                f"❌ Ошибка при создании лейбла\\: {str(e)}\n\n"
+                f"❌ Ошибка при создании лейбла: {str(e)}\n\n"
                 f"Попробуйте еще раз: /create",
                 parse_mode=ParseMode.MARKDOWN
             )
@@ -441,8 +441,8 @@ class TelegramConversationHandler:
         self.clear_user_data(user_id)
         
         await update.message.reply_text(
-            "❌ Создание лейбла отменено\\.\n\n"
-            "Используйте /create чтобы начать заново\\.",
+            "❌ Создание лейбла отменено.\n\n"
+            "Используйте /create чтобы начать заново.",
             parse_mode=ParseMode.MARKDOWN
         )
         return ConversationHandler.END
