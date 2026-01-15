@@ -28,6 +28,7 @@ _templates_service = None
 async def start_command(update, context):
     """Handle /start command"""
     global _users_service
+    from telegram import ReplyKeyboardMarkup, KeyboardButton
     
     # Remove buttons from the previous menu message (keep the message text)
     try:
@@ -54,6 +55,20 @@ async def start_command(update, context):
         balance = user.get('balance', 0.0)
         logger.info(f"User {tg_user.id} ({tg_user.username}) - balance: ${balance:.2f}")
     
+    # First set the persistent keyboard
+    persistent_keyboard = ReplyKeyboardMarkup(
+        [[KeyboardButton("🏠 Главное меню")]],
+        resize_keyboard=True,
+        is_persistent=True,
+        input_field_placeholder="Выберите действие..."
+    )
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text="👋",
+        reply_markup=persistent_keyboard
+    )
+    
+    # Then send welcome message with inline buttons
     telegram_service = TelegramService()
     sent_message = await telegram_service.send_welcome_message(update.effective_chat.id, balance)
     
