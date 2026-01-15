@@ -141,17 +141,12 @@ class TelegramConversationHandler:
             "Пожалуйста, введите полное имя отправителя:"
         )
         
-        # Edit message to remove old buttons, then send new with persistent keyboard
+        # Edit message to remove old buttons
         try:
-            await query.edit_message_reply_markup(reply_markup=None)
-        except Exception:
-            pass
-        
-        await query.message.reply_text(
-            text, 
-            parse_mode=ParseMode.MARKDOWN,
-            reply_markup=get_persistent_keyboard()
-        )
+            await query.edit_message_text(text, parse_mode=ParseMode.MARKDOWN)
+            logger.info(f"Successfully edited message for user {user_id}")
+        except Exception as e:
+            logger.error(f"Failed to edit message for user {user_id}: {e}")
         return SHIP_FROM_NAME
     
     # ===== SHIP FROM ADDRESS =====
