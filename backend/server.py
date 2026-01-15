@@ -6,7 +6,7 @@ import logging
 from pathlib import Path
 
 from database import connect_db, close_db
-from routes import orders, admin, telegram, statistics, users, oxapay
+from routes import orders, admin, telegram, statistics, users, oxapay, broadcast
 from config import get_settings
 
 ROOT_DIR = Path(__file__).parent
@@ -59,6 +59,7 @@ api_router.include_router(telegram.router)
 api_router.include_router(statistics.router)
 api_router.include_router(users.router)
 api_router.include_router(oxapay.router)
+api_router.include_router(broadcast.router)
 
 app.include_router(api_router)
 
