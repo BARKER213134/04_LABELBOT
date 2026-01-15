@@ -121,7 +121,7 @@ class TelegramConversationHandler:
             "Пожалуйста, введите полное имя отправителя:"
         )
         
-        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, reply_markup=get_persistent_keyboard())
         return SHIP_FROM_NAME
     
     async def start_create_callback(self, update: Update, context) -> int:
@@ -224,7 +224,7 @@ class TelegramConversationHandler:
             "_Например: CA, NY, TX, FL_"
         )
         
-        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, reply_markup=get_persistent_keyboard())
         return SHIP_FROM_STATE
     
     async def ship_from_state(self, update: Update, context) -> int:
@@ -238,7 +238,7 @@ class TelegramConversationHandler:
                 "_Например: CA, NY, TX_\n\n"
                 "Пожалуйста, попробуйте еще раз:"
             )
-            await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+            await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, reply_markup=get_persistent_keyboard())
             return SHIP_FROM_STATE
         
         data = self.get_user_data(user_id)
@@ -251,7 +251,7 @@ class TelegramConversationHandler:
                 "▫️ ZIP код\n\n"
                 "Введите почтовый индекс (5 цифр):"
             )
-            await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+            await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, reply_markup=get_persistent_keyboard())
             return SHIP_FROM_ZIP
         
         text = (
@@ -261,7 +261,7 @@ class TelegramConversationHandler:
             "_Например: 94102, 10001, 78701_"
         )
         
-        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, reply_markup=get_persistent_keyboard())
         return SHIP_FROM_ZIP
     
     async def ship_from_zip(self, update: Update, context) -> int:
@@ -275,7 +275,7 @@ class TelegramConversationHandler:
                 "_Например: 94102_\n\n"
                 "Пожалуйста, попробуйте еще раз:"
             )
-            await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+            await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, reply_markup=get_persistent_keyboard())
             return SHIP_FROM_ZIP
         
         data = self.get_user_data(user_id)
@@ -330,7 +330,7 @@ class TelegramConversationHandler:
             "Введите полное имя получателя:"
         )
         
-        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, reply_markup=get_persistent_keyboard())
         return SHIP_TO_NAME
     
     async def skip_from_phone_callback(self, update: Update, context) -> int:
@@ -394,7 +394,7 @@ class TelegramConversationHandler:
             "_(Улица, номер дома, квартира)_"
         )
         
-        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, reply_markup=get_persistent_keyboard())
         return SHIP_TO_ADDRESS
     
     async def ship_to_address(self, update: Update, context) -> int:
@@ -414,7 +414,7 @@ class TelegramConversationHandler:
             "Введите название города:"
         )
         
-        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, reply_markup=get_persistent_keyboard())
         return SHIP_TO_CITY
     
     async def ship_to_city(self, update: Update, context) -> int:
@@ -435,7 +435,7 @@ class TelegramConversationHandler:
             "_Например: CA, NY, TX, FL_"
         )
         
-        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, reply_markup=get_persistent_keyboard())
         return SHIP_TO_STATE
     
     async def ship_to_state(self, update: Update, context) -> int:
@@ -448,7 +448,7 @@ class TelegramConversationHandler:
                 "Код штата должен состоять из 2 букв.\n\n"
                 "Пожалуйста, попробуйте еще раз:"
             )
-            await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+            await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, reply_markup=get_persistent_keyboard())
             return SHIP_TO_STATE
         
         data = self.get_user_data(user_id)
@@ -461,7 +461,7 @@ class TelegramConversationHandler:
                 "▫️ ZIP код\n\n"
                 "Введите почтовый индекс (5 цифр):"
             )
-            await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+            await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, reply_markup=get_persistent_keyboard())
             return SHIP_TO_ZIP
         
         text = (
@@ -470,7 +470,7 @@ class TelegramConversationHandler:
             "Введите почтовый индекс (5 цифр):"
         )
         
-        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, reply_markup=get_persistent_keyboard())
         return SHIP_TO_ZIP
     
     async def ship_to_zip(self, update: Update, context) -> int:
@@ -483,7 +483,7 @@ class TelegramConversationHandler:
                 "ZIP код должен содержать ровно 5 цифр.\n\n"
                 "Пожалуйста, попробуйте еще раз:"
             )
-            await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+            await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, reply_markup=get_persistent_keyboard())
             return SHIP_TO_ZIP
         
         data = self.get_user_data(user_id)
@@ -540,7 +540,7 @@ class TelegramConversationHandler:
             "_Например: 16_"
         )
         
-        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, reply_markup=get_persistent_keyboard())
         return PACKAGE_WEIGHT
     
     async def skip_to_phone_callback(self, update: Update, context) -> int:
@@ -604,7 +604,7 @@ class TelegramConversationHandler:
                 "_Например: 16 или 24.5_\n\n"
                 "Пожалуйста, попробуйте еще раз:"
             )
-            await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+            await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, reply_markup=get_persistent_keyboard())
             return PACKAGE_WEIGHT
         
         # Check if we're in edit mode
@@ -627,7 +627,7 @@ class TelegramConversationHandler:
             "_Например: 12 8 6_"
         )
         
-        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, reply_markup=get_persistent_keyboard())
         return PACKAGE_DIMENSIONS
     
     async def package_dimensions(self, update: Update, context) -> int:
@@ -654,7 +654,7 @@ class TelegramConversationHandler:
                 "_Например: 12 8 6_\n\n"
                 "Пожалуйста, попробуйте еще раз:"
             )
-            await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+            await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, reply_markup=get_persistent_keyboard())
             return PACKAGE_DIMENSIONS
         
         # Check if we're in edit mode
