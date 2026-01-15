@@ -1298,9 +1298,10 @@ class TelegramConversationHandler:
         if data.get('shipToPhone'):
             summary += f"▫️ Телефон: {data.get('shipToPhone')}\n"
         
+        weight_lbs = data.get('packageWeightLbs', 0) or (data.get('packageWeight', 0) / 16)
         summary += (
             f"\n📦 *ПОСЫЛКА*\n"
-            f"▫️ Вес: {data.get('packageWeight')} oz ({data.get('packageWeight')/16:.2f} lbs)\n"
+            f"▫️ Вес: {weight_lbs:.2f} lbs\n"
             f"▫️ Размеры: {data.get('packageLength')}×{data.get('packageWidth')}×{data.get('packageHeight')} дюймов\n"
             f"\n🚚 *ДОСТАВКА*\n"
             f"▫️ Перевозчик: {carrier_name}\n"
