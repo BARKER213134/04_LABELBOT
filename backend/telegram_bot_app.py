@@ -152,7 +152,7 @@ async def topup_balance_callback(update, context):
 
 
 async def process_topup_amount(update, context):
-    """Process the entered top-up amount"""
+    """Process the entered top-up amount - sends new messages"""
     if not context.user_data.get('awaiting_topup_amount'):
         return False
     
@@ -162,59 +162,82 @@ async def process_topup_amount(update, context):
     # Clear the waiting flag
     context.user_data['awaiting_topup_amount'] = False
     
-    # Get stored message info for editing
+    # Remove buttons from previous message
     message_id = context.user_data.get('topup_message_id')
     chat_id = context.user_data.get('topup_chat_id')
+    if message_id and chat_id:
+        try:
+            await context.bot.edit_message_reply_markup(
+                chat_id=chat_id,
+                message_id=message_id,
+                reply_markup=None
+            )
+        except Exception:
+            pass
     
     try:
         amount = float(text_input.replace('$', '').replace(',', '.'))
         
         if amount < 10:
-            # Edit the existing message to show error
-            if message_id and chat_id:
-                from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-                keyboard = [[InlineKeyboardButton("❌ Отмена", callback_data="check_balance")]]
-                await context.bot.edit_message_text(
-                    chat_id=chat_id,
-                    message_id=message_id,
-                    text="❌ *Минимальная сумма: $10*\n\nПожалуйста, введите сумму от $10",
-                    reply_markup=InlineKeyboardMarkup(keyboard),
-                    parse_mode="Markdown"
-                )
-            context.user_data['awaiting_topup_amount'] = True
-            return True
-        
-        if amount > 10000:
-            if message_id and chat_id:
-                from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-                keyboard = [[InlineKeyboardButton("❌ Отмена", callback_data="check_balance")]]
-                await context.bot.edit_message_text(
-                    chat_id=chat_id,
-                    message_id=message_id,
-                    text="❌ *Максимальная сумма: $10,000*\n\nПожалуйста, введите меньшую сумму",
-                    reply_markup=InlineKeyboardMarkup(keyboard),
-                    parse_mode="Markdown"
-                )
-            context.user_data['awaiting_topup_amount'] = True
-            return True
-        
-        # Create payment invoice - edit existing message
-        await create_crypto_invoice(update, context, user_id, amount, message_id, chat_id)
-        return True
-        
-    except ValueError:
-        if message_id and chat_id:
             from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-            keyboard = [[InlineKeyboardButton("❌ Отмена", callback_data="check_balance")]]
-            await context.bot.edit_message_text(
-                chat_id=chat_id,
-                message_id=message_id,
-                text="❌ *Некорректная сумма*\n\nВведите число, например: 25 или 50.00",
+            keyboard = [[InlineKeyboardButton("❌ Отмена", callback_data="cancel_topup")]]
+            sent_msg = await update.message.reply_text(
+                "❌ *Минимальная сумма: $10*\n\nПожалуйста, введите сумму от $10",
                 reply_markup=InlineKeyboardMarkup(keyboard),
                 parse_mode="Markdown"
             )
-        context.user_data['awaiting_topup_amount'] = True
+            context.user_data['awaiting_topup_amount'] = True
+            context.user_data['topup_message_id'] = sent_msg.message_id
+            context.user_data['topup_chat_id'] = sent_msg.chat_id
+            return True
+        
+        if amount > 10000:
+            from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+            keyboard = [[InlineKeyboardButton("❌ Отмена", callback_data="cancel_topup")]]
+            sent_msg = await update.message.reply_text(
+                "❌ *Максимальная сумма: $10,000*\n\nПожалуйста, введите меньшую сумму",
+                reply_markup=InlineKeyboardMarkup(keyboard),
+                parse_mode="Markdown"
+            )
+            context.user_data['awaiting_topup_amount'] = True
+            context.user_data['topup_message_id'] = sent_msg.message_id
+            context.user_data['topup_chat_id'] = sent_msg.chat_id
+            return True
+        
+        # Create payment invoice - send new message
+        await create_crypto_invoice(update, context, user_id, amount)
         return True
+        
+    except ValueError:
+        from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+        keyboard = [[InlineKeyboardButton("❌ Отмена", callback_data="cancel_topup")]]
+        sent_msg = await update.message.reply_text(
+            "❌ *Некорректная сумма*\n\nВведите число, например: 25 или 50.00",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode="Markdown"
+        )
+        context.user_data['awaiting_topup_amount'] = True
+        context.user_data['topup_message_id'] = sent_msg.message_id
+        context.user_data['topup_chat_id'] = sent_msg.chat_id
+        return True
+
+
+async def cancel_topup_callback(update, context):
+    """Cancel top-up process and go back to balance"""
+    query = update.callback_query
+    await query.answer()
+    
+    # Clear the waiting flag
+    context.user_data['awaiting_topup_amount'] = False
+    
+    # Remove buttons from old message
+    try:
+        await query.edit_message_reply_markup(reply_markup=None)
+    except Exception:
+        pass
+    
+    # Redirect to balance check (which sends new message)
+    await check_balance_callback(update, context)
 
 
 async def create_crypto_invoice(update, context, user_id: str, amount: float, message_id=None, chat_id=None):
