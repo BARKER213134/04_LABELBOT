@@ -1506,12 +1506,12 @@ class TelegramConversationHandler:
             pass
         
         if not self.templates_service:
-            await query.message.reply_text("❌ Сервис шаблонов недоступен")
+            await query.message.reply_text("❌ Сервис шаблонов недоступен", reply_markup=get_persistent_keyboard())
             return ConversationHandler.END
         
         template = await self.templates_service.get_template(template_id)
         if not template:
-            await query.message.reply_text("❌ Шаблон не найден")
+            await query.message.reply_text("❌ Шаблон не найден", reply_markup=get_persistent_keyboard())
             return ConversationHandler.END
         
         # Load template data into user_data
@@ -1542,12 +1542,12 @@ class TelegramConversationHandler:
             pass
         
         if not self.templates_service:
-            await query.message.reply_text("❌ Сервис шаблонов недоступен")
+            await query.message.reply_text("❌ Сервис шаблонов недоступен", reply_markup=get_persistent_keyboard())
             return ConversationHandler.END
         
         template = await self.templates_service.get_template(template_id)
         if not template:
-            await query.message.reply_text("❌ Шаблон не найден")
+            await query.message.reply_text("❌ Шаблон не найден", reply_markup=get_persistent_keyboard())
             return ConversationHandler.END
         
         # Load template data into user_data
