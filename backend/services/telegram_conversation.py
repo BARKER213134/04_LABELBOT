@@ -1444,20 +1444,26 @@ class TelegramConversationHandler:
         return REVIEW_SUMMARY
     
     async def use_template(self, update: Update, context) -> int:
-        """Use a template to create a new label"""
+        """Use a template to create a new label - sends new message"""
         query = update.callback_query
         await query.answer()
         
         user_id = str(update.effective_user.id)
         template_id = query.data.replace("tpl_use_", "")
         
+        # Remove buttons from old message (keep text)
+        try:
+            await query.edit_message_reply_markup(reply_markup=None)
+        except Exception:
+            pass
+        
         if not self.templates_service:
-            await query.edit_message_text("❌ Сервис шаблонов недоступен")
+            await query.message.reply_text("❌ Сервис шаблонов недоступен")
             return ConversationHandler.END
         
         template = await self.templates_service.get_template(template_id)
         if not template:
-            await query.edit_message_text("❌ Шаблон не найден")
+            await query.message.reply_text("❌ Шаблон не найден")
             return ConversationHandler.END
         
         # Load template data into user_data
@@ -1469,25 +1475,31 @@ class TelegramConversationHandler:
         # Increment use count
         await self.templates_service.increment_use_count(template_id)
         
-        # Show review summary with template data (edit the message to remove buttons)
-        await self.show_review_summary(query.message, user_id, from_template=True, edit_message=True)
+        # Show review summary with template data as NEW message
+        await self.show_review_summary(query.message, user_id, from_template=True, edit_message=False)
         return REVIEW_SUMMARY
     
     async def edit_template(self, update: Update, context) -> int:
-        """Edit a template"""
+        """Edit a template - sends new message"""
         query = update.callback_query
         await query.answer()
         
         user_id = str(update.effective_user.id)
         template_id = query.data.replace("tpl_edit_", "")
         
+        # Remove buttons from old message (keep text)
+        try:
+            await query.edit_message_reply_markup(reply_markup=None)
+        except Exception:
+            pass
+        
         if not self.templates_service:
-            await query.edit_message_text("❌ Сервис шаблонов недоступен")
+            await query.message.reply_text("❌ Сервис шаблонов недоступен")
             return ConversationHandler.END
         
         template = await self.templates_service.get_template(template_id)
         if not template:
-            await query.edit_message_text("❌ Шаблон не найден")
+            await query.message.reply_text("❌ Шаблон не найден")
             return ConversationHandler.END
         
         # Load template data into user_data
@@ -1515,11 +1527,12 @@ class TelegramConversationHandler:
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
-        await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+        # Send as NEW message instead of editing
+        await query.message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
         return TEMPLATE_EDIT
     
     async def save_template_changes(self, update: Update, context) -> int:
-        """Save template changes"""
+        """Save template changes - sends new message"""
         query = update.callback_query
         await query.answer()
         
@@ -1527,6 +1540,12 @@ class TelegramConversationHandler:
         data = self.get_user_data(user_id)
         template_id = data.get('editing_template_id')
         template_name = data.get('editing_template_name', 'Шаблон')
+        
+        # Remove buttons from old message (keep text)
+        try:
+            await query.edit_message_reply_markup(reply_markup=None)
+        except Exception:
+            pass
         
         if self.templates_service and template_id:
             await self.templates_service.update_template(template_id, data)
@@ -1537,7 +1556,8 @@ class TelegramConversationHandler:
         keyboard = [[InlineKeyboardButton("📋 К шаблонам", callback_data="templates_menu")]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
-        await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+        # Send as NEW message instead of editing
+        await query.message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
         self.clear_user_data(user_id)
         return ConversationHandler.END
     
