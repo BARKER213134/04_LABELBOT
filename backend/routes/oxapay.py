@@ -75,16 +75,24 @@ async def notify_user_balance_credited(telegram_id: str, amount: float):
     try:
         from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
         from config import get_settings
+        from services.users_service import UsersService
         
         settings = get_settings()
         bot = Bot(token=settings.telegram_bot_token)
+        
+        # Get current user balance
+        db = Database.db
+        users_service = UsersService(db)
+        user = await users_service.get_user(telegram_id)
+        current_balance = user.get('balance', 0) if user else 0
         
         text = (
             "━━━━━━━━━━━━━━━━━━━━\n"
             "✅ *БАЛАНС ПОПОЛНЕН*\n"
             "━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"💰 Сумма: *${amount:.2f}*\n\n"
-            "Спасибо за пополнение! Ваш баланс обновлён.\n\n"
+            f"💰 Пополнение: *+${amount:.2f}*\n"
+            f"💳 Ваш баланс: *${current_balance:.2f}*\n\n"
+            "Спасибо за пополнение!\n\n"
             "━━━━━━━━━━━━━━━━━━━━"
         )
         
