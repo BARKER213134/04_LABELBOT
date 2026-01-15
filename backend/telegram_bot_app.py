@@ -545,11 +545,17 @@ async def template_delete_callback(update, context):
     await query.message.reply_text(text, reply_markup=reply_markup)
 
 async def refund_info_callback(update, context):
-    """Show refund information"""
+    """Show refund information - sends new message"""
     query = update.callback_query
     await query.answer()
     
     logger.info(f"refund_info_callback triggered by user {update.effective_user.id}")
+    
+    # Remove buttons from old message (keep text)
+    try:
+        await query.edit_message_reply_markup(reply_markup=None)
+    except Exception:
+        pass
     
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
     
@@ -570,14 +576,21 @@ async def refund_info_callback(update, context):
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    await query.edit_message_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+    # Send as NEW message
+    await query.message.reply_text(text, reply_markup=reply_markup, parse_mode="Markdown")
 
 async def faq_info_callback(update, context):
-    """Show FAQ and service description"""
+    """Show FAQ and service description - sends new message"""
     query = update.callback_query
     await query.answer()
     
     logger.info(f"faq_info_callback triggered by user {update.effective_user.id}")
+    
+    # Remove buttons from old message (keep text)
+    try:
+        await query.edit_message_reply_markup(reply_markup=None)
+    except Exception:
+        pass
     
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
     
@@ -621,7 +634,8 @@ async def faq_info_callback(update, context):
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    await query.edit_message_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+    # Send as NEW message
+    await query.message.reply_text(text, reply_markup=reply_markup, parse_mode="Markdown")
 
 async def help_command(update, context):
     """Handle /help command"""
