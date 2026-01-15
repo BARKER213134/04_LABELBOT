@@ -51,29 +51,21 @@ class TelegramService:
             [InlineKeyboardButton("📖 FAQ", callback_data="faq_info")],
             [InlineKeyboardButton("❓ Помощь", url="https://t.me/White_Label_Shipping_Bot_Agent")]
         ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
+        inline_markup = InlineKeyboardMarkup(keyboard)
         
-        # Add persistent keyboard with Main Menu button (small, on the side)
+        # Persistent keyboard with Main Menu button
         persistent_keyboard = ReplyKeyboardMarkup(
             [[KeyboardButton("🏠 Главное меню")]],
             resize_keyboard=True,
             is_persistent=True,
-            input_field_placeholder="Введите данные..."
+            input_field_placeholder="Выберите действие..."
         )
         
-        # First send message to set persistent keyboard
-        await self.bot.send_message(
-            chat_id=chat_id,
-            text="🏠",
-            reply_markup=persistent_keyboard
-        )
-        
-        # Delete the temp message
-        # Then send welcome with inline buttons
+        # Send with both inline and persistent keyboard
         return await self.bot.send_message(
             chat_id=chat_id,
             text=text,
-            reply_markup=reply_markup,
+            reply_markup=inline_markup,
             parse_mode=ParseMode.MARKDOWN
         )
     
