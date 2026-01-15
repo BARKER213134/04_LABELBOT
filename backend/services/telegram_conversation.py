@@ -835,11 +835,11 @@ class TelegramConversationHandler:
         if data.get('shipToPhone'):
             text += f"▫️ Телефон: {data.get('shipToPhone')}\n"
         
-        weight = data.get('packageWeight', 0) or 0
+        weight_lbs = data.get('packageWeightLbs', 0) or (data.get('packageWeight', 0) / 16)
         text += (
             f"\n━━━━━━━━━━━━━━━━━━━━\n"
             "📦 *ПОСЫЛКА*\n"
-            f"▫️ Вес: {weight} oz ({weight/16:.2f} lbs)\n"
+            f"▫️ Вес: {weight_lbs:.2f} lbs\n"
             f"▫️ Размеры: {data.get('packageLength')}×{data.get('packageWidth')}×{data.get('packageHeight')} дюймов\n\n"
             "━━━━━━━━━━━━━━━━━━━━\n\n"
             "Выберите действие:"
