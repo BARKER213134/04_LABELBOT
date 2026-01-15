@@ -720,6 +720,12 @@ async def setup_bot_application(environment='sandbox'):
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(CommandHandler("help", help_command))
     
+    # Set bot commands menu (only /start)
+    from telegram import BotCommand
+    await application.bot.set_my_commands([
+        BotCommand("start", "🏠 Главное меню")
+    ])
+    
     # Add callback handlers for menu buttons (these work when user is NOT in conversation)
     from telegram.ext import CallbackQueryHandler, MessageHandler, filters
     application.add_handler(CallbackQueryHandler(check_balance_callback, pattern="^check_balance$"))
