@@ -672,7 +672,7 @@ async def handle_text_input(update, context):
     text = update.message.text.strip()
     
     # Handle persistent "Main Menu" button
-    if text == "🏠 Главное меню":
+    if text == "🏠 Меню":
         await start_command(update, context)
         return
     
