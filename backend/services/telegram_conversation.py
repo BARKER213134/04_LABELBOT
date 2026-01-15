@@ -1799,6 +1799,7 @@ class TelegramConversationHandler:
             fallbacks=[
                 CommandHandler('start', self.reset_and_start),
                 CommandHandler('cancel', self.cancel),
+                MessageHandler(filters.Regex("^🏠 Главное меню$"), self.main_menu_button_handler),
                 CallbackQueryHandler(self.back_to_menu_fallback, pattern="^back_to_menu$"),
             ],
             per_message=False,
