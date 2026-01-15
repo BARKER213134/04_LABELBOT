@@ -55,11 +55,11 @@ class ShipEngineService:
             if not carrier_ids:
                 raise ValueError("No carriers connected to ShipEngine account")
             
-            # Set company_name to null to override carrier defaults
+            # Set company_name to dash to override carrier defaults (SITKAGEAR fix)
             ship_from = shipment_data["ship_from"].copy()
             ship_to = shipment_data["ship_to"].copy()
-            ship_from["company_name"] = None
-            ship_to["company_name"] = None
+            ship_from["company_name"] = "-"
+            ship_to["company_name"] = "-"
             
             payload = {
                 "rate_options": {
@@ -202,7 +202,7 @@ class ShipEngineService:
                 "service_code": order.serviceCode,
                 "ship_from": {
                     "name": order.shipFromAddress.name,
-                    "company_name": None,  # Explicitly null to override carrier defaults
+                    "company_name": "-",  # Dash to override carrier defaults (SITKAGEAR fix)
                     "address_line1": order.shipFromAddress.addressLine1,
                     "address_line2": order.shipFromAddress.addressLine2 or "",
                     "city_locality": order.shipFromAddress.city,
@@ -213,7 +213,7 @@ class ShipEngineService:
                 },
                 "ship_to": {
                     "name": order.shipToAddress.name,
-                    "company_name": None,  # Explicitly null to override carrier defaults
+                    "company_name": "-",  # Dash to override carrier defaults (SITKAGEAR fix)
                     "address_line1": order.shipToAddress.addressLine1,
                     "address_line2": order.shipToAddress.addressLine2 or "",
                     "city_locality": order.shipToAddress.city,
