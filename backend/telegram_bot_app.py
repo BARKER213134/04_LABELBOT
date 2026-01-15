@@ -451,7 +451,7 @@ async def template_view_callback(update, context):
     
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
     
-    # Remove buttons from old message
+    # Remove buttons from old message (keep text)
     try:
         await query.edit_message_reply_markup(reply_markup=None)
     except Exception:
@@ -491,16 +491,23 @@ async def template_view_callback(update, context):
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    await query.edit_message_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+    # Send as NEW message instead of editing
+    await query.message.reply_text(text, reply_markup=reply_markup, parse_mode="Markdown")
 
 async def template_delete_callback(update, context):
-    """Delete a template"""
+    """Delete a template - sends new message"""
     global _templates_service
     
     query = update.callback_query
     await query.answer()
     
     template_id = query.data.replace("tpl_del_", "")
+    
+    # Remove buttons from old message (keep text)
+    try:
+        await query.edit_message_reply_markup(reply_markup=None)
+    except Exception:
+        pass
     
     if _templates_service:
         await _templates_service.delete_template(template_id)
@@ -511,7 +518,8 @@ async def template_delete_callback(update, context):
     keyboard = [[InlineKeyboardButton("◀️ К шаблонам", callback_data="templates_menu")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    await query.edit_message_text(text, reply_markup=reply_markup)
+    # Send as NEW message instead of editing
+    await query.message.reply_text(text, reply_markup=reply_markup)
 
 async def refund_info_callback(update, context):
     """Show refund information"""
