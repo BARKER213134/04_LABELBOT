@@ -1030,13 +1030,20 @@ class TelegramConversationHandler:
             'ups': ['ups_ground', 'ups_3_day_select', 'ups_2nd_day_air', 'ups_next_day_air_saver'],
         }
         
+        # Get user balance
+        user_balance = 0.0
+        if self.users_service:
+            db_user = await self.users_service.get_user(user_id)
+            if db_user:
+                user_balance = db_user.get('balance', 0.0)
+        
         text = (
             "━━━━━━━━━━━━━━━━━━━━\n"
             "💰 *ДОСТУПНЫЕ ТАРИФЫ*\n"
             "━━━━━━━━━━━━━━━━━━━━\n\n"
             f"Прогресс: {self.get_progress_bar(4)} (Шаг 4/4)\n\n"
-            "Выберите тариф доставки:\n"
-            "_(в sandbox режиме USPS работает стабильнее)_\n\n"
+            f"💳 Ваш баланс: *${user_balance:.2f}*\n\n"
+            "Выберите тариф доставки:\n\n"
         )
         
         # Group rates by carrier
