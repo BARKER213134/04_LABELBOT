@@ -663,7 +663,8 @@ class TelegramConversationHandler:
             data['editing_field'] = None
             await update.message.reply_text(
                 f"✅ *Размеры сохранены* ({length}×{width}×{height} дюймов)",
-                parse_mode=ParseMode.MARKDOWN
+                parse_mode=ParseMode.MARKDOWN,
+                reply_markup=get_persistent_keyboard()
             )
         
         # Show review summary
