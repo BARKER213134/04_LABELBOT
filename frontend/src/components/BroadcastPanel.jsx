@@ -124,26 +124,33 @@ const BroadcastPanel = () => {
 
   // Format message for preview
   const formatPreviewText = (text) => {
+    let formatted = text;
+    
     if (parseMode === 'HTML') {
-      return text
-        .replace(/</g, '&lt;')
-        .replace(/&lt;b&gt;/g, '<b>')
-        .replace(/&lt;\/b&gt;/g, '</b>')
-        .replace(/&lt;i&gt;/g, '<i>')
-        .replace(/&lt;\/i&gt;/g, '</i>')
-        .replace(/&lt;code&gt;/g, '<code>')
-        .replace(/&lt;\/code&gt;/g, '</code>')
-        .replace(/&lt;a href="([^"]+)"&gt;/g, '<a href="$1" class="text-blue-400 underline">')
-        .replace(/&lt;\/a&gt;/g, '</a>')
+      // Replace HTML tags with actual formatting
+      formatted = formatted
+        .replace(/<b>/g, '<b>')
+        .replace(/<\/b>/g, '</b>')
+        .replace(/<i>/g, '<i>')
+        .replace(/<\/i>/g, '</i>')
+        .replace(/<code>/g, '<code class="bg-slate-700 px-1 rounded">')
+        .replace(/<\/code>/g, '</code>')
+        .replace(/<a href="([^"]+)">/g, '<a href="$1" class="text-blue-400 underline" target="_blank">')
+        .replace(/<\/a>/g, '</a>')
         .replace(/\n/g, '<br/>');
     } else {
-      return text
-        .replace(/\*([^*]+)\*/g, '<b>$1</b>')
-        .replace(/_([^_]+)_/g, '<i>$1</i>')
-        .replace(/`([^`]+)`/g, '<code>$1</code>')
-        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-400 underline">$1</a>')
+      // Markdown parsing
+      formatted = formatted
+        .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')  // **bold**
+        .replace(/\*([^*]+)\*/g, '<b>$1</b>')      // *bold*
+        .replace(/__([^_]+)__/g, '<i>$1</i>')      // __italic__
+        .replace(/_([^_]+)_/g, '<i>$1</i>')        // _italic_
+        .replace(/`([^`]+)`/g, '<code class="bg-slate-700 px-1 rounded">$1</code>')
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-400 underline" target="_blank">$1</a>')
         .replace(/\n/g, '<br/>');
     }
+    
+    return formatted;
   };
 
   return (
