@@ -55,7 +55,12 @@ async def update_balance(
     
     # Send Telegram notification
     try:
-        telegram_service = TelegramService()
+        from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
+        from config import get_settings
+        
+        settings = get_settings()
+        bot = Bot(token=settings.telegram_bot_token)
+        
         new_balance = user.get('balance', 0)
         
         if update.amount > 0:
@@ -70,6 +75,12 @@ async def update_balance(
                 f"▫️ Стало: *${new_balance:.2f}*\n\n"
                 "━━━━━━━━━━━━━━━━━━━━"
             )
+            # Add buttons for balance top-up
+            keyboard = [
+                [InlineKeyboardButton("📦 Продолжить заказ", callback_data="create_label")],
+                [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
         else:
             # Balance deducted
             message = (
@@ -82,8 +93,17 @@ async def update_balance(
                 f"▫️ Стало: *${new_balance:.2f}*\n\n"
                 "━━━━━━━━━━━━━━━━━━━━"
             )
+            keyboard = [
+                [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
         
-        await telegram_service.send_message(int(update.telegram_id), message)
+        await bot.send_message(
+            chat_id=int(update.telegram_id),
+            text=message,
+            parse_mode="Markdown",
+            reply_markup=reply_markup
+        )
         logger.info(f"Balance notification sent to {update.telegram_id}")
     except Exception as e:
         logger.error(f"Failed to send balance notification: {e}")
