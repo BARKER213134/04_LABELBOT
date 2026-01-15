@@ -1621,7 +1621,7 @@ class TelegramConversationHandler:
         tracking_number = data.get('tracking_number', 'label')
         
         if not label_url:
-            await query.message.reply_text("❌ Ссылка на лейбл не найдена")
+            await query.message.reply_text("❌ Ссылка на лейбл не найдена", reply_markup=get_persistent_keyboard())
             return ConversationHandler.END
         
         try:
@@ -1641,16 +1641,17 @@ class TelegramConversationHandler:
                         await query.message.reply_document(
                             document=pdf_file,
                             filename=f"{tracking_number}.pdf",
-                            caption=f"📦 Shipping Label\nTracking: {tracking_number}"
+                            caption=f"📦 Shipping Label\nTracking: {tracking_number}",
+                            reply_markup=get_persistent_keyboard()
                         )
                         
                         logger.info(f"Label sent to user {user_id}: {tracking_number}")
                     else:
-                        await query.message.reply_text(f"❌ Ошибка загрузки: HTTP {response.status}")
+                        await query.message.reply_text(f"❌ Ошибка загрузки: HTTP {response.status}", reply_markup=get_persistent_keyboard())
                         
         except Exception as e:
             logger.error(f"Error downloading label: {e}")
-            await query.message.reply_text(f"❌ Ошибка: {str(e)}")
+            await query.message.reply_text(f"❌ Ошибка: {str(e)}", reply_markup=get_persistent_keyboard())
         
         # Clear data after download
         self.clear_user_data(user_id)
