@@ -53,11 +53,12 @@ class TelegramService:
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
-        # Add persistent keyboard with Main Menu button
+        # Add persistent keyboard with Main Menu button (small, on the side)
         persistent_keyboard = ReplyKeyboardMarkup(
-            [[KeyboardButton("🏠 Главное меню")]],
+            [[KeyboardButton("🏠 Меню")]],
             resize_keyboard=True,
-            is_persistent=True
+            is_persistent=True,
+            input_field_placeholder="Введите данные..."
         )
         
         # First send message to set persistent keyboard
