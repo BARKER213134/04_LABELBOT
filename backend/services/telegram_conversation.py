@@ -1065,6 +1065,11 @@ class TelegramConversationHandler:
         
         # Handle back to review
         if callback_data == "back_to_review_from_rates":
+            # Remove buttons from old message
+            try:
+                await query.edit_message_reply_markup(reply_markup=None)
+            except Exception:
+                pass
             await self.show_review_summary(query.message, user_id)
             return REVIEW_SUMMARY
         
@@ -1078,6 +1083,12 @@ class TelegramConversationHandler:
             reply_markup = InlineKeyboardMarkup(keyboard)
             await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
             return SELECT_RATE
+        
+        # Remove buttons from rate selection message
+        try:
+            await query.edit_message_reply_markup(reply_markup=None)
+        except Exception:
+            pass
         
         # Store selected rate
         data['selected_rate'] = selected_rate
