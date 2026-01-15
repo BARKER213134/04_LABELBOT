@@ -659,9 +659,8 @@ class TelegramConversationHandler:
             "📦 *ШАГ 3: ПАРАМЕТРЫ ПОСЫЛКИ*\n"
             "━━━━━━━━━━━━━━━━━━━━\n\n"
             "▫️ *Подшаг 3.1:* Вес посылки\n\n"
-            "Введите вес в унциях:\n"
-            "_(1 фунт = 16 унций)_\n"
-            "_Например: 16_"
+            "Введите вес в фунтах (lbs):\n"
+            "_Например: 1 или 2.5_"
         )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
@@ -701,9 +700,8 @@ class TelegramConversationHandler:
             "📦 *ШАГ 3: ПАРАМЕТРЫ ПОСЫЛКИ*\n"
             "━━━━━━━━━━━━━━━━━━━━\n\n"
             "▫️ *Подшаг 3.1:* Вес посылки\n\n"
-            "Введите вес в унциях:\n"
-            "_(1 фунт = 16 унций)_\n"
-            "_Например: 16_"
+            "Введите вес в фунтах (lbs):\n"
+            "_Например: 1 или 2.5_"
         )
         
         # Edit the message to remove the skip button
