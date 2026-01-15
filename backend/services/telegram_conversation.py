@@ -737,8 +737,7 @@ class TelegramConversationHandler:
             data['editing_field'] = None
             await update.message.reply_text(
                 f"✅ *Вес сохранен* ({weight_lbs} lbs)",
-                parse_mode=ParseMode.MARKDOWN,
-                reply_markup=get_persistent_keyboard()
+                parse_mode=ParseMode.MARKDOWN
             )
             await self.show_review_summary(update.message, user_id)
             return REVIEW_SUMMARY
