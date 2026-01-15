@@ -1724,6 +1724,24 @@ class TelegramConversationHandler:
         await update.message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
         return ConversationHandler.END
     
+    async def main_menu_button_handler(self, update: Update, context) -> int:
+        """Handle persistent main menu button press"""
+        user_id = str(update.effective_user.id)
+        self.clear_user_data(user_id)
+        
+        # Get user balance
+        balance = 0.0
+        if self.users_service:
+            user = await self.users_service.get_user(user_id)
+            if user:
+                balance = user.get('balance', 0.0)
+        
+        from services.telegram_service import TelegramService
+        telegram_service = TelegramService()
+        await telegram_service.send_welcome_message(update.effective_chat.id, balance)
+        
+        return ConversationHandler.END
+    
     async def reset_and_start(self, update: Update, context) -> int:
         """Reset conversation and show start menu"""
         user_id = str(update.effective_user.id)
