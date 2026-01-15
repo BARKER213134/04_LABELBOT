@@ -521,6 +521,14 @@ class TelegramConversationHandler:
         
         phone = update.message.text.strip()
         if phone.lower() not in ['пропустить', 'skip']:
+            # Validate phone
+            is_valid, result = self.validate_phone(phone)
+            if not is_valid:
+                await update.message.reply_text(
+                    f"❌ *{result}*\n\nПожалуйста, введите корректный номер телефона:",
+                    parse_mode=ParseMode.MARKDOWN
+                )
+                return SHIP_TO_PHONE
             data['shipToPhone'] = phone
         else:
             # Generate random phone if user types skip
