@@ -55,14 +55,20 @@ class ShipEngineService:
             if not carrier_ids:
                 raise ValueError("No carriers connected to ShipEngine account")
             
+            # Ensure company_name is explicitly set to empty string to override defaults
+            ship_from = shipment_data["ship_from"].copy()
+            ship_to = shipment_data["ship_to"].copy()
+            ship_from["company_name"] = ""
+            ship_to["company_name"] = ""
+            
             payload = {
                 "rate_options": {
                     "carrier_ids": carrier_ids,
                 },
                 "shipment": {
                     "validate_address": "no_validation",
-                    "ship_from": shipment_data["ship_from"],
-                    "ship_to": shipment_data["ship_to"],
+                    "ship_from": ship_from,
+                    "ship_to": ship_to,
                     "packages": shipment_data["packages"]
                 }
             }
