@@ -198,7 +198,18 @@ class TelegramConversationHandler:
     async def ship_from_name(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
         data = self.get_user_data(user_id)
-        data['shipFromName'] = update.message.text
+        name = update.message.text.strip()
+        
+        # Validate name
+        is_valid, error_msg = self.validate_name(name)
+        if not is_valid:
+            await update.message.reply_text(
+                f"❌ *{error_msg}*\n\nПожалуйста, введите имя заново:",
+                parse_mode=ParseMode.MARKDOWN
+            )
+            return SHIP_FROM_NAME
+        
+        data['shipFromName'] = name
         
         # Check if we're in edit mode - editing only name
         if data.get('editing_field') == 'from_name_only':
@@ -219,7 +230,18 @@ class TelegramConversationHandler:
     async def ship_from_address(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
         data = self.get_user_data(user_id)
-        data['shipFromAddressLine1'] = update.message.text
+        address = update.message.text.strip()
+        
+        # Validate address
+        is_valid, error_msg = self.validate_address(address)
+        if not is_valid:
+            await update.message.reply_text(
+                f"❌ *{error_msg}*\n\nПожалуйста, введите адрес заново:",
+                parse_mode=ParseMode.MARKDOWN
+            )
+            return SHIP_FROM_ADDRESS
+        
+        data['shipFromAddressLine1'] = address
         
         # Check if we're in edit mode - editing address chain
         if data.get('editing_field') == 'from_address':
@@ -239,7 +261,18 @@ class TelegramConversationHandler:
     async def ship_from_city(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
         data = self.get_user_data(user_id)
-        data['shipFromCity'] = update.message.text
+        city = update.message.text.strip()
+        
+        # Validate city
+        is_valid, error_msg = self.validate_city(city)
+        if not is_valid:
+            await update.message.reply_text(
+                f"❌ *{error_msg}*\n\nПожалуйста, введите город заново:",
+                parse_mode=ParseMode.MARKDOWN
+            )
+            return SHIP_FROM_CITY
+        
+        data['shipFromCity'] = city
         
         # Check if we're in edit mode - editing location chain
         if data.get('editing_field') == 'from_city_only':
