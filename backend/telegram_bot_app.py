@@ -55,11 +55,11 @@ async def start_command(update, context):
         balance = user.get('balance', 0.0)
         logger.info(f"User {tg_user.id} ({tg_user.username}) - balance: ${balance:.2f}")
     
-    # Remove any persistent keyboard
-    await context.bot.send_message(
+    # Send logo image
+    logo_url = "https://static.prod-images.emergentagent.com/jobs/fa626b61-cf8a-489c-95b6-c5cd0d1a57da/images/f2f2d483d36098d4c9662099a13944dcffa8b9944b82d7887eafa610eac54ecf.png"
+    await context.bot.send_photo(
         chat_id=update.effective_chat.id,
-        text="👋",
-        reply_markup=ReplyKeyboardRemove()
+        photo=logo_url
     )
     
     # Then send welcome message with inline buttons
