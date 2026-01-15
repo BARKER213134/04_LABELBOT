@@ -202,6 +202,7 @@ class ShipEngineService:
                 "service_code": order.serviceCode,
                 "ship_from": {
                     "name": order.shipFromAddress.name,
+                    "company_name": None,  # Explicitly null to override carrier defaults
                     "address_line1": order.shipFromAddress.addressLine1,
                     "address_line2": order.shipFromAddress.addressLine2 or "",
                     "city_locality": order.shipFromAddress.city,
@@ -212,6 +213,7 @@ class ShipEngineService:
                 },
                 "ship_to": {
                     "name": order.shipToAddress.name,
+                    "company_name": None,  # Explicitly null to override carrier defaults
                     "address_line1": order.shipToAddress.addressLine1,
                     "address_line2": order.shipToAddress.addressLine2 or "",
                     "city_locality": order.shipToAddress.city,
