@@ -73,7 +73,7 @@ async def notify_user_balance_credited(telegram_id: str, amount: float):
     Send Telegram notification to user about successful payment
     """
     try:
-        from telegram import Bot
+        from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
         from config import get_settings
         
         settings = get_settings()
@@ -88,10 +88,18 @@ async def notify_user_balance_credited(telegram_id: str, amount: float):
             "━━━━━━━━━━━━━━━━━━━━"
         )
         
+        # Add buttons to continue order or go to main menu
+        keyboard = [
+            [InlineKeyboardButton("📦 Продолжить заказ", callback_data="create_label")],
+            [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
         await bot.send_message(
             chat_id=int(telegram_id),
             text=text,
-            parse_mode="Markdown"
+            parse_mode="Markdown",
+            reply_markup=reply_markup
         )
         
         logger.info(f"Notification sent to user {telegram_id}")
