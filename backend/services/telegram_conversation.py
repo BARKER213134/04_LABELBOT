@@ -1177,7 +1177,8 @@ class TelegramConversationHandler:
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
-        await query.edit_message_text(
+        # Send confirmation as NEW message
+        await query.message.reply_text(
             summary,
             reply_markup=reply_markup,
             parse_mode=ParseMode.MARKDOWN
