@@ -677,14 +677,7 @@ async def help_command(update, context):
 
 
 async def handle_text_input(update, context):
-    """Handle text input for top-up amount and main menu button"""
-    text = update.message.text.strip()
-    
-    # Handle persistent "Main Menu" button
-    if text == "🏠 Главное меню":
-        await start_command(update, context)
-        return
-    
+    """Handle text input for top-up amount"""
     # Check if we're waiting for top-up amount
     if context.user_data.get('awaiting_topup_amount'):
         await process_topup_amount(update, context)
