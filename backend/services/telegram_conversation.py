@@ -1180,8 +1180,8 @@ class TelegramConversationHandler:
             data['editing_field'] = 'weight'
             await query.edit_message_text(
                 "✏️ *Редактирование веса*\n\n"
-                "Введите новый вес в унциях:\n"
-                "_(1 фунт = 16 унций)_",
+                "Введите новый вес в фунтах (lbs):\n"
+                "_Например: 1 или 2.5_",
                 parse_mode=ParseMode.MARKDOWN
             )
             return PACKAGE_WEIGHT
