@@ -68,6 +68,50 @@ class TelegramConversationHandler:
         empty = "⬜" * (total_steps - step)
         return f"{filled}{empty}"
     
+    def validate_english_text(self, text: str, field_name: str = "текст") -> tuple[bool, str]:
+        """Validate that text contains only English characters, numbers, and basic punctuation"""
+        import re
+        # Allow English letters, numbers, spaces, and common punctuation
+        pattern = r'^[a-zA-Z0-9\s\.,\-\'\"#@&()/\\]+$'
+        if not re.match(pattern, text):
+            return False, f"Пожалуйста, введите {field_name} на английском языке (латиницей)"
+        if len(text.strip()) < 1:
+            return False, f"Поле {field_name} не может быть пустым"
+        return True, ""
+    
+    def validate_name(self, name: str) -> tuple[bool, str]:
+        """Validate name - English only, 2-50 characters"""
+        is_english, msg = self.validate_english_text(name, "имя")
+        if not is_english:
+            return False, msg
+        if len(name.strip()) < 2:
+            return False, "Имя должно содержать минимум 2 символа"
+        if len(name.strip()) > 50:
+            return False, "Имя должно содержать максимум 50 символов"
+        return True, ""
+    
+    def validate_address(self, address: str) -> tuple[bool, str]:
+        """Validate address - English only, 5-100 characters"""
+        is_english, msg = self.validate_english_text(address, "адрес")
+        if not is_english:
+            return False, msg
+        if len(address.strip()) < 5:
+            return False, "Адрес должен содержать минимум 5 символов"
+        if len(address.strip()) > 100:
+            return False, "Адрес должен содержать максимум 100 символов"
+        return True, ""
+    
+    def validate_city(self, city: str) -> tuple[bool, str]:
+        """Validate city - English only, 2-50 characters"""
+        is_english, msg = self.validate_english_text(city, "город")
+        if not is_english:
+            return False, msg
+        if len(city.strip()) < 2:
+            return False, "Название города должно содержать минимум 2 символа"
+        if len(city.strip()) > 50:
+            return False, "Название города должно содержать максимум 50 символов"
+        return True, ""
+    
     def generate_random_phone(self) -> str:
         """Generate random US phone number"""
         # Generate phone in format: (XXX) XXX-XXXX
