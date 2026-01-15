@@ -1809,10 +1809,10 @@ class TelegramConversationHandler:
         if data.get('shipToPhone'):
             text += f"▫️ ☎ {data.get('shipToPhone')}\n"
         
-        weight = data.get('packageWeight', 0)
+        weight_lbs = data.get('packageWeightLbs', 0) or (data.get('packageWeight', 0) / 16)
         text += (
             f"\n*Посылка:*\n"
-            f"▫️ Вес: {weight} oz ({weight/16:.2f} lbs)\n"
+            f"▫️ Вес: {weight_lbs:.2f} lbs\n"
             f"▫️ Размеры: {data.get('packageLength', 0)}×{data.get('packageWidth', 0)}×{data.get('packageHeight', 0)} дюймов\n"
         )
         
