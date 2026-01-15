@@ -29,7 +29,7 @@ class TelegramService:
     
     async def send_welcome_message(self, chat_id: int, balance: float = None):
         """Send welcome message with instructions"""
-        from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
+        from telegram import InlineKeyboardButton, InlineKeyboardMarkup
         
         balance_text = f"💰 Баланс: *${balance:.2f}*\n\n" if balance is not None else ""
         
@@ -51,21 +51,12 @@ class TelegramService:
             [InlineKeyboardButton("📖 FAQ", callback_data="faq_info")],
             [InlineKeyboardButton("❓ Помощь", url="https://t.me/White_Label_Shipping_Bot_Agent")]
         ]
-        inline_markup = InlineKeyboardMarkup(keyboard)
+        reply_markup = InlineKeyboardMarkup(keyboard)
         
-        # Persistent keyboard with Main Menu button
-        persistent_keyboard = ReplyKeyboardMarkup(
-            [[KeyboardButton("🏠 Главное меню")]],
-            resize_keyboard=True,
-            is_persistent=True,
-            input_field_placeholder="Выберите действие..."
-        )
-        
-        # Send with both inline and persistent keyboard
         return await self.bot.send_message(
             chat_id=chat_id,
             text=text,
-            reply_markup=inline_markup,
+            reply_markup=reply_markup,
             parse_mode=ParseMode.MARKDOWN
         )
     
