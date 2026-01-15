@@ -1,4 +1,4 @@
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ConversationHandler,
     CommandHandler,
@@ -13,15 +13,6 @@ import random
 from services.ai_messages import generate_thank_you_message
 
 logger = logging.getLogger(__name__)
-
-# Persistent keyboard for main menu button
-def get_persistent_keyboard():
-    return ReplyKeyboardMarkup(
-        [[KeyboardButton("🏠 Главное меню")]],
-        resize_keyboard=True,
-        is_persistent=True,
-        input_field_placeholder="Введите данные..."
-    )
 
 # Conversation states
 (
