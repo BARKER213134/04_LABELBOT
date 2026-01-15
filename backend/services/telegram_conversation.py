@@ -613,7 +613,8 @@ class TelegramConversationHandler:
             pounds = weight / 16
             await update.message.reply_text(
                 f"✅ *Вес сохранен* ({weight} oz ≈ {pounds:.2f} lbs)",
-                parse_mode=ParseMode.MARKDOWN
+                parse_mode=ParseMode.MARKDOWN,
+                reply_markup=get_persistent_keyboard()
             )
             await self.show_review_summary(update.message, user_id)
             return REVIEW_SUMMARY
