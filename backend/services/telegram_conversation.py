@@ -1337,7 +1337,8 @@ class TelegramConversationHandler:
                 thank_you_msg = await generate_thank_you_message(carrier_name, tracking_number)
                 await query.message.reply_text(
                     thank_you_msg,
-                    parse_mode=None  # Plain text, no formatting
+                    parse_mode=None,  # Plain text, no formatting
+                    reply_markup=get_persistent_keyboard()
                 )
             except Exception as ai_err:
                 logger.warning(f"Failed to send AI thank you message: {ai_err}")
