@@ -183,7 +183,7 @@ class TelegramConversationHandler:
             "_(Улица, номер дома, квартира)_"
         )
         
-        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, reply_markup=get_persistent_keyboard())
         return SHIP_FROM_ADDRESS
     
     async def ship_from_address(self, update: Update, context) -> int:
@@ -203,7 +203,7 @@ class TelegramConversationHandler:
             "Введите название города:"
         )
         
-        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, reply_markup=get_persistent_keyboard())
         return SHIP_FROM_CITY
     
     async def ship_from_city(self, update: Update, context) -> int:
