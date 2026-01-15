@@ -240,20 +240,17 @@ async def cancel_topup_callback(update, context):
     await check_balance_callback(update, context)
 
 
-async def create_crypto_invoice(update, context, user_id: str, amount: float, message_id=None, chat_id=None):
-    """Create OxaPay crypto invoice"""
+async def create_crypto_invoice(update, context, user_id: str, amount: float):
+    """Create OxaPay crypto invoice - sends new message"""
     from database import Database
     from services.oxapay_service import OxaPayService
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
     
-    # Edit existing message to show loading
-    if message_id and chat_id:
-        await context.bot.edit_message_text(
-            chat_id=chat_id,
-            message_id=message_id,
-            text="⏳ *Создаю платёж...*",
-            parse_mode="Markdown"
-        )
+    # Send loading message
+    loading_msg = await update.message.reply_text(
+        "⏳ *Создаю платёж...*",
+        parse_mode="Markdown"
+    )
     
     try:
         db = Database.db
@@ -289,37 +286,26 @@ async def create_crypto_invoice(update, context, user_id: str, amount: float, me
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
             
-            # Edit the same message with result
-            if message_id and chat_id:
-                await context.bot.edit_message_text(
-                    chat_id=chat_id,
-                    message_id=message_id,
-                    text=text,
-                    reply_markup=reply_markup,
-                    parse_mode="Markdown"
-                )
+            # Edit loading message with result
+            await loading_msg.edit_text(text, reply_markup=reply_markup, parse_mode="Markdown")
         else:
             raise Exception("Failed to create invoice")
             
     except Exception as e:
         logger.error(f"Failed to create crypto invoice: {e}")
         
-        from telegram import InlineKeyboardButton, InlineKeyboardMarkup
         keyboard = [
             [InlineKeyboardButton("🔄 Попробовать снова", callback_data="topup_balance")],
             [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
-        # Edit message to show error
-        if message_id and chat_id:
-            await context.bot.edit_message_text(
-                chat_id=chat_id,
-                message_id=message_id,
-                text=f"❌ *Ошибка создания платежа*\n\n{str(e)}\n\nПопробуйте позже.",
-                reply_markup=reply_markup,
-                parse_mode="Markdown"
-            )
+        # Edit loading message to show error
+        await loading_msg.edit_text(
+            f"❌ *Ошибка создания платежа*\n\n{str(e)}\n\nПопробуйте позже.",
+            reply_markup=reply_markup,
+            parse_mode="Markdown"
+        )
 
 
 async def check_payment_status_callback(update, context):
