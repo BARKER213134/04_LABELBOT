@@ -614,7 +614,7 @@ async def help_command(update, context):
         "*Шаг 4:* Выбор тарифа доставки\n\n"
         "━━━━━━━━━━━━━━━━━━━━\n\n"
         "💡 *Веб-дашборд для управления:*\n"
-        "https://shipengine-tg.preview.emergentagent.com\n\n"
+        "https://shipnow-bot.preview.emergentagent.com\n\n"
         "▫️ Просмотр всех заказов\n"
         "▫️ Скачивание PDF лейблов\n"
         "▫️ Статистика доставок"

@@ -119,7 +119,7 @@
 ### Веб-дашборд:
 
 Для полного функционала используйте:
-https://shipengine-tg.preview.emergentagent.com
+https://shipnow-bot.preview.emergentagent.com
 
 **В дашборде можно:**
 - Просмотреть все заказы

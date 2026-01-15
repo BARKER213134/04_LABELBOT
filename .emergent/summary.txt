@@ -2,90 +2,96 @@
 The user wants to create a Telegram bot for generating shipping labels using the ShipEngine API.
 
 PRODUCT REQUIREMENTS:
-- The bot should have a beautiful and animated interface.
-- The system should be built with a scalable architecture to avoid future refactoring.
-- It should support both test and production environments for the ShipEngine API, with a toggle in an admin panel.
-- The bot should handle creating labels for carriers like USPS, FedEx, and UPS.
-- A web dashboard is required for management.
-- A database is needed to store the history of shipments and users, with each label being a separate order.
-- Each user should be created separately in the database, and their balance should be manageable from the admin panel.
-- The bot's conversation flow should be official and professional, with a multi-step wizard for data entry.
-- The wizard should include a summary and an option to edit data before final confirmation.
-- The bot's UI should use buttons instead of text commands where possible.
-- A skip button for optional fields should be implemented.
+- A scalable system with a beautiful, animated interface.
+- Support for both test and production ShipEngine environments, switchable from an admin panel.
+- A web dashboard for management.
+- A database (MongoDB) to store user and shipment history.
+- A complete user management system where each user has a balance manageable from the admin panel.
+- A professional, multi-step wizard conversation flow for data entry in the bot.
+- The wizard must include a summary and an option to edit data before final confirmation.
+- The bot's UI should prioritize buttons over text commands.
+- A skip button for optional fields.
 - Users should be able to save, manage, and use up to 10 shipment templates.
-- Prices fetched from ShipEngine should have a 0 markup added.
+- Prices fetched from ShipEngine must have a 0 markup.
 - Main menu buttons should be removed after being clicked to prevent re-use.
 - The bot should include buttons for Balance, Templates, Refund, FAQ, and Help.
+- Implement cryptocurrency payments via OxaPay.
+- After a label is successfully created, an AI should generate a unique, uplifting thank-you message in Russian.
+- The bot should download the label PDF from ShipEngine and send it as a file, hiding the original URL.
 
 **User's preferred language**:
 Russian. The next agent MUST respond in Russian.
 
 **what currently exists?**
 A full-stack application with a FastAPI backend, React frontend, and MongoDB. The system includes:
-- A web dashboard with an admin panel for switching environments (sandbox/production) and a new section for managing users and their balances.
+- A web dashboard with an admin panel for switching environments and managing user balances.
 - A Telegram bot with a multi-step  wizard for creating shipping labels.
-- Integration with ShipEngine API to fetch shipping rates (with a 0 markup) and create labels.
-- A complete user management system: users are created in the DB on first interaction, and their balance can be managed via the web UI. Notifications are sent to the user on balance changes.
-- A full template management system: users can create, view, use, edit, and delete up to 10 shipment templates directly within the bot.
-- A redesigned main menu in the bot with buttons for creating labels, managing templates, checking balance, requesting refunds, viewing an FAQ, and contacting help.
+- Integration with the ShipEngine API to fetch rates (with a 0 markup) and create labels.
+- A complete user management system where users are created in the DB on first interaction and their balance can be managed via the web UI, with Telegram notifications on balance changes.
+- A full template management system allowing users to create, view, use, edit, and delete shipment templates.
+- An integrated OxaPay payment gateway for users to top up their balance with cryptocurrency.
+- An AI message generator (GPT-4o-mini) that sends a unique, warm thank-you message in Russian after each successful label creation.
+- A label download feature that sends the PDF as a Telegram document, hiding the source URL.
 
 **Last working item**:
-- **Last item agent was working:** The agent was trying to fix a UI bug in the Telegram bot where the main menu's inline keyboard buttons are not removed after a user clicks them. This allows the user to click the buttons again, which can disrupt the bot's flow.
+- **Last item agent was working:** The user requested that the template management flow be changed. Instead of editing a single message for all template actions (view, edit, delete), the bot should send new messages for each step, making the conversation history easier to follow. The agent began this refactor.
 - **Status:** IN PROGRESS
 - **Agent Testing Done:** N
-- **Which testing method agent to use?** Manual testing by interacting with the Telegram bot.
-- **User Testing Done:** Y (User confirmed the fix did not work by saying кнопки не убрались - buttons were not removed).
+- **Which testing method agent to use?** Manual testing by interacting with the Telegram bot. Navigate to the Templates section and test all sub-features (view list, view details, use, create, edit, delete).
+- **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
-- **Issue 1:** Inline keyboard buttons do not disappear after being clicked (Priority: P0)
+- **Issue 1:** Refactor the template management flow to use new messages instead of editing a single one. (Priority: P0)
 
 **Issues Detail:**
 - **Issue 1:**
-    - **Description:** When the user clicks a button on the main menu (e.g., 📦 Создать Label, 📋 Шаблоны), the action is triggered, but the message with the buttons remains, allowing for repeated clicks.
-    - **Attempted fixes:** The agent tried to solve this by using  in the callback handlers in  and . This was intended to replace the message content and remove the keyboard. However, the user reported that the buttons still remain.
+    - **Description:** The user finds the current single-message interface for managing templates inconvenient because it's hard to track previous actions. The goal is to make the flow feel like a natural chat conversation.
+    - **Attempted fixes:** The agent started the fix by modifying the main  in  to use  instead of . However, other template-related handlers have not been updated yet.
     - **Next debug checklist:**
-        1. Review all callback handlers in  (e.g., , , , , ) and the  in .
-        2. Ensure that *every* handler associated with a button click from the main menu calls .
-        3. The primary goal is to modify the *original message* containing the buttons. Do not send a new message with  and then try to edit the old one. The call should look like .
-        4. Specifically investigate the  handler in . It uses , which sends a *new* message with the main menu. If the user somehow triggers  while another menu is active, the old menu will remain. This is expected behavior for , but the issue is with *button clicks*.
-        5. Verify that  is called in each handler, as this is required for callback queries.
-        6. Start by fixing one button, for example, the 📖 FAQ button. In , ensure the code is , which should replace the main menu with the FAQ text and a back button. Confirm this single case works before applying the pattern everywhere.
-    - **Why fix this issue and what will be achieved with the fix?** This will prevent user confusion and errors caused by clicking outdated buttons, leading to a smoother and more reliable user experience.
+        1.  In , review all callback handlers related to templates: , , , and any others.
+        2.  For each handler, implement the following pattern:
+            a. First, remove the keyboard from the previous message to prevent re-clicks: .
+            b. Then, send the new content as a new message: .
+        3.  Apply this pattern consistently across the entire template management user journey: viewing the list, viewing a single template, using a template, creating a new one, editing one, and deleting one.
+        4.  Thoroughly test the entire flow to ensure it's logical and that no old, clickable keyboards remain.
+    - **Why fix this issue and what will be achieved with the fix?** This will significantly improve the user experience for the template feature, making it more intuitive and readable.
     - **Status:** IN PROGRESS
-    - **Is recurring issue?** Y
-    - **Should Test frontend/backend/both after fix?** Backend (Telegram bot interaction)
+    - **Is recurring issue?** N
+    - **Should Test frontend/backend/both after fix?** Backend (Telegram bot interaction).
     - **Blocked on other issue:** None
 
 **In progress Task List**:
-None. The focus is on fixing the P0 issue.
+- **Task 1:** Complete the refactoring of the template management conversational flow.
+    - **Where to resume:** The agent has only modified  in . The next step is to apply the same logic (disable old keyboard, send new message) to all other template-related functions in  and .
+    - **What will be achieved with this?** A more user-friendly and intuitive template management experience in the bot.
+    - **Status:** IN PROGRESS
+    - **Should Test frontend/backend/both after fix?** Backend.
+    - **Blocked on something:** None.
 
 **Upcoming and Future Tasks**
-- **Refactoring:** The files  and  are becoming very large. Consider refactoring the logic into smaller, feature-specific modules (e.g., , ) to improve maintainability.
+- **Future Tasks:**
+    - **Refactoring:** The files  and  have become very large and complex. They should be broken down into smaller, more manageable modules (e.g., , , etc.) to improve code maintainability and scalability. (Priority: P1)
+    - **FedEx Sandbox Handling:** FedEx is unstable in the sandbox environment. Consider implementing a feature to hide FedEx as an option when the bot is in sandbox mode to prevent user confusion and errors. (Priority: P2)
 
 **Completed work in this session**
-- **Telegram Bot - Edit Flow:** Implemented the summary and edit step in the label creation wizard, allowing users to review and correct data.
-- **Telegram Bot - Rate Fetching:** Integrated ShipEngine rate fetching, added a 0 markup, and displayed a filtered list of the top 4 tariffs per carrier (USPS, FedEx, UPS).
-- **Telegram Bot - User & Balance System:**
-    - Implemented automatic user creation/retrieval in the database.
-    - Added a  command that resets the conversation.
-    - Added a Balance button to the main menu to show the user's balance, total orders, and total spent.
-    - Implemented notifications to users in Telegram when their balance is adjusted via the admin panel.
-- **Telegram Bot - Template Management:**
-    - Implemented a full feature for users to save, view, use, edit, and delete up to 10 shipment templates.
-- **Telegram Bot - UI Enhancements:**
-    - Added Refund Label, FAQ, and Help buttons to the main menu with corresponding actions.
-- **Web Dashboard - User Management:**
-    - Created a Users Management page in the React frontend.
-    - Admins can view all registered users and their balances.
-    - Implemented functionality to add/deduct from a user's balance.
-- **Bug Fixes:**
-    - Fixed a critical issue where the Telegram webhook was pointing to an old URL, making the bot unresponsive.
-    - Fixed a frontend bug () in the  component.
-    - Fixed a styling issue in the admin panel where input text was not visible.
+- **Bug Fix - Telegram Webhook:** Fixed a critical bug where the webhook pointed to an old URL, making the bot unresponsive.
+- **Bug Fix - Disappearing Buttons:** Resolved a core issue where inline keyboard buttons were not being removed after being clicked across multiple flows (label creation, main menu, balance, templates).
+- **Feature - OxaPay Integration:** Successfully integrated OxaPay for cryptocurrency payments, including a top-up flow from the balance menu and when funds are insufficient.
+- **Bug Fix - Label Creation Flow:**
+    - Fixed multiple bugs preventing label creation, including incorrect regex for callbacks, improper handling of carrier errors (e.g., from FedEx), and unrecognized carrier codes ( for USPS).
+    - Resolved an issue where  was appearing on UPS labels by explicitly setting the company name to an empty string.
+    - Made the label creation process more robust by using .
+- **Feature - Secure Label Download:** Implemented a feature to download the label PDF from ShipEngine and send it directly as a Telegram document, hiding the source URL from the user.
+- **Feature - AI Thank-You Messages:** Integrated GPT-4o-mini to generate unique, warm, and uplifting thank-you messages in Russian after each successful label creation.
+- **UX Improvement - Template Save Flow:** Moved the Save as Template button to the data review screen (before rate selection) based on user feedback.
+- **UX Improvement - Main Menu Button:** Made the 🏠 Главное меню button function like the  command, cleaning up previous keyboards and starting fresh.
 
 **Earlier issues found/mentioned but not fixed**
-None.
+- **Issue 1: FedEx/UPS Sandbox Instability:**
+    - **Debug checklist:** The agent determined this is a limitation of the ShipEngine sandbox environment itself, not a bug in the code. FedEx, in particular, often returns a General Error.
+    - **Why to solve this issue and what will be achieved with this?** Solving or mitigating this would reduce user friction during testing. The proposed solution is to hide FedEx as a carrier option when the application is in  mode.
+    - **Should Test frontend/backend/both after fix:** Backend (Telegram bot).
+    - **Is recurring issue?** Y
 
 **Known issue recurrence from previous fork**
 None.
@@ -97,73 +103,75 @@ None.
 - **Backend:** FastAPI, Pydantic, Motor (async MongoDB driver)
 - **Frontend:** React, React Router, Axios, Tailwind CSS
 - **Bot:** , 
-- **API Integration:** ShipEngine API
+- **API Integration:** ShipEngine, OxaPay, OpenAI (via )
 
 **key DB schema**
 - ****: 
 - ****: 
-- ****: Stores order objects with sender/recipient details, label info, etc.
-- ****: Stores the active environment (/).
+- ****: Stores shipment objects with sender/recipient details, label info, rate details, tracking number, etc.
 
 **changes in tech stack**
-None.
+- Added  library to interact with OpenAI.
+- Added  library (implicitly via playbook).
 
 **All files of reference**
-- : **(High Importance)** Contains the main menu button handlers that need to be fixed.
-- : **(High Importance)** Contains the start of the creation flow, which also needs to correctly remove the main menu buttons.
-- : New file for user management API.
-- : New file for user logic.
-- : New file for user model.
-- : New file for template logic.
-- : New file for template model.
-- : New frontend component for user administration.
+- : **(High Importance)** Contains the template handlers that need to be refactored.
+- : **(High Importance)** Contains the multi-step conversation logic, including parts of the template flow.
+- : New service for OxaPay integration.
+- : New route for the OxaPay webhook.
+- : New service for generating AI messages.
+- : Updated with new environment variables.
+- : Updated to include the new OxaPay router.
 
 **Areas that need refactoring**:
-- : This file has grown to include many callback handlers. These could be moved to separate files for better organization.
-- : This file is extremely large. The conversation logic should be broken down into smaller, more manageable state machines or modules.
+-  and  are monolithic and difficult to maintain. They should be broken down into smaller, feature-specific modules under a new  directory.
 
 **key api endpoints**
 - : Main webhook for the Telegram bot.
+- : Webhook for receiving OxaPay payment status updates.
 - : Get all users.
 - : Update a user's balance.
-- : Get a user's balance transaction history.
 
 **Critical Info for New Agent**
-- **The P0 Bug:** The top priority is fixing the bug where Telegram buttons are not removed after being clicked. The user is blocked by this.
-- **Testing Account:** The user's personal Telegram account, which they use for testing, has the username  and the ID . This is the account that should receive notifications.
-- **State Management:** The bot relies heavily on . Be mindful of how states transition and how context () is passed. A reset of the backend server will clear in-memory persistence, so workflows should be tested from the beginning ().
+- **Top Priority:** The immediate task is to refactor the template management flow to use new messages for each interaction instead of editing a single message.
+- **Sandbox Limitations:** Be aware that FedEx and, to a lesser extent, UPS are unstable in the ShipEngine sandbox. USPS is the most reliable carrier for testing. This is a known limitation of the external service, not a bug in our code.
+- **State Management:** The bot relies heavily on a complex . When making changes, be mindful of state transitions, context data (), and fallbacks.
 
 **documents and test reports created in this job**
 - 
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **кнопки не убрались** (buttons were not removed) - Status: **PENDING**. This is the current P0 bug.
-2.  **сделай так что бы после того как было выбранно какое-то действие кнопки автоматически убирались...** (make it so that after an action is selected, the buttons are automatically removed) - Status: **IN PROGRESS**.
-3.  **кнопку faq сделай красивое описание сервиса внутри** (for the faq button, make a beautiful description of the service inside) - Status: **Completed**.
-4.  **добавь кнопку помощь, так же при нажатии человек должен сразу попадать на нашего агента...** (add a help button, also when clicked the person should immediately get to our agent) - Status: **Completed**.
-5.  **добавь кнопку refund label...** (add a refund label button) - Status: **Completed**.
-6.  **теперь надо сделать кнопку шаблоны...** (now we need to make a templates button) - Status: **Completed**.
-7.  **название сервиса White Label Shipping Bot сделай главную страницу локаничней...** (make the main page more concise with the service name White Label Shipping Bot) - Status: **Completed**.
-8.  **при пополнении или вычитании баланса, пользователю должно приходить сообщение** (when replenishing or deducting the balance, the user should receive a message) - Status: **Completed**.
-9.  **не вписывается сумма и причина** (the amount and reason are not being entered) - Status: **Completed**.
-10. **@whitelabel_shipping_bot_test_bot добавь этого пользователя мы здесь сейчас работаем** (add this user @whitelabel_shipping_bot_test_bot we are working here now) - Status: **Completed**.
+1. **шаблоны все работает в одном сообщении это не удобно...** (templates all work in one message, it's inconvenient...): **PENDING**. This is the current P0 task.
+2. **кнопка главное меню... должна работать как кнопка старт** (the main menu button... should work like the start button): **Completed**.
+3. **ситкагиар в юпс остался** (sitkagear is still on the ups label): **Completed**.
+4. **User reports FedEx error again**: **Completed**. The agent explained it's a sandbox issue.
+5. **в юпс лейбле вместо sitkagear надо сделать что бы был прочерк** (on the ups label, instead of sitkagear there should be a dash): **Completed**.
+6. **кнопка отмены после сохранения шаблона не убралась** (the cancel button after saving a template was not removed): **Completed**.
+7. **User requests changes to AI message**: **Completed**. The agent updated the prompt to be more uplifting and in Russian only.
+8. **кнопка скачивание лейбла, надо организовать так что бы пользователь не видел от куда он скачивается** (the download label button should be organized so the user doesn't see where it's downloading from): **Completed**.
+9. **кнопка сохранить как шаблон не работает** (the save as template button doesn't work): **Completed**.
+10. **User provides valid addresses but FedEx still fails**: **Completed**. The agent improved error messages and diagnosed it as a sandbox issue.
 
 **Project Health Check:**
-- **Broken:** The core user interaction with the main menu in the Telegram bot is broken because buttons are not removed after use, leading to a confusing and error-prone experience.
+- **Broken:** None.
 - **Mocked:** None.
+- **Needs Improvement:** The user experience for the template management feature is the current focus.
 
 **3rd Party Integrations**
-- **ShipEngine API**: Used for fetching rates and creating shipping labels.
-- **Telegram Bot API**: Integrated via .
+- **ShipEngine API**: Used for fetching rates and creating shipping labels. Requires .
+- **Telegram Bot API**: Integrated via . Requires .
+- **OxaPay**: For crypto payments. Requires .
+- **OpenAI GPT-4o-mini**: Used for AI message generation via . Uses Emergent LLM Key.
 
 **Testing status**
 - **Testing agent used after significant changes:** NO
 - **Troubleshoot agent used after agent stuck in loop:** NO
-- **Test files created:** None.
-- **Known regressions:** The main menu button behavior is a regression in user experience.
+- **Test files created:** None
+- **Known regressions:** None
 
 **Credentials to test flow:**
-- All necessary API keys and bot tokens are stored in .
+All necessary API keys and bot tokens are stored in .
 
 **What agent forgot to execute**
-The agent attempted but failed to correctly implement the user's request to remove inline keyboard buttons after they are clicked. The implementation was flawed, as confirmed by the user.</analysis>
+- The agent has not fully completed the user's last request to refactor the template management flow. Only the first step was taken.
+- The agent proposed hiding the unstable FedEx carrier in sandbox mode to avoid confusion, but this was not implemented as there was no explicit user confirmation. This could be re-proposed as a quality-of-life improvement.</analysis>
