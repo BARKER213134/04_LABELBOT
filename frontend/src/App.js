@@ -8,6 +8,7 @@ import OrdersList from './components/OrdersList';
 import CreateOrder from './components/CreateOrder';
 import AdminPanel from './components/AdminPanel';
 import UsersManagement from './components/UsersManagement';
+import BroadcastPanel from './components/BroadcastPanel';
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
             <Route path="/orders" element={<OrdersList />} />
             <Route path="/create" element={<CreateOrder />} />
             <Route path="/users" element={<UsersManagement />} />
+            <Route path="/broadcast" element={<BroadcastPanel />} />
             <Route path="/admin" element={<AdminPanel />} />
           </Routes>
         </div>
