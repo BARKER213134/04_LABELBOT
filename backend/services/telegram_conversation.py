@@ -1756,6 +1756,9 @@ class TelegramConversationHandler:
     
     def get_conversation_handler(self) -> ConversationHandler:
         """Get the conversation handler"""
+        # Filter for text input excluding the main menu button
+        text_filter = filters.TEXT & ~filters.COMMAND & ~filters.Regex("^🏠 Главное меню$")
+        
         return ConversationHandler(
             entry_points=[
                 CommandHandler('create', self.start_create),
@@ -1764,28 +1767,28 @@ class TelegramConversationHandler:
                 CallbackQueryHandler(self.edit_template, pattern="^tpl_edit_"),
             ],
             states={
-                SHIP_FROM_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.ship_from_name)],
-                SHIP_FROM_ADDRESS: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.ship_from_address)],
-                SHIP_FROM_CITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.ship_from_city)],
-                SHIP_FROM_STATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.ship_from_state)],
-                SHIP_FROM_ZIP: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.ship_from_zip)],
+                SHIP_FROM_NAME: [MessageHandler(text_filter, self.ship_from_name)],
+                SHIP_FROM_ADDRESS: [MessageHandler(text_filter, self.ship_from_address)],
+                SHIP_FROM_CITY: [MessageHandler(text_filter, self.ship_from_city)],
+                SHIP_FROM_STATE: [MessageHandler(text_filter, self.ship_from_state)],
+                SHIP_FROM_ZIP: [MessageHandler(text_filter, self.ship_from_zip)],
                 SHIP_FROM_PHONE: [
-                    MessageHandler(filters.TEXT & ~filters.COMMAND, self.ship_from_phone),
+                    MessageHandler(text_filter, self.ship_from_phone),
                     CallbackQueryHandler(self.skip_from_phone_callback, pattern="^skip_from_phone$")
                 ],
                 
-                SHIP_TO_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.ship_to_name)],
-                SHIP_TO_ADDRESS: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.ship_to_address)],
-                SHIP_TO_CITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.ship_to_city)],
-                SHIP_TO_STATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.ship_to_state)],
-                SHIP_TO_ZIP: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.ship_to_zip)],
+                SHIP_TO_NAME: [MessageHandler(text_filter, self.ship_to_name)],
+                SHIP_TO_ADDRESS: [MessageHandler(text_filter, self.ship_to_address)],
+                SHIP_TO_CITY: [MessageHandler(text_filter, self.ship_to_city)],
+                SHIP_TO_STATE: [MessageHandler(text_filter, self.ship_to_state)],
+                SHIP_TO_ZIP: [MessageHandler(text_filter, self.ship_to_zip)],
                 SHIP_TO_PHONE: [
-                    MessageHandler(filters.TEXT & ~filters.COMMAND, self.ship_to_phone),
+                    MessageHandler(text_filter, self.ship_to_phone),
                     CallbackQueryHandler(self.skip_to_phone_callback, pattern="^skip_to_phone$")
                 ],
                 
-                PACKAGE_WEIGHT: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.package_weight)],
-                PACKAGE_DIMENSIONS: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.package_dimensions)],
+                PACKAGE_WEIGHT: [MessageHandler(text_filter, self.package_weight)],
+                PACKAGE_DIMENSIONS: [MessageHandler(text_filter, self.package_dimensions)],
                 
                 REVIEW_SUMMARY: [
                     CallbackQueryHandler(self.handle_edit_choice, pattern="^(edit_from|edit_to|edit_package|continue_to_carrier)$"),
@@ -1804,7 +1807,7 @@ class TelegramConversationHandler:
                 ],
                 
                 TEMPLATE_SAVE_NAME: [
-                    MessageHandler(filters.TEXT & ~filters.COMMAND, self.save_template_name),
+                    MessageHandler(text_filter, self.save_template_name),
                     CallbackQueryHandler(self.handle_edit_choice, pattern="^continue_to_carrier$"),
                     CallbackQueryHandler(self.back_to_review_from_template, pattern="^back_to_review_after_save$")
                 ],
