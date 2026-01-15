@@ -62,13 +62,19 @@ async def start_command(update, context):
         context.user_data['last_menu_message_id'] = sent_message.message_id
 
 async def check_balance_callback(update, context):
-    """Handle balance check button"""
+    """Handle balance check button - sends new message"""
     global _users_service
     
     query = update.callback_query
     await query.answer()
     
     logger.info(f"check_balance_callback triggered by user {update.effective_user.id}")
+    
+    # Remove buttons from old message (keep text)
+    try:
+        await query.edit_message_reply_markup(reply_markup=None)
+    except Exception:
+        pass
     
     user_id = str(update.effective_user.id)
     balance = 0.0
@@ -102,21 +108,26 @@ async def check_balance_callback(update, context):
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    await query.edit_message_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+    # Send as NEW message
+    await query.message.reply_text(text, reply_markup=reply_markup, parse_mode="Markdown")
 
 
 async def topup_balance_callback(update, context):
-    """Handle balance top-up request - ask for amount"""
+    """Handle balance top-up request - sends new message"""
     query = update.callback_query
     await query.answer()
     
     user_id = str(update.effective_user.id)
     logger.info(f"topup_balance_callback triggered by user {user_id}")
     
-    # Store state and message info in context
+    # Remove buttons from old message (keep text)
+    try:
+        await query.edit_message_reply_markup(reply_markup=None)
+    except Exception:
+        pass
+    
+    # Store state in context
     context.user_data['awaiting_topup_amount'] = True
-    context.user_data['topup_message_id'] = query.message.message_id
-    context.user_data['topup_chat_id'] = query.message.chat_id
     
     text = (
         "━━━━━━━━━━━━━━━━━━━━\n"
@@ -130,11 +141,14 @@ async def topup_balance_callback(update, context):
     
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
     keyboard = [
-        [InlineKeyboardButton("❌ Отмена", callback_data="check_balance")]
+        [InlineKeyboardButton("❌ Отмена", callback_data="cancel_topup")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    await query.edit_message_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+    # Send as NEW message and store its ID
+    sent_msg = await query.message.reply_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+    context.user_data['topup_message_id'] = sent_msg.message_id
+    context.user_data['topup_chat_id'] = sent_msg.chat_id
 
 
 async def process_topup_amount(update, context):
