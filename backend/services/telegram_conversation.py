@@ -1098,6 +1098,13 @@ class TelegramConversationHandler:
         data['rate_id'] = selected_rate.get('rate_id', '')
         data['total_cost'] = selected_rate.get('total_amount', 0)
         
+        # Get user balance
+        user_balance = 0.0
+        if self.users_service:
+            db_user = await self.users_service.get_user(user_id)
+            if db_user:
+                user_balance = db_user.get('balance', 0.0)
+        
         # Show confirmation
         carrier_name = selected_rate.get('carrier_friendly_name', selected_rate.get('carrier_code', ''))
         service_type = selected_rate.get('service_type', '')
@@ -1105,6 +1112,10 @@ class TelegramConversationHandler:
         total_price = selected_rate.get('total_amount', 0)
         
         delivery_text = f" ({delivery_days} дней)" if delivery_days else ""
+        
+        # Check if balance is sufficient
+        balance_status = "✅" if user_balance >= total_price else "❌"
+        balance_after = user_balance - total_price
         
         summary = (
             "━━━━━━━━━━━━━━━━━━━━\n"
@@ -1136,9 +1147,17 @@ class TelegramConversationHandler:
             f"\n🚚 *ДОСТАВКА*\n"
             f"▫️ Перевозчик: {carrier_name}\n"
             f"▫️ Сервис: {service_type}{delivery_text}\n"
-            f"\n💰 *СТОИМОСТЬ: ${total_price:.2f}*\n\n"
-            "━━━━━━━━━━━━━━━━━━━━"
+            f"\n💰 *СТОИМОСТЬ: ${total_price:.2f}*\n"
+            f"💳 *Ваш баланс: ${user_balance:.2f}* {balance_status}\n"
         )
+        
+        if user_balance >= total_price:
+            summary += f"▫️ После оплаты: ${balance_after:.2f}\n"
+        else:
+            needed = total_price - user_balance
+            summary += f"▫️ Не хватает: ${needed:.2f}\n"
+        
+        summary += "\n━━━━━━━━━━━━━━━━━━━━"
         
         keyboard = [
             [InlineKeyboardButton(f"✅ Оплатить ${total_price:.2f} и создать лейбл", callback_data="confirm_yes")],
