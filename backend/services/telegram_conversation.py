@@ -735,18 +735,16 @@ class TelegramConversationHandler:
         # Check if we're in edit mode
         if data.get('editing_field') == 'weight':
             data['editing_field'] = None
-            pounds = weight / 16
             await update.message.reply_text(
-                f"✅ *Вес сохранен* ({weight} oz ≈ {pounds:.2f} lbs)",
+                f"✅ *Вес сохранен* ({weight_lbs} lbs)",
                 parse_mode=ParseMode.MARKDOWN,
                 reply_markup=get_persistent_keyboard()
             )
             await self.show_review_summary(update.message, user_id)
             return REVIEW_SUMMARY
         
-        pounds = weight / 16
         text = (
-            f"✅ *Вес сохранен* ({weight} oz ≈ {pounds:.2f} lbs)\n\n"
+            f"✅ *Вес сохранен* ({weight_lbs} lbs)\n\n"
             "▫️ *Подшаг 3.2:* Размеры посылки\n\n"
             "Введите размеры через пробел в дюймах:\n"
             "*Длина Ширина Высота*\n\n"
