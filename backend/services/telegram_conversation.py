@@ -715,15 +715,18 @@ class TelegramConversationHandler:
         data = self.get_user_data(user_id)
         
         try:
-            weight = float(update.message.text.strip())
-            if weight <= 0:
+            weight_lbs = float(update.message.text.strip())
+            if weight_lbs <= 0:
                 raise ValueError()
-            data['packageWeight'] = weight
+            # Convert pounds to ounces for API
+            weight_oz = weight_lbs * 16
+            data['packageWeight'] = weight_oz
+            data['packageWeightLbs'] = weight_lbs
         except ValueError:
             text = (
                 "❌ *Некорректное значение*\n\n"
                 "Вес должен быть положительным числом.\n"
-                "_Например: 16 или 24.5_\n\n"
+                "_Например: 1 или 2.5_\n\n"
                 "Пожалуйста, попробуйте еще раз:"
             )
             await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
