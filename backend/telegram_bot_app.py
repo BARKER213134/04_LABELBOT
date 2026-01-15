@@ -56,7 +56,7 @@ async def start_command(update, context):
         logger.info(f"User {tg_user.id} ({tg_user.username}) - balance: ${balance:.2f}")
     
     # Send logo image
-    logo_url = "https://static.prod-images.emergentagent.com/jobs/fa626b61-cf8a-489c-95b6-c5cd0d1a57da/images/f2f2d483d36098d4c9662099a13944dcffa8b9944b82d7887eafa610eac54ecf.png"
+    logo_url = "https://customer-assets.emergentagent.com/job_shipnow-bot/artifacts/tnl64fud_JUST%20WHITE.png"
     await context.bot.send_photo(
         chat_id=update.effective_chat.id,
         photo=logo_url
