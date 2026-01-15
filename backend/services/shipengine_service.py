@@ -55,11 +55,11 @@ class ShipEngineService:
             if not carrier_ids:
                 raise ValueError("No carriers connected to ShipEngine account")
             
-            # Ensure company_name is explicitly set to single space to override defaults
+            # Remove company_name to avoid default values from carrier settings
             ship_from = shipment_data["ship_from"].copy()
             ship_to = shipment_data["ship_to"].copy()
-            ship_from["company_name"] = " "
-            ship_to["company_name"] = " "
+            ship_from.pop("company_name", None)
+            ship_to.pop("company_name", None)
             
             payload = {
                 "rate_options": {
