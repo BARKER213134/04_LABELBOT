@@ -592,6 +592,15 @@ async def template_delete_callback(update, context):
     global _templates_service
     
     query = update.callback_query
+    
+    user_id = str(update.effective_user.id)
+    
+    # Check if user is banned
+    if await check_user_banned(user_id):
+        await query.answer()
+        await send_banned_message(update.effective_chat.id, context.bot)
+        return
+    
     await query.answer()
     
     template_id = query.data.replace("tpl_del_", "")
