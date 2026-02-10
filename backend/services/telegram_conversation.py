@@ -2021,5 +2021,4 @@ class TelegramConversationHandler:
             per_chat=True,
             per_user=True,
             allow_reentry=True,
-            block=False,
         )
