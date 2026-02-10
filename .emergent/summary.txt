@@ -25,44 +25,53 @@ PRODUCT REQUIREMENTS:
 Russian. The next agent MUST respond in Russian.
 
 **what currently exists?**
-A full-stack application with a FastAPI backend, React frontend, and MongoDB. The system includes:
-- A web dashboard with an admin panel for switching environments, managing user balances, and a new broadcast panel for sending mass messages with image uploads and previews.
-- Admin functionality to ban, unban, and delete users from the user management table.
-- A Telegram bot with a multi-step  wizard for creating shipping labels, featuring extensive UX improvements and input validation.
-- Integration with the ShipEngine API to fetch rates (with a 0 markup) and create labels.
-- A complete user management system where users are created in the DB on first interaction. Banned users are blocked from using the bot.
-- A full template management system allowing users to create, view, use, edit, and delete shipment templates. The conversational flow was refactored to be more intuitive.
-- An integrated OxaPay payment gateway for users to top up their balance, with a Continue Order flow post-payment.
-- An AI message generator (GPT-4o-mini) that sends a unique, warm thank-you message in Russian after each successful label creation.
-- A secure label download feature that sends the PDF as a Telegram document.
+A full-stack application with a FastAPI backend, React frontend, and a production MongoDB Atlas database. The system is deployed and operational.
+- The web dashboard includes user management (ban/unban/delete), a broadcast panel, and environment switching.
+- The Telegram bot is now configured for two modes: the sandbox bot runs in polling mode for testing, and the production bot () runs via webhook on the deployed application.
+- The backend has undergone significant performance optimization, including connection pooling, in-memory caching for user data, lazy loading of modules (and subsequent pre-loading to reduce initial user delay), and asynchronous task execution.
+- The application has been made robust for Kubernetes deployment by resolving numerous startup and configuration issues.
 
 **Last working item**:
-- **Last item agent was working:** Implementing functionality for an admin to ban, unban, or delete a user directly from the user management table in the web dashboard. A banned user should be notified and blocked from using the bot.
+- **Last item agent was working:** Final round of performance optimizations for the Telegram bot to make it as fast as possible. This involved adding a new in-memory caching service (), refactoring several bot handlers in  to use background tasks () and caching to reduce response latency. Also removed a redundant  command, keeping only .
 - **Status:** USER VERIFICATION PENDING
-- **Agent Testing Done:** N
-- **Which testing method agent to use?** Manual testing.
-    1.  Go to the admin panel -> Users tab.
-    2.  Click Ban on a user. Verify a notification is sent to the bot user.
-    3.  As the banned user, try using the bot (). It should show a banned message.
-    4.  In the admin panel, click Unban.
-    5.  As the user, try using the bot again. It should now work.
-    6.  In the admin panel, click Delete. Verify the user is removed from the list and the database.
+- **Agent Testing Done:** Y (Agent performed extensive manual testing of all components, including API endpoints, bot functionality, and simulated production environment startup.)
+- **Which testing method agent to use?** Manual testing by user. The user should be asked to test the production bot's responsiveness and overall speed.
 - **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
 - **Issue 1:** The text SITKAGEAR may still appear on UPS labels. (Priority: P0)
+- **Issue 2:** User reports of slowness, despite massive performance optimizations. (Priority: P1)
 
 **Issues Detail:**
 - **Issue 1:**
-    - **Description:** SITKAGEAR appears as the company name on UPS labels. This is a recurring issue, likely due to a default setting in the ShipEngine account that overrides API values.
-    - **Attempted fixes:** The agent set the  field to  (a hyphen) in the API calls within , as the user indicated this worked previously.
+    - **Description:** SITKAGEAR appears as the company name on UPS labels. This is a recurring issue, likely due to a default setting in the user's ShipEngine account that overrides API values.
+    - **Attempted fixes:** The agent previously set the  field to  (a hyphen) in . This fix was never verified by the user in the current session.
     - **Next debug checklist:**
-        1.  Ask the user to create a new UPS label to confirm if the hyphen fix worked.
-        2.  If it failed, inform the user that the setting is likely in their ShipEngine account dashboard and cannot be fixed via code. Advise them to check their UPS carrier settings in ShipEngine and remove the default company name.
+        1.  Ask the user to create a new UPS label in the production environment to confirm if the hyphen fix worked.
+        2.  If it failed, inform the user that the setting is in their ShipEngine account dashboard and cannot be fixed via code. Advise them to check their UPS carrier settings in ShipEngine and remove any default company name.
     - **Why fix this issue and what will be achieved with the fix?** To produce professional-looking labels without an incorrect company name.
     - **Status:** USER VERIFICATION PENDING
     - **Is recurring issue?** Y
-    - **Should Test frontend/backend/both after fix?** Backend (Telegram bot interaction to create a label).
+    - **Should Test frontend/backend/both after fix?** Backend (via production Telegram bot).
+    - **Blocked on other issue:** None
+
+- **Issue 2:**
+    - **Description:** The user has repeatedly stated the bot is slow, especially on initial startup.
+    - **Attempted fixes:** The agent has performed multiple rounds of extensive optimization:
+        1.  **Lazy Loading:** Implemented lazy loading for the Telegram module to speed up server startup from ~2s to ~0.6s, which resolved deployment timeout issues.
+        2.  **Pre-loading:** Reverted lazy loading and implemented pre-loading of the bot instance during server startup ( event) to eliminate the first-user delay.
+        3.  **Caching:** Added a new in-memory cache () for user data and bot instances to minimize database lookups.
+        4.  **Async Tasks:** Refactored multiple handlers to perform non-essential actions (like balance checks) in the background.
+        5.  **DB Pooling:** Enabled MongoDB connection pooling ().
+        6.  **API Timeouts:** Tuned  API timeouts.
+    - **Next debug checklist:**
+        1.  Get specific feedback from the user on which commands are slow in the deployed production environment.
+        2.  Analyze logs for any remaining long-running operations.
+        3.  Consider more advanced caching strategies (e.g., Redis) if the in-memory cache is insufficient, though this might be overkill.
+    - **Why fix this issue and what will be achieved with the fix?** To meet user expectations of a momentary fast bot.
+    - **Status:** IN PROGRESS
+    - **Is recurring issue?** Y
+    - **Should Test frontend/backend/both after fix?** Backend (production bot performance).
     - **Blocked on other issue:** None
 
 **In progress Task List**:
@@ -74,27 +83,33 @@ None.
     - **FedEx Sandbox Handling (P2):** FedEx is unstable in the sandbox environment. Implement a feature to hide FedEx as a carrier option when the bot is in sandbox mode to prevent user errors.
 
 **Completed work in this session**
-- **Admin Broadcast Feature:** Created a Рассылка (Broadcast) tab in the admin panel for sending mass messages with image upload and live preview.
-- **User Ban/Delete Functionality:** Implemented Ban, Unban, and Delete actions for users in the admin panel.
-- **Bot Flow Refactoring:** Changed template and balance management to use new messages for each step instead of editing one, improving clarity.
-- **Comprehensive Bot UX Improvements:**
-    - Added user balance display to the rate selection and order confirmation screens.
-    - Changed weight input from ounces to pounds (lbs) for user convenience.
-    - Added a Continue Order button to the notification after a user tops up their balance.
-    - Added an inline Главное меню button to the data review screen.
-    - Replaced the welcome image with a user-provided logo.
-    - Cleaned up the bot's command menu (, ).
-- **Input Validation:** Added validation for phone number length and for ensuring address fields are entered in English.
-- **Bug Fix:** Ensured inline keyboard buttons are correctly removed after a rate is selected.
-- **Bug Fix (Attempted):** Set  to  to try and fix the recurring SITKAGEAR issue on UPS labels.
+- **Production Deployment Fixes:** Resolved numerous critical deployment blockers, enabling a successful production launch. This included fixing startup timeouts, handling environment variables correctly, adding a  endpoint, and configuring the app for a production MongoDB Atlas connection.
+- **Ban Functionality Fix:** Comprehensively fixed the user ban feature. A banned user is now correctly blocked across all bot functions, not just the  command.
+- **Dual Bot Environment:** Configured the application to run the test bot in a local polling mode () while the production bot operates via webhook on the deployed server.
+- **Webhook Management:** Corrected the Telegram webhook URL multiple times as the deployment URL changed, ultimately setting it to the final production URL.
+- **Performance Optimization:**
+    - Implemented a new in-memory caching layer ().
+    - Optimized server startup time from ~2s to ~0.6s and then moved bot initialization to the startup phase to eliminate first-user lag.
+    - Added connection pooling to MongoDB.
+    - Refactored multiple bot handlers to use background tasks for non-critical operations.
+    - Optimized Telegram API call settings.
+- **Bug Fixes:**
+    - Fixed a bug where the Отмена button did not disappear after saving a template.
+    - Fixed a bug where the Отменить button on the order confirmation screen was not working.
+    - Resolved a  for .
+    - Removed a redundant Перезагрузить бота menu command, leaving only .
+- **AI Message Tuning:** Iteratively refined the AI-generated thank-you message prompt based on user feedback to be more official yet varied.
+- **UI/UX Cleanup:**
+    - Removed the display of  from the rate selection and confirmation screens.
+- **Database Configuration:** Successfully configured, URL-encoded, and tested the connection to the user's production MongoDB Atlas instance.
 
 **Earlier issues found/mentioned but not fixed**
-None.
+None that weren't addressed in some capacity. The  issue is tracked under Pending Issues.
 
 **Known issue recurrence from previous fork**
 - **Issue:** The  text appearing on UPS labels was marked as fixed previously but reappeared.
 - **Recurrence count:** 1
-- **Status:** IN PROGRESS (awaiting user verification of the latest fix).
+- **Status:** USER VERIFICATION PENDING
 
 **Code Architecture**
 
@@ -102,8 +117,10 @@ None.
 **Key Technical Concepts**
 - **Backend:** FastAPI, Pydantic, Motor (async MongoDB driver)
 - **Frontend:** React, React Router, Axios, Tailwind CSS
-- **Bot:** , 
-- **API Integration:** ShipEngine, OxaPay, OpenAI (via )
+- **Bot:**  v21+, 
+- **Database:** MongoDB Atlas (for production)
+- **Deployment:** Kubernetes on Emergent Platform, Nginx, Supervisor
+- **Performance:** In-memory caching, asyncio background tasks, MongoDB connection pooling, lazy/eager module loading.
 
 **key DB schema**
 - ****: 
@@ -111,68 +128,69 @@ None.
 - ****: 
 
 **changes in tech stack**
-None.
+- The database for the production environment is now a remote MongoDB Atlas cluster, not the local instance.
 
 **All files of reference**
-- : Updated with ban/unban/delete endpoints.
-- : Updated with ban/unban/delete buttons.
-- : New file for the broadcast API endpoint.
-- : New file for the broadcast UI.
-- : Updated with ban check logic and various UX refactors.
-- : Heavily updated with input validation and multiple UX improvements.
-- : Updated to attempt a fix for the  issue.
+- : Major changes to handle production environment, robust startup, logging, and pre-loading the bot.
+- : Major changes to fix ban logic, implement performance optimizations (caching, async tasks), and tune API calls.
+- : Multiple bug fixes related to conversation flow and new performance optimizations.
+- : Made more robust for production deployment.
+- : Added connection pooling and refined connection logic for Atlas.
+- : Refactored to pre-load the bot instance during server startup.
+- : **New file** for a simple in-memory caching mechanism.
+- : **New file** to run the sandbox bot in polling mode.
+- : Updated with the production MongoDB Atlas URL.
 
 **Areas that need refactoring**:
--  and  are monolithic. They should be broken down into smaller, feature-specific modules under a  directory for better maintainability.
+-  and  are still monolithic and would benefit from being broken down into smaller modules.
 
 **key api endpoints**
-- : Sends a mass message to all users.
-- : Bans a user.
-- : Unbans a user.
-- : Deletes a user.
-- : Main webhook for the Telegram bot.
-- : Webhook for receiving OxaPay payment status updates.
+- : New root health check endpoint added for Kubernetes liveness probes.
+- : The main endpoint for the production bot.
 
 **Critical Info for New Agent**
-- **Verification Needed:** The top priorities are to have the user test the new ban/delete functionality and verify if the  issue on UPS labels is resolved by the latest fix ().
-- **User Feedback:** The user provides frequent, iterative feedback and may change their mind on UI/UX features (e.g., the persistent Main Menu button was requested, implemented, and then removed). Be prepared to adapt and confirm requirements clearly.
-- **Sandbox Limitations:** Remember that the ShipEngine sandbox is unstable for FedEx. This is a known external limitation.
+- **The application is LIVE.** The primary focus has shifted from initial development to debugging and optimizing the live, deployed application.
+- **Performance is Key:** The user is highly sensitive to the bot's speed. While many optimizations have been implemented, the next agent must continue to prioritize and validate performance.
+- **Two Bot Environments:** Remember the dual setup. The sandbox bot runs via . The production bot is part of the FastAPI server and runs via webhook on the deployed URL. Changes need to be tested with this in mind.
+- **Deployment is Sensitive:** The application startup sequence is finely tuned to pass Kubernetes health checks. Be cautious when adding new imports or logic to the startup path (, ).
 
 **documents and test reports created in this job**
--  (Updated during the session)
+None.
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  (Add ban/delete buttons for each user in admin panel): **In Progress (Coding Done, Verification Pending)**
-2.  (Check if the AI thank you message is connected): **Completed**.
-3.  (Need to enter weight in pounds, not ounces): **Completed**.
-4.  (Add user balance display and remove the sandbox notice): **Completed**.
-5.  (There must be validation everywhere, user must enter everything in English): **Completed**.
-6.  (Need to verify phone number by number of characters): **Completed**.
-7.  (Replace the hand emoji with a logo): **Completed**.
-8.  (The menu button didn't appear): **Completed** (Agent explained Telegram cache).
-9.  (Make it so when you open the menu, there's a main menu button): **Completed**.
-10.  (No, that's nonsense, remove the main menu button): **Completed** (Agent removed the persistent button per user request).
+1.  (leave only one of the buttons, they do the same thing): **Completed**. Agent removed the redundant menu command.
+2.  (continue): **Completed**. User asked the agent to continue the optimization task.
+3.  (how to make it even faster?): **In Progress**. User wants maximum possible speed.
+4.  (nothing is happening): **Resolved**. User reported the bot was broken after an optimization attempt. Agent found and fixed a  API misuse.
+5.  (do research and testing right away): **Completed**. User asked the agent to test fixes thoroughly before replying.
+6.  (make it even faster): **In Progress**. Another request for performance improvements.
+7.  (also make the timeout as low as possible...): **Completed**. User requested aggressive timeouts for the Telegram API.
+8.  (there is a long timeout when pressing start or reloading the bot): **Resolved**. This was due to lazy loading, which the agent changed to pre-loading.
+9. : **Investigated**. User pasted a deployment log error. Agent identified it as a normal timeout during a busy server state.
+10.  (everything works very slowly): **In Progress**. The initial complaint about high latency from MongoDB Atlas, which kicked off the major performance optimization effort.
 
 **Project Health Check:**
-- **Broken:** None.
+- **Broken:** None. The application is deployed and functional.
 - **Mocked:** None.
-- **Needs Improvement:** The  issue requires final verification. The new ban/delete feature needs to be tested by the user.
+- **Needs Improvement:**
+    - Overall application speed is still a user concern.
+    - The  label issue needs final user verification.
 
 **3rd Party Integrations**
-- **ShipEngine API**: For rates and labels. Requires .
-- **Telegram Bot API**: Via . Requires .
-- **OxaPay**: For crypto payments. Requires .
+- **ShipEngine API**: For rates and labels.
+- **Telegram Bot API**: Via .
+- **OxaPay**: For crypto payments.
 - **OpenAI GPT-4o-mini**: For AI thank-you messages. Uses Emergent LLM Key.
+- **MongoDB Atlas**: Production database.
 
 **Testing status**
 - **Testing agent used after significant changes:** NO
-- **Troubleshoot agent used after agent stuck in loop:** NO
+- **Troubleshoot agent used after agent stuck in loop:** YES (Effectively, the agent used the  as a troubleshooting tool for deployment issues).
 - **Test files created:** None
 - **Known regressions:** None
 
 **Credentials to test flow:**
-All necessary API keys and tokens are stored in .
+All keys are in . The production app uses the variables set in the Emergent deployment dashboard, which should mirror the production values in the  file.
 
 **What agent forgot to execute**
-- The agent implemented the user ban/delete feature but did not perform any testing or ask the user to verify it before finishing the session.
-- The agent did not get final confirmation from the user on whether the latest  fix was successful.</analysis>
+- The agent did not follow up on the original pending issue from the previous handoff: verifying if the  fix was successful. This task was overshadowed by the critical deployment and ban functionality bugs.</analysis>
