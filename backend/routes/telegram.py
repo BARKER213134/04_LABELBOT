@@ -15,31 +15,33 @@ logger = logging.getLogger(__name__)
 # Pre-loaded bot application
 _cached_bot_app = None
 _bot_loading = False
+_bot_lock = asyncio.Lock()
 
 # Deduplication cache for processed update IDs (last 1000 updates)
 _processed_updates = {}
 _MAX_CACHED_UPDATES = 1000
 
 async def _preload_bot():
-    """Preload bot application in background"""
+    """Preload bot application"""
     global _cached_bot_app, _bot_loading
-    if _cached_bot_app is None and not _bot_loading:
-        _bot_loading = True
-        try:
-            from telegram_bot_app import get_or_create_app
-            _cached_bot_app = await get_or_create_app("production")
-            logger.info("Bot application preloaded")
-        except Exception as e:
-            logger.error(f"Failed to preload bot: {e}")
-        finally:
-            _bot_loading = False
+    async with _bot_lock:
+        if _cached_bot_app is None and not _bot_loading:
+            _bot_loading = True
+            try:
+                logger.warning("[BOT] Starting bot preload...")
+                from telegram_bot_app import get_or_create_app
+                _cached_bot_app = await get_or_create_app("production")
+                logger.warning("[BOT] Bot application preloaded successfully")
+            except Exception as e:
+                logger.error(f"[BOT] Failed to preload bot: {e}")
+            finally:
+                _bot_loading = False
 
 async def _get_bot_app():
-    """Get cached bot app or load it"""
+    """Get cached bot app or load it (with lock to prevent race conditions)"""
     global _cached_bot_app
     if _cached_bot_app is None:
-        from telegram_bot_app import get_or_create_app
-        _cached_bot_app = await get_or_create_app("production")
+        await _preload_bot()
     return _cached_bot_app
 
 # Start preloading bot in background when module loads
