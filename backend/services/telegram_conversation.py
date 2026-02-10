@@ -2018,5 +2018,8 @@ class TelegramConversationHandler:
                 CallbackQueryHandler(self.back_to_menu_fallback, pattern="^back_to_menu$"),
             ],
             per_message=False,
+            per_chat=True,
+            per_user=True,
             allow_reentry=True,
+            block=False,
         )
