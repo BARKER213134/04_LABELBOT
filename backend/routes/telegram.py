@@ -77,28 +77,15 @@ def _is_duplicate_update(update_id: int) -> bool:
     return False
 
 
-async def _process_update_background(update_data: dict):
-    """Process Telegram update in background"""
-    try:
-        app = await _get_bot_app()
-        update = Update.de_json(update_data, app.bot)
-        await app.process_update(update)
-    except (TimedOut, NetworkError) as e:
-        logger.warning(f"Telegram timeout in background: {e}")
-    except Exception as e:
-        logger.error(f"Background processing error: {e}")
-
-
 @router.post("/webhook")
 async def telegram_webhook(
     request: Request,
-    background_tasks: BackgroundTasks,
     settings: Settings = Depends(get_settings),
     db: AsyncIOMotorDatabase = Depends(get_database)
 ):
     """
     Unified webhook handler for Telegram bot
-    Returns immediately and processes in background to avoid Telegram retries
+    Processes synchronously to maintain conversation state
     """
     try:
         update_data = await request.json()
@@ -109,11 +96,19 @@ async def telegram_webhook(
             logger.debug(f"Duplicate update {update_id} ignored")
             return JSONResponse(content={"status": "ok"})
         
-        # Process in background - respond immediately to Telegram
-        asyncio.create_task(_process_update_background(update_data))
+        # Get cached bot application
+        app = await _get_bot_app()
+        
+        # Process update synchronously to maintain conversation state
+        update = Update.de_json(update_data, app.bot)
+        await app.process_update(update)
         
         return JSONResponse(content={"status": "ok"})
     
+    except (TimedOut, NetworkError) as e:
+        logger.warning(f"Telegram timeout: {e}")
+        return JSONResponse(content={"status": "ok"})
+        
     except Exception as e:
         logger.error(f"Webhook error: {e}")
         return JSONResponse(content={"status": "ok", "error": str(e)})
