@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     
     # MongoDB
     mongo_url: str
+    mongo_url_prod: str = ""  # Production MongoDB URL (optional)
     db_name: str
     
     # ShipEngine
