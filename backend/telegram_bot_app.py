@@ -160,7 +160,7 @@ async def _safe_remove_buttons(query):
 
 
 async def topup_balance_callback(update, context):
-    """Handle balance top-up - FAST"""
+    """Handle balance top-up - using buttons instead of text input"""
     query = update.callback_query
     await query.answer()
     
@@ -170,89 +170,126 @@ async def topup_balance_callback(update, context):
         return
     
     asyncio.create_task(_safe_remove_buttons(query))
-    context.user_data['awaiting_topup_amount'] = True
     
     text = (
         "💳 *ПОПОЛНЕНИЕ БАЛАНСА*\n\n"
-        "Введите сумму в USD\n"
+        "Выберите сумму пополнения:\n"
         "▫️ Минимум: $10\n"
         "▫️ Крипто: BTC, ETH, USDT, LTC"
     )
     
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-    keyboard = [[InlineKeyboardButton("❌ Отмена", callback_data="cancel_topup")]]
+    keyboard = [
+        [
+            InlineKeyboardButton("$10", callback_data="topup_10"),
+            InlineKeyboardButton("$25", callback_data="topup_25"),
+            InlineKeyboardButton("$50", callback_data="topup_50"),
+        ],
+        [
+            InlineKeyboardButton("$100", callback_data="topup_100"),
+            InlineKeyboardButton("$200", callback_data="topup_200"),
+            InlineKeyboardButton("$500", callback_data="topup_500"),
+        ],
+        [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+    ]
     
-    sent = await query.message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
-    context.user_data['topup_message_id'] = sent.message_id
-    context.user_data['topup_chat_id'] = sent.chat_id
+    await query.message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
 
 
-async def process_topup_amount(update, context):
-    """Process top-up amount - FAST"""
-    if not context.user_data.get('awaiting_topup_amount'):
-        return False
+async def topup_amount_callback(update, context):
+    """Handle topup amount button click"""
+    query = update.callback_query
+    await query.answer()
     
     user_id = str(update.effective_user.id)
-    text_input = update.message.text.strip()
-    context.user_data['awaiting_topup_amount'] = False
+    if banned_cache.get(f"ban_{user_id}"):
+        await send_banned_message(update.effective_chat.id, context.bot)
+        return
     
-    message_id = context.user_data.get('topup_message_id')
-    chat_id = context.user_data.get('topup_chat_id')
-    if message_id and chat_id:
-        try:
-            await context.bot.edit_message_reply_markup(
-                chat_id=chat_id,
-                message_id=message_id,
-                reply_markup=None
-            )
-        except Exception:
-            pass
+    # Parse amount from callback data (topup_XX)
+    amount_str = query.data.replace("topup_", "")
+    try:
+        amount = float(amount_str)
+    except ValueError:
+        await query.message.reply_text("❌ Ошибка. Попробуйте снова.")
+        return
+    
+    asyncio.create_task(_safe_remove_buttons(query))
+    
+    # Create payment invoice
+    await create_crypto_invoice_from_callback(query, context, user_id, amount)
+
+
+async def create_crypto_invoice_from_callback(query, context, user_id: str, amount: float):
+    """Create OxaPay crypto invoice from callback"""
+    from database import Database
+    from services.oxapay_service import OxaPayService
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+    
+    # Send loading message
+    loading_msg = await query.message.reply_text(
+        "⏳ *Создаю платёж...*",
+        parse_mode="Markdown"
+    )
     
     try:
-        amount = float(text_input.replace('$', '').replace(',', '.'))
+        db = Database.db
+        oxapay_service = OxaPayService(db)
         
-        if amount < 10:
-            from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-            keyboard = [[InlineKeyboardButton("❌ Отмена", callback_data="cancel_topup")]]
-            sent_msg = await update.message.reply_text(
-                "❌ *Минимальная сумма: $10*\n\nПожалуйста, введите сумму от $10",
-                reply_markup=InlineKeyboardMarkup(keyboard),
-                parse_mode="Markdown"
+        result = await oxapay_service.create_invoice(
+            user_id=user_id,
+            telegram_id=user_id,
+            amount=amount,
+            currency="USD"
+        )
+        
+        if result.get("success"):
+            payment_url = result.get("payment_url")
+            
+            text = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "💳 *ОПЛАТА СОЗДАНА*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"💰 Сумма: *${amount:.2f}*\n\n"
+                "▫️ Нажмите кнопку ниже для оплаты\n"
+                "▫️ Принимаем: BTC, ETH, USDT, LTC\n"
+                "▫️ После оплаты баланс обновится автоматически\n\n"
+                "⏰ *Срок оплаты: 60 минут*\n\n"
+                "━━━━━━━━━━━━━━━━━━━━"
             )
-            context.user_data['awaiting_topup_amount'] = True
-            context.user_data['topup_message_id'] = sent_msg.message_id
-            context.user_data['topup_chat_id'] = sent_msg.chat_id
-            return True
+            
+            track_id = result.get("track_id")
+            keyboard = [
+                [InlineKeyboardButton("💳 Оплатить криптой", url=payment_url)],
+                [InlineKeyboardButton("🔄 Проверить статус", callback_data=f"check_payment_{track_id}")],
+                [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            
+            await loading_msg.edit_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+        else:
+            raise Exception("Failed to create invoice")
+            
+    except Exception as e:
+        logger.error(f"Failed to create crypto invoice: {e}")
         
-        if amount > 10000:
-            from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-            keyboard = [[InlineKeyboardButton("❌ Отмена", callback_data="cancel_topup")]]
-            sent_msg = await update.message.reply_text(
-                "❌ *Максимальная сумма: $10,000*\n\nПожалуйста, введите меньшую сумму",
-                reply_markup=InlineKeyboardMarkup(keyboard),
-                parse_mode="Markdown"
-            )
-            context.user_data['awaiting_topup_amount'] = True
-            context.user_data['topup_message_id'] = sent_msg.message_id
-            context.user_data['topup_chat_id'] = sent_msg.chat_id
-            return True
+        keyboard = [
+            [InlineKeyboardButton("🔄 Попробовать снова", callback_data="topup_balance")],
+            [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
         
-        # Create payment invoice - send new message
-        await create_crypto_invoice(update, context, user_id, amount)
-        return True
-        
-    except ValueError:
-        from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-        keyboard = [[InlineKeyboardButton("❌ Отмена", callback_data="cancel_topup")]]
-        sent_msg = await update.message.reply_text(
-            "❌ *Некорректная сумма*\n\nВведите число, например: 25 или 50.00",
-            reply_markup=InlineKeyboardMarkup(keyboard),
+        await loading_msg.edit_text(
+            f"❌ *Ошибка создания платежа*\n\n{str(e)}\n\nПопробуйте позже.",
+            reply_markup=reply_markup,
             parse_mode="Markdown"
         )
-        context.user_data['awaiting_topup_amount'] = True
-        context.user_data['topup_message_id'] = sent_msg.message_id
-        context.user_data['topup_chat_id'] = sent_msg.chat_id
-        return True
+
+
+# Keep old function for compatibility but it's no longer used
+async def process_topup_amount(update, context):
+    """Process top-up amount - DEPRECATED, using buttons now"""
+    pass
 
 
 async def cancel_topup_callback(update, context):
