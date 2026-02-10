@@ -598,6 +598,8 @@ class TelegramConversationHandler:
         user_id = str(update.effective_user.id)
         state = update.message.text.strip().upper()
         
+        logger.warning(f"[DEBUG] ship_to_state called for user {user_id}, input: '{state}'")
+        
         if len(state) != 2 or not state.isalpha():
             text = (
                 "❌ *Некорректный формат*\n\n"
@@ -627,6 +629,7 @@ class TelegramConversationHandler:
         )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        logger.warning(f"[DEBUG] ship_to_state completed for user {user_id}, returning SHIP_TO_ZIP")
         return SHIP_TO_ZIP
     
     async def ship_to_zip(self, update: Update, context) -> int:
