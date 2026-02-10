@@ -806,7 +806,14 @@ async def setup_bot_application(environment='sandbox'):
     application.add_handler(CallbackQueryHandler(refund_info_callback, pattern="^refund_info$"))
     application.add_handler(CallbackQueryHandler(faq_info_callback, pattern="^faq_info$"))
     
-    # NO global text handler - ConversationHandler handles ALL text during label creation
+    # Text handler for topup amount - in group 2 (lowest priority)
+    # Only processes if user is in topup mode AND not in ConversationHandler
+    async def handle_topup_text(update, context):
+        """Handle text input ONLY for topup amount"""
+        if context.user_data.get('awaiting_topup_amount'):
+            await process_topup_amount(update, context)
+    
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_topup_text), group=2)
     
     logger.info("Bot application setup complete")
     return application
