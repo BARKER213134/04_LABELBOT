@@ -5,19 +5,47 @@ from telegram.error import TimedOut, NetworkError
 from config import get_settings, Settings
 from database import get_database
 import logging
+import asyncio
 
 router = APIRouter(prefix="/telegram", tags=["telegram"])
 logger = logging.getLogger(__name__)
 
-# Lazy import for telegram_bot_app to speed up startup
-_bot_app_module = None
+# Pre-loaded bot application
+_cached_bot_app = None
+_bot_loading = False
 
-def _get_bot_app_module():
-    global _bot_app_module
-    if _bot_app_module is None:
+async def _preload_bot():
+    """Preload bot application in background"""
+    global _cached_bot_app, _bot_loading
+    if _cached_bot_app is None and not _bot_loading:
+        _bot_loading = True
+        try:
+            from telegram_bot_app import get_or_create_app
+            _cached_bot_app = await get_or_create_app("production")
+            logger.info("Bot application preloaded")
+        except Exception as e:
+            logger.error(f"Failed to preload bot: {e}")
+        finally:
+            _bot_loading = False
+
+async def _get_bot_app():
+    """Get cached bot app or load it"""
+    global _cached_bot_app
+    if _cached_bot_app is None:
         from telegram_bot_app import get_or_create_app
-        _bot_app_module = get_or_create_app
-    return _bot_app_module
+        _cached_bot_app = await get_or_create_app("production")
+    return _cached_bot_app
+
+# Start preloading bot in background when module loads
+def _start_preload():
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            asyncio.create_task(_preload_bot())
+    except:
+        pass
+
+_start_preload()
 
 @router.post("/webhook")
 async def telegram_webhook(
@@ -27,17 +55,12 @@ async def telegram_webhook(
 ):
     """
     Unified webhook handler for Telegram bot
-    Uses production environment by default
     """
     try:
         update_data = await request.json()
         
-        # Use production environment (faster - no DB query needed)
-        current_env = "production"
-        
-        # Get appropriate bot application (lazy load)
-        get_or_create_app = _get_bot_app_module()
-        app = await get_or_create_app(current_env)
+        # Get cached bot application
+        app = await _get_bot_app()
         
         # Process the update
         update = Update.de_json(update_data, app.bot)
@@ -46,11 +69,16 @@ async def telegram_webhook(
         return {"status": "ok"}
     
     except (TimedOut, NetworkError) as e:
-        # Telegram timeout - not critical, just log and return OK
-        logger.warning(f"Telegram timeout (will retry): {e}")
+        logger.warning(f"Telegram timeout: {e}")
         return {"status": "ok", "warning": "timeout"}
         
     except Exception as e:
-        logger.error(f"Webhook error: {e}", exc_info=True)
-        # Return OK to prevent Telegram from retrying
+        logger.error(f"Webhook error: {e}")
         return {"status": "ok", "error": str(e)}
+
+
+@router.get("/preload")
+async def preload_bot():
+    """Endpoint to trigger bot preloading"""
+    await _preload_bot()
+    return {"status": "ok", "bot_loaded": _cached_bot_app is not None}
