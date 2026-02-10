@@ -445,9 +445,17 @@ async def back_to_menu_callback(update, context):
     global _users_service
     
     query = update.callback_query
-    await query.answer()
     
     user_id = str(update.effective_user.id)
+    
+    # Check if user is banned
+    if await check_user_banned(user_id):
+        await query.answer()
+        await send_banned_message(update.effective_chat.id, context.bot)
+        return
+    
+    await query.answer()
+    
     balance = 0.0
     
     if _users_service:
