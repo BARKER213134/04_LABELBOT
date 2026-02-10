@@ -1300,10 +1300,7 @@ class TelegramConversationHandler:
         # Show confirmation
         carrier_name = selected_rate.get('carrier_friendly_name', selected_rate.get('carrier_code', ''))
         service_type = selected_rate.get('service_type', '')
-        delivery_days = selected_rate.get('delivery_days', '')
         total_price = selected_rate.get('total_amount', 0)
-        
-        delivery_text = f" ({delivery_days} дней)" if delivery_days else ""
         
         # Check if balance is sufficient
         balance_status = "✅" if user_balance >= total_price else "❌"
@@ -1339,7 +1336,7 @@ class TelegramConversationHandler:
             f"▫️ Размеры: {data.get('packageLength')}×{data.get('packageWidth')}×{data.get('packageHeight')} дюймов\n"
             f"\n🚚 *ДОСТАВКА*\n"
             f"▫️ Перевозчик: {carrier_name}\n"
-            f"▫️ Сервис: {service_type}{delivery_text}\n"
+            f"▫️ Сервис: {service_type}\n"
             f"\n💰 *СТОИМОСТЬ: ${total_price:.2f}*\n"
             f"💳 *Ваш баланс: ${user_balance:.2f}* {balance_status}\n"
         )
