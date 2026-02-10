@@ -821,8 +821,8 @@ async def setup_bot_application(environment='sandbox'):
     application.add_handler(CallbackQueryHandler(refund_info_callback, pattern="^refund_info$"))
     application.add_handler(CallbackQueryHandler(faq_info_callback, pattern="^faq_info$"))
     
-    # Add message handler for top-up amount input
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text_input))
+    # Add message handler for top-up amount input (group=1 to not interfere with ConversationHandler)
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text_input), group=1)
     
     logger.info("Bot application setup complete")
     return application
