@@ -25,10 +25,40 @@ logger = logging.getLogger(__name__)
 _users_service = None
 _templates_service = None
 
+async def check_user_banned(user_id: str) -> bool:
+    """Check if user is banned"""
+    global _users_service
+    if _users_service:
+        user = await _users_service.get_user(user_id)
+        if user and user.get('is_banned', False):
+            return True
+    return False
+
+
+async def send_banned_message(chat_id: int, bot):
+    """Send banned message to user"""
+    message = (
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "🚫 *ДОСТУП ЗАПРЕЩЁН*\n"
+        "━━━━━━━━━━━━━━━━━━━━\n\n"
+        "Ваш аккаунт заблокирован.\n\n"
+        "Свяжитесь с поддержкой для разблокировки.\n\n"
+        "━━━━━━━━━━━━━━━━━━━━"
+    )
+    await bot.send_message(chat_id=chat_id, text=message, parse_mode="Markdown")
+
+
 async def start_command(update, context):
     """Handle /start command"""
     global _users_service
     from telegram import ReplyKeyboardRemove
+    
+    user_id = str(update.effective_user.id)
+    
+    # Check if user is banned
+    if await check_user_banned(user_id):
+        await send_banned_message(update.effective_chat.id, context.bot)
+        return
     
     # Remove buttons from the previous menu message (keep the message text)
     try:
