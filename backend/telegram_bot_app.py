@@ -796,7 +796,6 @@ async def setup_bot_application(environment='sandbox'):
     from telegram.ext import CallbackQueryHandler, MessageHandler, filters
     application.add_handler(CallbackQueryHandler(check_balance_callback, pattern="^check_balance$"))
     application.add_handler(CallbackQueryHandler(topup_balance_callback, pattern="^topup_balance$"))
-    application.add_handler(CallbackQueryHandler(topup_amount_callback, pattern="^topup_\\d+$"))  # topup_10, topup_25, etc.
     application.add_handler(CallbackQueryHandler(cancel_topup_callback, pattern="^cancel_topup$"))
     application.add_handler(CallbackQueryHandler(check_payment_status_callback, pattern="^check_payment_"))
     application.add_handler(CallbackQueryHandler(back_to_menu_callback, pattern="^back_to_menu$"))
