@@ -6,13 +6,14 @@ import logging
 import sys
 from pathlib import Path
 
-# Configure logging FIRST
+# Configure logging - WARNING level for speed
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.WARNING,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     stream=sys.stdout
 )
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)  # Keep server logs at INFO
 
 logger.info("=" * 50)
 logger.info("Starting ShipBot API server...")
