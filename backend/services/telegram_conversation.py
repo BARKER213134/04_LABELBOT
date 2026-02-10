@@ -1120,12 +1120,8 @@ class TelegramConversationHandler:
             for rate in sorted_carrier_rates[:4]:
                 service_type = rate.get('service_type', rate.get('service_code', ''))
                 total_price = rate.get('total_amount', 0)
-                delivery_days = rate.get('delivery_days', '')
                 
-                # Format delivery time
-                delivery_text = f" ({delivery_days} дн.)" if delivery_days else ""
-                
-                button_text = f"{config['icon']} {config['name']} {service_type}{delivery_text} - ${total_price:.2f}"
+                button_text = f"{config['icon']} {config['name']} {service_type} - ${total_price:.2f}"
                 
                 # Store rate info
                 rate_id = f"rate_{rate_index}"
