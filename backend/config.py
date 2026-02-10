@@ -5,10 +5,10 @@ import os
 class Settings(BaseSettings):
     """Application settings loaded from environment variables"""
     
-    # MongoDB
-    mongo_url: str
+    # MongoDB - with defaults for safety
+    mongo_url: str = "mongodb://localhost:27017"
     mongo_url_prod: str = ""  # Production MongoDB URL (optional)
-    db_name: str
+    db_name: str = "shipbot_database"
     
     # ShipEngine
     shipengine_sandbox_key: str = "TEST_demo"
@@ -16,8 +16,8 @@ class Settings(BaseSettings):
     environment: str = "sandbox"
     
     # Telegram
-    telegram_bot_token: str = "demo_token"
-    telegram_bot_token_prod: str = "demo_token_prod"
+    telegram_bot_token: str = ""
+    telegram_bot_token_prod: str = ""
     webhook_secret: str = "demo_secret"
     webhook_url: str = "https://demo.com"
     
@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = False
+        extra = "ignore"  # Ignore extra env variables
     
     @property
     def shipengine_api_key(self) -> str:
