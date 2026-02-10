@@ -1996,7 +1996,7 @@ class TelegramConversationHandler:
                     CallbackQueryHandler(self.select_rate, pattern="^(rate_|back_to_review_from_rates)")
                 ],
                 CONFIRM: [
-                    CallbackQueryHandler(self.confirm_and_create, pattern="^(confirm_yes|back_to_rates)$"),
+                    CallbackQueryHandler(self.confirm_and_create, pattern="^(confirm_yes|confirm_no|back_to_rates)$"),
                     CallbackQueryHandler(self.download_label, pattern="^download_label$"),
                 ],
                 
