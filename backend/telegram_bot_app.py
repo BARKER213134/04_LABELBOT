@@ -797,21 +797,41 @@ async def handle_text_input(update, context):
 
 
 async def setup_bot_application(environment='sandbox'):
-    """Setup bot application with handlers"""
+    """Setup bot application with handlers - optimized for speed"""
     settings = get_settings()
     
     # Select bot token and API key based on environment
     if environment == 'production':
         bot_token = settings.telegram_bot_token_prod
         shipengine_key = settings.shipengine_production_key
-        logger.info("Setting up PRODUCTION bot")
     else:
         bot_token = settings.telegram_bot_token
         shipengine_key = settings.shipengine_sandbox_key
-        logger.info("Setting up SANDBOX bot")
     
-    # Create application
-    application = Application.builder().token(bot_token).build()
+    # Create application with optimized timeouts
+    from telegram.ext import ApplicationBuilder
+    from telegram.request import HTTPXRequest
+    
+    # Optimized request settings for faster responses
+    request = HTTPXRequest(
+        connection_pool_size=10,
+        connect_timeout=5.0,      # Connection timeout (seconds)
+        read_timeout=10.0,        # Read timeout (seconds)
+        write_timeout=10.0,       # Write timeout (seconds)
+        pool_timeout=3.0,         # Pool timeout (seconds)
+    )
+    
+    application = (
+        ApplicationBuilder()
+        .token(bot_token)
+        .request(request)
+        .get_updates_request(request)
+        .connect_timeout(5.0)
+        .read_timeout(10.0)
+        .write_timeout(10.0)
+        .pool_timeout(3.0)
+        .build()
+    )
     
     # Connect to database
     await connect_db()
