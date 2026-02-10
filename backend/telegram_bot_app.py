@@ -59,59 +59,55 @@ async def send_banned_message(chat_id: int, bot):
 
 
 async def start_command(update, context):
-    """Handle /start command"""
+    """Handle /start command - ULTRA FAST"""
     global _users_service
-    from telegram import ReplyKeyboardRemove
-    
-    # Send typing immediately for instant feedback
-    await update.effective_chat.send_action(ChatAction.TYPING)
+    import asyncio
     
     user_id = str(update.effective_user.id)
+    chat_id = update.effective_chat.id
     
-    # Check if user is banned
-    if await check_user_banned(user_id):
-        await send_banned_message(update.effective_chat.id, context.bot)
+    # Quick ban check from cache
+    if user_id in _banned_cache and _banned_cache[user_id]:
+        await send_banned_message(chat_id, context.bot)
         return
     
-    logger.info(f"[START] User {user_id} is not banned, continuing...")
-    
-    # Remove buttons from the previous menu message (keep the message text)
-    try:
-        last_menu_msg_id = context.user_data.get('last_menu_message_id')
-        if last_menu_msg_id:
-            await context.bot.edit_message_reply_markup(
-                chat_id=update.effective_chat.id,
-                message_id=last_menu_msg_id,
-                reply_markup=None
-            )
-    except Exception as e:
-        logger.debug(f"Could not remove buttons from previous menu: {e}")
-    
-    balance = 0.0
-    # Create/update user in database
-    if _users_service:
-        tg_user = update.effective_user
-        user = await _users_service.get_or_create_user(
-            telegram_id=str(tg_user.id),
-            username=tg_user.username,
-            first_name=tg_user.first_name,
-            last_name=tg_user.last_name
-        )
-        balance = user.get('balance', 0.0)
-        logger.info(f"User {tg_user.id} ({tg_user.username}) - balance: ${balance:.2f}")
-    
-    # Send logo image
+    # Send logo IMMEDIATELY (no waiting for DB)
     logo_url = "https://customer-assets.emergentagent.com/job_shipnow-bot/artifacts/tnl64fud_JUST%20WHITE.png"
-    await context.bot.send_photo(
-        chat_id=update.effective_chat.id,
-        photo=logo_url
-    )
     
-    # Then send welcome message with inline buttons
-    telegram_service = TelegramService()
-    sent_message = await telegram_service.send_welcome_message(update.effective_chat.id, balance)
+    # Start background tasks
+    async def bg_tasks():
+        # Check ban in background
+        if await check_user_banned(user_id):
+            return
+        # Create user in background
+        if _users_service:
+            tg_user = update.effective_user
+            await _users_service.get_or_create_user(
+                telegram_id=str(tg_user.id),
+                username=tg_user.username,
+                first_name=tg_user.first_name,
+                last_name=tg_user.last_name
+            )
     
-    # Store the new menu message id
+    # Run in parallel: send photo + background tasks
+    asyncio.create_task(bg_tasks())
+    
+    await context.bot.send_photo(chat_id=chat_id, photo=logo_url)
+    
+    # Get balance (quick if cached, or 0)
+    balance = 0.0
+    if _users_service:
+        try:
+            user = await _users_service.get_user(user_id)
+            if user:
+                balance = user.get('balance', 0.0)
+        except:
+            pass
+    
+    # Send welcome message
+    telegram_service = TelegramService('production')
+    sent_message = await telegram_service.send_welcome_message(chat_id, balance)
+    
     if sent_message:
         context.user_data['last_menu_message_id'] = sent_message.message_id
 
