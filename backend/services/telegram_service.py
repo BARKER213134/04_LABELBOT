@@ -1,36 +1,42 @@
 from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ParseMode
+from telegram.request import HTTPXRequest
 import logging
 from config import get_settings
 
 logger = logging.getLogger(__name__)
 
+# Cached bot instances
+_bot_cache = {}
+
+def _get_optimized_bot(token: str) -> Bot:
+    """Get or create optimized bot instance with connection pooling"""
+    if token not in _bot_cache:
+        request = HTTPXRequest(
+            connection_pool_size=10,
+            connect_timeout=5.0,
+            read_timeout=10.0,
+            write_timeout=10.0,
+            pool_timeout=3.0,
+        )
+        _bot_cache[token] = Bot(token=token, request=request)
+    return _bot_cache[token]
+
 class TelegramService:
-    """Service for Telegram bot interactions"""
+    """Service for Telegram bot interactions - optimized for speed"""
     
     def __init__(self, environment='sandbox'):
-        """
-        Initialize Telegram service with appropriate bot based on environment
-        
-        Args:
-            environment: 'sandbox' or 'production'
-        """
         settings = get_settings()
-        # Выбираем токен в зависимости от ShipEngine environment
         if environment == 'production':
             bot_token = settings.telegram_bot_token_prod
-            logger.info("Using PRODUCTION Telegram bot")
         else:
             bot_token = settings.telegram_bot_token
-            logger.info("Using SANDBOX Telegram bot")
         
-        self.bot = Bot(token=bot_token)
+        self.bot = _get_optimized_bot(bot_token)
         self.environment = environment
     
     async def send_welcome_message(self, chat_id: int, balance: float = None):
         """Send welcome message with instructions"""
-        from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-        
         balance_text = f"💰 Баланс: *${balance:.2f}*\n\n" if balance is not None else ""
         
         text = (
