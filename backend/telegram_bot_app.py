@@ -162,10 +162,17 @@ async def check_balance_callback(update, context):
 async def topup_balance_callback(update, context):
     """Handle balance top-up request - sends new message"""
     query = update.callback_query
-    await query.answer()
     
     user_id = str(update.effective_user.id)
     logger.info(f"topup_balance_callback triggered by user {user_id}")
+    
+    # Check if user is banned
+    if await check_user_banned(user_id):
+        await query.answer()
+        await send_banned_message(update.effective_chat.id, context.bot)
+        return
+    
+    await query.answer()
     
     # Remove buttons from old message (keep text)
     try:
