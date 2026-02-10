@@ -252,9 +252,12 @@ async def process_topup_amount(update, context):
 
 
 async def cancel_topup_callback(update, context):
-    """Cancel top-up process and go back to menu"""
+    """Cancel top-up process and go back to balance"""
     query = update.callback_query
     await query.answer()
+    
+    # Clear the waiting flag
+    context.user_data['awaiting_topup_amount'] = False
     
     # Remove buttons from old message
     try:
