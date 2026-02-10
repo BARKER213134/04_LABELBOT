@@ -162,6 +162,11 @@ class TelegramConversationHandler:
     async def start_create(self, update: Update, context) -> int:
         """Start the label creation process"""
         user_id = str(update.effective_user.id)
+        
+        # Check if user is banned
+        if await self._check_user_banned(user_id):
+            return await self._send_banned_message(update)
+        
         self.clear_user_data(user_id)
         
         # Ensure user exists
@@ -191,6 +196,11 @@ class TelegramConversationHandler:
         
         user_id = str(update.effective_user.id)
         logger.info(f"start_create_callback triggered by user {user_id}")
+        
+        # Check if user is banned
+        if await self._check_user_banned(user_id):
+            return await self._send_banned_message(update)
+        
         self.clear_user_data(user_id)
         
         # Ensure user exists
