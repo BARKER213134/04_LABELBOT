@@ -18,83 +18,83 @@ PRODUCT REQUIREMENTS:
 - Implement cryptocurrency payments via OxaPay.
 - After a label is successfully created, an AI should generate a unique, uplifting thank-you message in Russian.
 - The bot should download the label PDF from ShipEngine and send it as a file, hiding the original URL.
+- An admin panel feature for mass messaging/advertising to all users.
+- Admin functionality to ban, unban, and delete users.
 
 **User's preferred language**:
 Russian. The next agent MUST respond in Russian.
 
 **what currently exists?**
 A full-stack application with a FastAPI backend, React frontend, and MongoDB. The system includes:
-- A web dashboard with an admin panel for switching environments and managing user balances.
-- A Telegram bot with a multi-step  wizard for creating shipping labels.
+- A web dashboard with an admin panel for switching environments, managing user balances, and a new broadcast panel for sending mass messages with image uploads and previews.
+- Admin functionality to ban, unban, and delete users from the user management table.
+- A Telegram bot with a multi-step  wizard for creating shipping labels, featuring extensive UX improvements and input validation.
 - Integration with the ShipEngine API to fetch rates (with a 0 markup) and create labels.
-- A complete user management system where users are created in the DB on first interaction and their balance can be managed via the web UI, with Telegram notifications on balance changes.
-- A full template management system allowing users to create, view, use, edit, and delete shipment templates.
-- An integrated OxaPay payment gateway for users to top up their balance with cryptocurrency.
+- A complete user management system where users are created in the DB on first interaction. Banned users are blocked from using the bot.
+- A full template management system allowing users to create, view, use, edit, and delete shipment templates. The conversational flow was refactored to be more intuitive.
+- An integrated OxaPay payment gateway for users to top up their balance, with a Continue Order flow post-payment.
 - An AI message generator (GPT-4o-mini) that sends a unique, warm thank-you message in Russian after each successful label creation.
-- A label download feature that sends the PDF as a Telegram document, hiding the source URL.
+- A secure label download feature that sends the PDF as a Telegram document.
 
 **Last working item**:
-- **Last item agent was working:** The user requested that the template management flow be changed. Instead of editing a single message for all template actions (view, edit, delete), the bot should send new messages for each step, making the conversation history easier to follow. The agent began this refactor.
-- **Status:** IN PROGRESS
+- **Last item agent was working:** Implementing functionality for an admin to ban, unban, or delete a user directly from the user management table in the web dashboard. A banned user should be notified and blocked from using the bot.
+- **Status:** USER VERIFICATION PENDING
 - **Agent Testing Done:** N
-- **Which testing method agent to use?** Manual testing by interacting with the Telegram bot. Navigate to the Templates section and test all sub-features (view list, view details, use, create, edit, delete).
+- **Which testing method agent to use?** Manual testing.
+    1.  Go to the admin panel -> Users tab.
+    2.  Click Ban on a user. Verify a notification is sent to the bot user.
+    3.  As the banned user, try using the bot (). It should show a banned message.
+    4.  In the admin panel, click Unban.
+    5.  As the user, try using the bot again. It should now work.
+    6.  In the admin panel, click Delete. Verify the user is removed from the list and the database.
 - **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
-- **Issue 1:** Refactor the template management flow to use new messages instead of editing a single one. (Priority: P0)
+- **Issue 1:** The text SITKAGEAR may still appear on UPS labels. (Priority: P0)
 
 **Issues Detail:**
 - **Issue 1:**
-    - **Description:** The user finds the current single-message interface for managing templates inconvenient because it's hard to track previous actions. The goal is to make the flow feel like a natural chat conversation.
-    - **Attempted fixes:** The agent started the fix by modifying the main  in  to use  instead of . However, other template-related handlers have not been updated yet.
+    - **Description:** SITKAGEAR appears as the company name on UPS labels. This is a recurring issue, likely due to a default setting in the ShipEngine account that overrides API values.
+    - **Attempted fixes:** The agent set the  field to  (a hyphen) in the API calls within , as the user indicated this worked previously.
     - **Next debug checklist:**
-        1.  In , review all callback handlers related to templates: , , , and any others.
-        2.  For each handler, implement the following pattern:
-            a. First, remove the keyboard from the previous message to prevent re-clicks: .
-            b. Then, send the new content as a new message: .
-        3.  Apply this pattern consistently across the entire template management user journey: viewing the list, viewing a single template, using a template, creating a new one, editing one, and deleting one.
-        4.  Thoroughly test the entire flow to ensure it's logical and that no old, clickable keyboards remain.
-    - **Why fix this issue and what will be achieved with the fix?** This will significantly improve the user experience for the template feature, making it more intuitive and readable.
-    - **Status:** IN PROGRESS
-    - **Is recurring issue?** N
-    - **Should Test frontend/backend/both after fix?** Backend (Telegram bot interaction).
+        1.  Ask the user to create a new UPS label to confirm if the hyphen fix worked.
+        2.  If it failed, inform the user that the setting is likely in their ShipEngine account dashboard and cannot be fixed via code. Advise them to check their UPS carrier settings in ShipEngine and remove the default company name.
+    - **Why fix this issue and what will be achieved with the fix?** To produce professional-looking labels without an incorrect company name.
+    - **Status:** USER VERIFICATION PENDING
+    - **Is recurring issue?** Y
+    - **Should Test frontend/backend/both after fix?** Backend (Telegram bot interaction to create a label).
     - **Blocked on other issue:** None
 
 **In progress Task List**:
-- **Task 1:** Complete the refactoring of the template management conversational flow.
-    - **Where to resume:** The agent has only modified  in . The next step is to apply the same logic (disable old keyboard, send new message) to all other template-related functions in  and .
-    - **What will be achieved with this?** A more user-friendly and intuitive template management experience in the bot.
-    - **Status:** IN PROGRESS
-    - **Should Test frontend/backend/both after fix?** Backend.
-    - **Blocked on something:** None.
+None.
 
 **Upcoming and Future Tasks**
 - **Future Tasks:**
-    - **Refactoring:** The files  and  have become very large and complex. They should be broken down into smaller, more manageable modules (e.g., , , etc.) to improve code maintainability and scalability. (Priority: P1)
-    - **FedEx Sandbox Handling:** FedEx is unstable in the sandbox environment. Consider implementing a feature to hide FedEx as an option when the bot is in sandbox mode to prevent user confusion and errors. (Priority: P2)
+    - **Refactoring (P1):** The files  and  are large and complex. They should be broken down into smaller, feature-specific modules (e.g., ) to improve maintainability.
+    - **FedEx Sandbox Handling (P2):** FedEx is unstable in the sandbox environment. Implement a feature to hide FedEx as a carrier option when the bot is in sandbox mode to prevent user errors.
 
 **Completed work in this session**
-- **Bug Fix - Telegram Webhook:** Fixed a critical bug where the webhook pointed to an old URL, making the bot unresponsive.
-- **Bug Fix - Disappearing Buttons:** Resolved a core issue where inline keyboard buttons were not being removed after being clicked across multiple flows (label creation, main menu, balance, templates).
-- **Feature - OxaPay Integration:** Successfully integrated OxaPay for cryptocurrency payments, including a top-up flow from the balance menu and when funds are insufficient.
-- **Bug Fix - Label Creation Flow:**
-    - Fixed multiple bugs preventing label creation, including incorrect regex for callbacks, improper handling of carrier errors (e.g., from FedEx), and unrecognized carrier codes ( for USPS).
-    - Resolved an issue where  was appearing on UPS labels by explicitly setting the company name to an empty string.
-    - Made the label creation process more robust by using .
-- **Feature - Secure Label Download:** Implemented a feature to download the label PDF from ShipEngine and send it directly as a Telegram document, hiding the source URL from the user.
-- **Feature - AI Thank-You Messages:** Integrated GPT-4o-mini to generate unique, warm, and uplifting thank-you messages in Russian after each successful label creation.
-- **UX Improvement - Template Save Flow:** Moved the Save as Template button to the data review screen (before rate selection) based on user feedback.
-- **UX Improvement - Main Menu Button:** Made the 🏠 Главное меню button function like the  command, cleaning up previous keyboards and starting fresh.
+- **Admin Broadcast Feature:** Created a Рассылка (Broadcast) tab in the admin panel for sending mass messages with image upload and live preview.
+- **User Ban/Delete Functionality:** Implemented Ban, Unban, and Delete actions for users in the admin panel.
+- **Bot Flow Refactoring:** Changed template and balance management to use new messages for each step instead of editing one, improving clarity.
+- **Comprehensive Bot UX Improvements:**
+    - Added user balance display to the rate selection and order confirmation screens.
+    - Changed weight input from ounces to pounds (lbs) for user convenience.
+    - Added a Continue Order button to the notification after a user tops up their balance.
+    - Added an inline Главное меню button to the data review screen.
+    - Replaced the welcome image with a user-provided logo.
+    - Cleaned up the bot's command menu (, ).
+- **Input Validation:** Added validation for phone number length and for ensuring address fields are entered in English.
+- **Bug Fix:** Ensured inline keyboard buttons are correctly removed after a rate is selected.
+- **Bug Fix (Attempted):** Set  to  to try and fix the recurring SITKAGEAR issue on UPS labels.
 
 **Earlier issues found/mentioned but not fixed**
-- **Issue 1: FedEx/UPS Sandbox Instability:**
-    - **Debug checklist:** The agent determined this is a limitation of the ShipEngine sandbox environment itself, not a bug in the code. FedEx, in particular, often returns a General Error.
-    - **Why to solve this issue and what will be achieved with this?** Solving or mitigating this would reduce user friction during testing. The proposed solution is to hide FedEx as a carrier option when the application is in  mode.
-    - **Should Test frontend/backend/both after fix:** Backend (Telegram bot).
-    - **Is recurring issue?** Y
+None.
 
 **Known issue recurrence from previous fork**
-None.
+- **Issue:** The  text appearing on UPS labels was marked as fixed previously but reappeared.
+- **Recurrence count:** 1
+- **Status:** IN PROGRESS (awaiting user verification of the latest fix).
 
 **Code Architecture**
 
@@ -108,60 +108,61 @@ None.
 **key DB schema**
 - ****: 
 - ****: 
-- ****: Stores shipment objects with sender/recipient details, label info, rate details, tracking number, etc.
+- ****: 
 
 **changes in tech stack**
-- Added  library to interact with OpenAI.
-- Added  library (implicitly via playbook).
+None.
 
 **All files of reference**
-- : **(High Importance)** Contains the template handlers that need to be refactored.
-- : **(High Importance)** Contains the multi-step conversation logic, including parts of the template flow.
-- : New service for OxaPay integration.
-- : New route for the OxaPay webhook.
-- : New service for generating AI messages.
-- : Updated with new environment variables.
-- : Updated to include the new OxaPay router.
+- : Updated with ban/unban/delete endpoints.
+- : Updated with ban/unban/delete buttons.
+- : New file for the broadcast API endpoint.
+- : New file for the broadcast UI.
+- : Updated with ban check logic and various UX refactors.
+- : Heavily updated with input validation and multiple UX improvements.
+- : Updated to attempt a fix for the  issue.
 
 **Areas that need refactoring**:
--  and  are monolithic and difficult to maintain. They should be broken down into smaller, feature-specific modules under a new  directory.
+-  and  are monolithic. They should be broken down into smaller, feature-specific modules under a  directory for better maintainability.
 
 **key api endpoints**
+- : Sends a mass message to all users.
+- : Bans a user.
+- : Unbans a user.
+- : Deletes a user.
 - : Main webhook for the Telegram bot.
 - : Webhook for receiving OxaPay payment status updates.
-- : Get all users.
-- : Update a user's balance.
 
 **Critical Info for New Agent**
-- **Top Priority:** The immediate task is to refactor the template management flow to use new messages for each interaction instead of editing a single message.
-- **Sandbox Limitations:** Be aware that FedEx and, to a lesser extent, UPS are unstable in the ShipEngine sandbox. USPS is the most reliable carrier for testing. This is a known limitation of the external service, not a bug in our code.
-- **State Management:** The bot relies heavily on a complex . When making changes, be mindful of state transitions, context data (), and fallbacks.
+- **Verification Needed:** The top priorities are to have the user test the new ban/delete functionality and verify if the  issue on UPS labels is resolved by the latest fix ().
+- **User Feedback:** The user provides frequent, iterative feedback and may change their mind on UI/UX features (e.g., the persistent Main Menu button was requested, implemented, and then removed). Be prepared to adapt and confirm requirements clearly.
+- **Sandbox Limitations:** Remember that the ShipEngine sandbox is unstable for FedEx. This is a known external limitation.
 
 **documents and test reports created in this job**
-- 
+-  (Updated during the session)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1. **шаблоны все работает в одном сообщении это не удобно...** (templates all work in one message, it's inconvenient...): **PENDING**. This is the current P0 task.
-2. **кнопка главное меню... должна работать как кнопка старт** (the main menu button... should work like the start button): **Completed**.
-3. **ситкагиар в юпс остался** (sitkagear is still on the ups label): **Completed**.
-4. **User reports FedEx error again**: **Completed**. The agent explained it's a sandbox issue.
-5. **в юпс лейбле вместо sitkagear надо сделать что бы был прочерк** (on the ups label, instead of sitkagear there should be a dash): **Completed**.
-6. **кнопка отмены после сохранения шаблона не убралась** (the cancel button after saving a template was not removed): **Completed**.
-7. **User requests changes to AI message**: **Completed**. The agent updated the prompt to be more uplifting and in Russian only.
-8. **кнопка скачивание лейбла, надо организовать так что бы пользователь не видел от куда он скачивается** (the download label button should be organized so the user doesn't see where it's downloading from): **Completed**.
-9. **кнопка сохранить как шаблон не работает** (the save as template button doesn't work): **Completed**.
-10. **User provides valid addresses but FedEx still fails**: **Completed**. The agent improved error messages and diagnosed it as a sandbox issue.
+1.  (Add ban/delete buttons for each user in admin panel): **In Progress (Coding Done, Verification Pending)**
+2.  (Check if the AI thank you message is connected): **Completed**.
+3.  (Need to enter weight in pounds, not ounces): **Completed**.
+4.  (Add user balance display and remove the sandbox notice): **Completed**.
+5.  (There must be validation everywhere, user must enter everything in English): **Completed**.
+6.  (Need to verify phone number by number of characters): **Completed**.
+7.  (Replace the hand emoji with a logo): **Completed**.
+8.  (The menu button didn't appear): **Completed** (Agent explained Telegram cache).
+9.  (Make it so when you open the menu, there's a main menu button): **Completed**.
+10.  (No, that's nonsense, remove the main menu button): **Completed** (Agent removed the persistent button per user request).
 
 **Project Health Check:**
 - **Broken:** None.
 - **Mocked:** None.
-- **Needs Improvement:** The user experience for the template management feature is the current focus.
+- **Needs Improvement:** The  issue requires final verification. The new ban/delete feature needs to be tested by the user.
 
 **3rd Party Integrations**
-- **ShipEngine API**: Used for fetching rates and creating shipping labels. Requires .
-- **Telegram Bot API**: Integrated via . Requires .
+- **ShipEngine API**: For rates and labels. Requires .
+- **Telegram Bot API**: Via . Requires .
 - **OxaPay**: For crypto payments. Requires .
-- **OpenAI GPT-4o-mini**: Used for AI message generation via . Uses Emergent LLM Key.
+- **OpenAI GPT-4o-mini**: For AI thank-you messages. Uses Emergent LLM Key.
 
 **Testing status**
 - **Testing agent used after significant changes:** NO
@@ -170,8 +171,8 @@ None.
 - **Known regressions:** None
 
 **Credentials to test flow:**
-All necessary API keys and bot tokens are stored in .
+All necessary API keys and tokens are stored in .
 
 **What agent forgot to execute**
-- The agent has not fully completed the user's last request to refactor the template management flow. Only the first step was taken.
-- The agent proposed hiding the unstable FedEx carrier in sandbox mode to avoid confusion, but this was not implemented as there was no explicit user confirmation. This could be re-proposed as a quality-of-life improvement.</analysis>
+- The agent implemented the user ban/delete feature but did not perform any testing or ask the user to verify it before finishing the session.
+- The agent did not get final confirmation from the user on whether the latest  fix was successful.</analysis>

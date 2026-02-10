@@ -119,7 +119,7 @@
 ### Веб-дашборд:
 
 Для полного функционала используйте:
-https://shipnow-bot.preview.emergentagent.com
+https://shipping-label-bot.preview.emergentagent.com
 
 **В дашборде можно:**
 - Просмотреть все заказы
