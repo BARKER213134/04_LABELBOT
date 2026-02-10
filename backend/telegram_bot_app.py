@@ -160,63 +160,42 @@ async def _safe_remove_buttons(query):
 
 
 async def topup_balance_callback(update, context):
-    """Handle balance top-up request - sends new message"""
+    """Handle balance top-up - FAST"""
     query = update.callback_query
+    await query.answer()
     
     user_id = str(update.effective_user.id)
-    logger.info(f"topup_balance_callback triggered by user {user_id}")
-    
-    # Check if user is banned
-    if await check_user_banned(user_id):
-        await query.answer()
+    if banned_cache.get(f"ban_{user_id}"):
         await send_banned_message(update.effective_chat.id, context.bot)
         return
     
-    await query.answer()
-    
-    # Remove buttons from old message (keep text)
-    try:
-        await query.edit_message_reply_markup(reply_markup=None)
-    except Exception:
-        pass
-    
-    # Store state in context
+    asyncio.create_task(_safe_remove_buttons(query))
     context.user_data['awaiting_topup_amount'] = True
     
     text = (
-        "━━━━━━━━━━━━━━━━━━━━\n"
-        "💳 *ПОПОЛНЕНИЕ БАЛАНСА*\n"
-        "━━━━━━━━━━━━━━━━━━━━\n\n"
-        "💰 *Введите сумму пополнения в USD*\n\n"
+        "💳 *ПОПОЛНЕНИЕ БАЛАНСА*\n\n"
+        "Введите сумму в USD\n"
         "▫️ Минимум: $10\n"
-        "▫️ Криптовалюты: BTC, ETH, USDT, LTC\n\n"
-        "_Например: 25 или 50.00_"
+        "▫️ Крипто: BTC, ETH, USDT, LTC"
     )
     
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-    keyboard = [
-        [InlineKeyboardButton("❌ Отмена", callback_data="cancel_topup")]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    keyboard = [[InlineKeyboardButton("❌ Отмена", callback_data="cancel_topup")]]
     
-    # Send as NEW message and store its ID
-    sent_msg = await query.message.reply_text(text, reply_markup=reply_markup, parse_mode="Markdown")
-    context.user_data['topup_message_id'] = sent_msg.message_id
-    context.user_data['topup_chat_id'] = sent_msg.chat_id
+    sent = await query.message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+    context.user_data['topup_message_id'] = sent.message_id
+    context.user_data['topup_chat_id'] = sent.chat_id
 
 
 async def process_topup_amount(update, context):
-    """Process the entered top-up amount - sends new messages"""
+    """Process top-up amount - FAST"""
     if not context.user_data.get('awaiting_topup_amount'):
         return False
     
     user_id = str(update.effective_user.id)
     text_input = update.message.text.strip()
-    
-    # Clear the waiting flag
     context.user_data['awaiting_topup_amount'] = False
     
-    # Remove buttons from previous message
     message_id = context.user_data.get('topup_message_id')
     chat_id = context.user_data.get('topup_chat_id')
     if message_id and chat_id:
