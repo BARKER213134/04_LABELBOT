@@ -6,6 +6,7 @@ This runs the bot with webhook mode and conversation handlers
 import asyncio
 import logging
 from telegram.ext import Application, CommandHandler
+from telegram.constants import ChatAction
 from config import get_settings
 from database import Database, connect_db
 from services.telegram_service import TelegramService
@@ -16,7 +17,7 @@ from services.users_service import UsersService
 from services.templates_service import TemplatesService
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.WARNING,  # Reduced logging for speed
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
@@ -25,24 +26,27 @@ logger = logging.getLogger(__name__)
 _users_service = None
 _templates_service = None
 
+# Simple cache for banned users (cleared on restart)
+_banned_cache = {}
+
 async def check_user_banned(user_id: str) -> bool:
-    """Check if user is banned"""
-    global _users_service
-    logger.info(f"[BAN CHECK] Checking ban status for user {user_id}")
+    """Check if user is banned (with caching)"""
+    global _users_service, _banned_cache
+    
+    # Check cache first
+    if user_id in _banned_cache:
+        return _banned_cache[user_id]
+    
     if _users_service:
         user = await _users_service.get_user(user_id)
         is_banned = user and user.get('is_banned', False)
-        logger.info(f"[BAN CHECK] User {user_id} is_banned: {is_banned}")
-        if is_banned:
-            return True
-    else:
-        logger.warning(f"[BAN CHECK] _users_service is None!")
+        _banned_cache[user_id] = is_banned
+        return is_banned
     return False
 
 
 async def send_banned_message(chat_id: int, bot):
     """Send banned message to user"""
-    logger.info(f"[BAN] Sending banned message to chat {chat_id}")
     message = (
         "━━━━━━━━━━━━━━━━━━━━\n"
         "🚫 *ДОСТУП ЗАПРЕЩЁН*\n"
@@ -59,12 +63,13 @@ async def start_command(update, context):
     global _users_service
     from telegram import ReplyKeyboardRemove
     
+    # Send typing immediately for instant feedback
+    await update.effective_chat.send_action(ChatAction.TYPING)
+    
     user_id = str(update.effective_user.id)
-    logger.info(f"[START] start_command called by user {user_id}")
     
     # Check if user is banned
     if await check_user_banned(user_id):
-        logger.info(f"[START] User {user_id} is banned, sending ban message")
         await send_banned_message(update.effective_chat.id, context.bot)
         return
     
