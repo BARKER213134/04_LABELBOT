@@ -91,9 +91,15 @@ async def telegram_webhook(
         update_data = await request.json()
         update_id = update_data.get("update_id")
         
+        # Log incoming update for debugging
+        msg = update_data.get("message", {})
+        text = msg.get("text", "")[:50] if msg else ""
+        user_id = msg.get("from", {}).get("id", "?") if msg else "?"
+        logger.warning(f"[WEBHOOK] update_id={update_id}, user={user_id}, text='{text}'")
+        
         # Deduplicate updates - Telegram may retry if response is slow
         if update_id and _is_duplicate_update(update_id):
-            logger.debug(f"Duplicate update {update_id} ignored")
+            logger.warning(f"[WEBHOOK] Duplicate update {update_id} ignored")
             return JSONResponse(content={"status": "ok"})
         
         # Get cached bot application
@@ -103,6 +109,7 @@ async def telegram_webhook(
         update = Update.de_json(update_data, app.bot)
         await app.process_update(update)
         
+        logger.warning(f"[WEBHOOK] update_id={update_id} processed successfully")
         return JSONResponse(content={"status": "ok"})
     
     except (TimedOut, NetworkError) as e:
