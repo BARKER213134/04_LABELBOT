@@ -753,20 +753,19 @@ async def setup_bot_application(environment='sandbox'):
         bot_token = settings.telegram_bot_token
         shipengine_key = settings.shipengine_sandbox_key
     
-    # Create application with MINIMAL timeouts
+    # Create application with reasonable timeouts
     from telegram.ext import ApplicationBuilder
     from telegram.request import HTTPXRequest
     
-    # Ultra-fast request settings
+    # Reasonable request settings (not too aggressive)
     request = HTTPXRequest(
         connection_pool_size=20,
-        connect_timeout=3.0,
-        read_timeout=5.0,
-        write_timeout=5.0,
-        pool_timeout=1.0,
+        connect_timeout=10.0,
+        read_timeout=15.0,
+        write_timeout=15.0,
+        pool_timeout=3.0,
     )
     
-    # Don't set timeouts again in builder when using custom request
     application = (
         ApplicationBuilder()
         .token(bot_token)
