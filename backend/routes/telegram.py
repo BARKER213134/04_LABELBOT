@@ -8,8 +8,15 @@ import logging
 router = APIRouter(prefix="/telegram", tags=["telegram"])
 logger = logging.getLogger(__name__)
 
-# Import bot application
-from telegram_bot_app import get_or_create_app
+# Lazy import for telegram_bot_app to speed up startup
+_bot_app_module = None
+
+def _get_bot_app_module():
+    global _bot_app_module
+    if _bot_app_module is None:
+        from telegram_bot_app import get_or_create_app
+        _bot_app_module = get_or_create_app
+    return _bot_app_module
 
 @router.post("/webhook")
 async def telegram_webhook(
@@ -31,7 +38,8 @@ async def telegram_webhook(
         
         logger.info(f"Using {current_env.upper()} environment for Telegram bot")
         
-        # Get appropriate bot application
+        # Get appropriate bot application (lazy load)
+        get_or_create_app = _get_bot_app_module()
         app = await get_or_create_app(current_env)
         
         # Process the update
