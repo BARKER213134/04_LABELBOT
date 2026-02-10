@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Ban, Trash2, UserCheck, History } from 'lucide-react';
+import { toast } from 'sonner';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -12,6 +14,7 @@ const UsersManagement = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [balanceHistory, setBalanceHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -34,7 +37,7 @@ const UsersManagement = () => {
     
     const amount = parseFloat(balanceAmount);
     if (isNaN(amount) || amount <= 0) {
-      alert('Введите корректную сумму');
+      toast.error('Введите корректную сумму');
       return;
     }
 
@@ -46,7 +49,6 @@ const UsersManagement = () => {
         reason: balanceReason || (isAdd ? 'Пополнение баланса' : 'Списание средств')
       });
       
-      // Update user in list
       setUsers(users.map(u => 
         u.telegram_id === selectedUser.telegram_id ? response.data : u
       ));
@@ -54,12 +56,54 @@ const UsersManagement = () => {
       setBalanceAmount('');
       setBalanceReason('');
       
-      alert(`Баланс ${isAdd ? 'пополнен' : 'уменьшен'} на $${amount.toFixed(2)}`);
+      toast.success(`Баланс ${isAdd ? 'пополнен' : 'уменьшен'} на $${amount.toFixed(2)}`);
     } catch (error) {
       console.error('Error updating balance:', error);
-      alert('Ошибка обновления баланса');
+      toast.error('Ошибка обновления баланса');
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleBanUser = async (user) => {
+    const isBanned = user.is_banned;
+    const action = isBanned ? 'unban' : 'ban';
+    
+    try {
+      await axios.post(`${API_URL}/users/${user.telegram_id}/${action}`);
+      
+      // Update user in list
+      const updatedUsers = users.map(u => 
+        u.telegram_id === user.telegram_id ? {...u, is_banned: !isBanned} : u
+      );
+      setUsers(updatedUsers);
+      
+      if (selectedUser?.telegram_id === user.telegram_id) {
+        setSelectedUser({...selectedUser, is_banned: !isBanned});
+      }
+      
+      toast.success(isBanned ? 'Пользователь разблокирован' : 'Пользователь заблокирован');
+    } catch (error) {
+      console.error('Error banning user:', error);
+      toast.error('Ошибка при изменении статуса');
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return;
+    
+    try {
+      await axios.delete(`${API_URL}/users/${selectedUser.telegram_id}`);
+      
+      // Remove user from list
+      setUsers(users.filter(u => u.telegram_id !== selectedUser.telegram_id));
+      setSelectedUser(null);
+      setShowDeleteConfirm(false);
+      
+      toast.success('Пользователь удалён');
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast.error('Ошибка удаления пользователя');
     }
   };
 
@@ -106,16 +150,13 @@ const UsersManagement = () => {
                     Пользователь
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Telegram ID
+                    Статус
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                     Баланс
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                     Заказы
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Потрачено
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                     Действия
@@ -128,12 +169,14 @@ const UsersManagement = () => {
                     key={user.telegram_id}
                     className={`hover:bg-gray-50 cursor-pointer ${
                       selectedUser?.telegram_id === user.telegram_id ? 'bg-blue-50' : ''
-                    }`}
+                    } ${user.is_banned ? 'bg-red-50' : ''}`}
                     onClick={() => setSelectedUser(user)}
                   >
                     <td className="px-4 py-3 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-medium">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-medium ${
+                          user.is_banned ? 'bg-red-500' : 'bg-blue-500'
+                        }`}>
                           {(user.first_name || user.username || 'U')[0].toUpperCase()}
                         </div>
                         <div className="ml-3">
@@ -146,8 +189,16 @@ const UsersManagement = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                      {user.telegram_id}
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {user.is_banned ? (
+                        <span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
+                          Заблокирован
+                        </span>
+                      ) : (
+                        <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                          Активен
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`text-sm font-semibold ${
@@ -159,26 +210,51 @@ const UsersManagement = () => {
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                       {user.total_orders || 0}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                      ${user.total_spent?.toFixed(2) || '0.00'}
-                    </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          fetchBalanceHistory(user.telegram_id);
-                          setSelectedUser(user);
-                        }}
-                        className="text-blue-600 hover:text-blue-800"
-                      >
-                        История
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleBanUser(user);
+                          }}
+                          className={`p-1.5 rounded ${
+                            user.is_banned 
+                              ? 'bg-green-100 text-green-600 hover:bg-green-200' 
+                              : 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200'
+                          }`}
+                          title={user.is_banned ? 'Разблокировать' : 'Заблокировать'}
+                        >
+                          {user.is_banned ? <UserCheck size={16} /> : <Ban size={16} />}
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedUser(user);
+                            setShowDeleteConfirm(true);
+                          }}
+                          className="p-1.5 rounded bg-red-100 text-red-600 hover:bg-red-200"
+                          title="Удалить"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            fetchBalanceHistory(user.telegram_id);
+                            setSelectedUser(user);
+                          }}
+                          className="p-1.5 rounded bg-blue-100 text-blue-600 hover:bg-blue-200"
+                          title="История"
+                        >
+                          <History size={16} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
                 {users.length === 0 && (
                   <tr>
-                    <td colSpan="6" className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan="5" className="px-4 py-8 text-center text-gray-500">
                       Пользователей пока нет
                     </td>
                   </tr>
@@ -212,6 +288,12 @@ const UsersManagement = () => {
                   <span className="font-medium">{selectedUser.telegram_id}</span>
                 </div>
                 <div className="flex justify-between">
+                  <span className="text-gray-500">Статус:</span>
+                  <span className={`font-medium ${selectedUser.is_banned ? 'text-red-600' : 'text-green-600'}`}>
+                    {selectedUser.is_banned ? '🚫 Заблокирован' : '✅ Активен'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
                   <span className="text-gray-500">Баланс:</span>
                   <span className="font-semibold text-green-600">
                     ${selectedUser.balance?.toFixed(2)}
@@ -225,16 +307,34 @@ const UsersManagement = () => {
                   <span className="text-gray-500">Потрачено:</span>
                   <span className="font-medium">${selectedUser.total_spent?.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Регистрация:</span>
-                  <span className="font-medium">{formatDate(selectedUser.created_at)}</span>
-                </div>
+              </div>
+              
+              {/* Ban/Unban and Delete buttons */}
+              <div className="mt-4 flex gap-2">
+                <button
+                  onClick={() => handleBanUser(selectedUser)}
+                  className={`flex-1 py-2 px-3 rounded-lg font-medium text-sm flex items-center justify-center gap-1 ${
+                    selectedUser.is_banned 
+                      ? 'bg-green-500 hover:bg-green-600 text-white' 
+                      : 'bg-yellow-500 hover:bg-yellow-600 text-white'
+                  }`}
+                >
+                  {selectedUser.is_banned ? <UserCheck size={16} /> : <Ban size={16} />}
+                  {selectedUser.is_banned ? 'Разблокировать' : 'Заблокировать'}
+                </button>
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="flex-1 py-2 px-3 rounded-lg font-medium text-sm bg-red-500 hover:bg-red-600 text-white flex items-center justify-center gap-1"
+                >
+                  <Trash2 size={16} />
+                  Удалить
+                </button>
               </div>
             </div>
           )}
 
           {/* Balance Management */}
-          {selectedUser && (
+          {selectedUser && !selectedUser.is_banned && (
             <div className="bg-white rounded-lg shadow p-4">
               <h3 className="font-semibold text-gray-700 mb-3">
                 Управление балансом
@@ -252,7 +352,6 @@ const UsersManagement = () => {
                     onChange={(e) => setBalanceAmount(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
                     placeholder="0.00"
-                    style={{ color: '#111827', backgroundColor: '#ffffff' }}
                   />
                 </div>
                 <div>
@@ -265,7 +364,6 @@ const UsersManagement = () => {
                     onChange={(e) => setBalanceReason(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
                     placeholder="Причина изменения"
-                    style={{ color: '#111827', backgroundColor: '#ffffff' }}
                   />
                 </div>
                 <div className="flex gap-2">
@@ -289,6 +387,36 @@ const UsersManagement = () => {
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && selectedUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              Подтверждение удаления
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Вы уверены, что хотите удалить пользователя <strong>@{selectedUser.username || selectedUser.telegram_id}</strong>?
+              <br /><br />
+              Это действие удалит все данные пользователя, включая шаблоны. Пользователь получит уведомление об удалении.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 py-2 px-4 rounded-lg font-medium bg-gray-200 hover:bg-gray-300 text-gray-800"
+              >
+                Отмена
+              </button>
+              <button
+                onClick={handleDeleteUser}
+                className="flex-1 py-2 px-4 rounded-lg font-medium bg-red-500 hover:bg-red-600 text-white"
+              >
+                Удалить
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Balance History Modal */}
       {showHistory && selectedUser && (
