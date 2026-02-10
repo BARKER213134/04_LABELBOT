@@ -53,34 +53,70 @@ def _start_preload():
 
 _start_preload()
 
+
+def _is_duplicate_update(update_id: int) -> bool:
+    """Check if update was already processed (deduplication)"""
+    global _processed_updates
+    
+    current_time = time.time()
+    
+    # Cleanup old entries (older than 5 minutes)
+    if len(_processed_updates) > _MAX_CACHED_UPDATES:
+        cutoff = current_time - 300  # 5 minutes
+        _processed_updates = {
+            uid: ts for uid, ts in _processed_updates.items() 
+            if ts > cutoff
+        }
+    
+    # Check if already processed
+    if update_id in _processed_updates:
+        return True
+    
+    # Mark as processed
+    _processed_updates[update_id] = current_time
+    return False
+
+
+async def _process_update_background(update_data: dict):
+    """Process Telegram update in background"""
+    try:
+        app = await _get_bot_app()
+        update = Update.de_json(update_data, app.bot)
+        await app.process_update(update)
+    except (TimedOut, NetworkError) as e:
+        logger.warning(f"Telegram timeout in background: {e}")
+    except Exception as e:
+        logger.error(f"Background processing error: {e}")
+
+
 @router.post("/webhook")
 async def telegram_webhook(
     request: Request,
+    background_tasks: BackgroundTasks,
     settings: Settings = Depends(get_settings),
     db: AsyncIOMotorDatabase = Depends(get_database)
 ):
     """
     Unified webhook handler for Telegram bot
+    Returns immediately and processes in background to avoid Telegram retries
     """
     try:
         update_data = await request.json()
+        update_id = update_data.get("update_id")
         
-        # Get cached bot application
-        app = await _get_bot_app()
+        # Deduplicate updates - Telegram may retry if response is slow
+        if update_id and _is_duplicate_update(update_id):
+            logger.debug(f"Duplicate update {update_id} ignored")
+            return JSONResponse(content={"status": "ok"})
         
-        # Process the update
-        update = Update.de_json(update_data, app.bot)
-        await app.process_update(update)
+        # Process in background - respond immediately to Telegram
+        asyncio.create_task(_process_update_background(update_data))
         
-        return {"status": "ok"}
+        return JSONResponse(content={"status": "ok"})
     
-    except (TimedOut, NetworkError) as e:
-        logger.warning(f"Telegram timeout: {e}")
-        return {"status": "ok", "warning": "timeout"}
-        
     except Exception as e:
         logger.error(f"Webhook error: {e}")
-        return {"status": "ok", "error": str(e)}
+        return JSONResponse(content={"status": "ok", "error": str(e)})
 
 
 @router.get("/preload")
