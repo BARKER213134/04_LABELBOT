@@ -420,54 +420,36 @@ async def check_payment_status_callback(update, context):
         await query.answer(f"❌ Ошибка: {str(e)}", show_alert=True)
 
 async def back_to_menu_callback(update, context):
-    """Handle back to menu button - works like /start command"""
+    """Back to menu - FAST"""
     global _users_service
     
     query = update.callback_query
+    await query.answer()
     
     user_id = str(update.effective_user.id)
-    
-    # Check if user is banned
-    if await check_user_banned(user_id):
-        await query.answer()
+    if banned_cache.get(f"ban_{user_id}"):
         await send_banned_message(update.effective_chat.id, context.bot)
         return
     
-    await query.answer()
+    # Get balance from cache
+    balance = balance_cache.get(f"bal_{user_id}") or 0.0
     
-    balance = 0.0
+    asyncio.create_task(_safe_remove_buttons(query))
     
-    if _users_service:
-        user = await _users_service.get_user(user_id)
-        if user:
-            balance = user.get('balance', 0.0)
-    
-    # Remove buttons from the current message (keep text)
-    try:
-        await query.edit_message_reply_markup(reply_markup=None)
-    except Exception as e:
-        logger.debug(f"Could not remove buttons from message: {e}")
-    
-    # Send new welcome message with menu (like /start)
-    telegram_service = TelegramService()
-    sent_message = await telegram_service.send_welcome_message(query.message.chat_id, balance)
-    
-    # Store the new menu message id
-    if sent_message:
-        context.user_data['last_menu_message_id'] = sent_message.message_id
+    telegram_service = TelegramService('production')
+    sent = await telegram_service.send_welcome_message(query.message.chat_id, balance)
+    if sent:
+        context.user_data['last_menu_message_id'] = sent.message_id
 
 async def templates_menu_callback(update, context):
-    """Show templates menu - sends new message"""
+    """Templates menu - FAST"""
     global _templates_service
     
     query = update.callback_query
-    
-    logger.info(f"templates_menu_callback triggered by user {update.effective_user.id}")
+    await query.answer()
     
     user_id = str(update.effective_user.id)
-    
-    # Check if user is banned
-    if await check_user_banned(user_id):
+    if banned_cache.get(f"ban_{user_id}"):
         await query.answer()
         await send_banned_message(update.effective_chat.id, context.bot)
         return
