@@ -1871,6 +1871,11 @@ class TelegramConversationHandler:
         await query.answer()
         
         user_id = str(update.effective_user.id)
+        
+        # Check if user is banned
+        if await self._check_user_banned(user_id):
+            return await self._send_banned_message(update)
+        
         self.clear_user_data(user_id)
         
         logger.info(f"back_to_menu_fallback triggered by user {user_id} - ending conversation")
