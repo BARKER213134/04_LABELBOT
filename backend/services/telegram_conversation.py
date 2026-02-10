@@ -6,12 +6,14 @@ from telegram.ext import (
     CallbackQueryHandler,
     filters,
 )
-from telegram.constants import ParseMode
+from telegram.constants import ParseMode, ChatAction
 import logging
 from typing import Dict, Any, List
 import random
 from services.ai_messages import generate_thank_you_message
 
+# Reduce logging for speed
+logging.getLogger(__name__).setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 # Conversation states
@@ -38,6 +40,9 @@ logger = logging.getLogger(__name__)
     TEMPLATE_EDIT,
     TEMPLATE_SAVE_NAME,
 ) = range(21)
+
+# Cache for user balances
+_balance_cache = {}
 
 class TelegramConversationHandler:
     """Handler for multi-step label creation conversation"""
