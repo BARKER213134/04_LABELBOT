@@ -62,12 +62,11 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Database connection failed: {e}")
     
-    # Preload telegram bot in background
+    # Preload telegram bot SYNCHRONOUSLY to ensure it's ready
     try:
         from routes.telegram import _preload_bot
-        import asyncio
-        asyncio.create_task(_preload_bot())
-        logger.info("Bot preloading started")
+        await _preload_bot()
+        logger.info("Bot preloaded successfully")
     except Exception as e:
         logger.error(f"Bot preload failed: {e}")
     
