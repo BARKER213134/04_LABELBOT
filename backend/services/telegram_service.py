@@ -10,14 +10,14 @@ logger = logging.getLogger(__name__)
 _bot_cache = {}
 
 def _get_optimized_bot(token: str) -> Bot:
-    """Get or create optimized bot instance with connection pooling"""
+    """Get or create ULTRA FAST bot instance"""
     if token not in _bot_cache:
         request = HTTPXRequest(
-            connection_pool_size=10,
-            connect_timeout=5.0,
-            read_timeout=10.0,
-            write_timeout=10.0,
-            pool_timeout=3.0,
+            connection_pool_size=20,
+            connect_timeout=3.0,
+            read_timeout=5.0,
+            write_timeout=5.0,
+            pool_timeout=1.0,
         )
         _bot_cache[token] = Bot(token=token, request=request)
     return _bot_cache[token]
