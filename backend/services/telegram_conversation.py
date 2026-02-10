@@ -1830,8 +1830,7 @@ class TelegramConversationHandler:
                         await query.message.reply_document(
                             document=pdf_file,
                             filename=f"{tracking_number}.pdf",
-                            caption=f"📦 Shipping Label\nTracking: {tracking_number}",
-                            reply_markup=get_persistent_keyboard()
+                            caption=f"📦 Shipping Label\nTracking: {tracking_number}"
                         )
                         
                         logger.info(f"Label sent to user {user_id}: {tracking_number}")
