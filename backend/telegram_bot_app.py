@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-Telegram Bot Application Runner
-This runs the bot with webhook mode and conversation handlers
+Telegram Bot - ULTRA FAST VERSION
 """
 import asyncio
 import logging
@@ -15,71 +14,71 @@ from services.orders_service import OrdersService
 from services.shipengine_service import ShipEngineService
 from services.users_service import UsersService
 from services.templates_service import TemplatesService
+from services.cache import user_cache, balance_cache, banned_cache
 
-logging.basicConfig(
-    level=logging.WARNING,  # Reduced logging for speed
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Global references for use in handlers
 _users_service = None
 _templates_service = None
 
-# Simple cache for banned users (cleared on restart)
-_banned_cache = {}
 
 async def check_user_banned(user_id: str) -> bool:
-    """Check if user is banned (with caching)"""
-    global _users_service, _banned_cache
-    
-    # Check cache first
-    if user_id in _banned_cache:
-        return _banned_cache[user_id]
+    """Check if user is banned - CACHED"""
+    # Check cache first (instant)
+    cached = banned_cache.get(f"ban_{user_id}")
+    if cached is not None:
+        return cached
     
     if _users_service:
         user = await _users_service.get_user(user_id)
         is_banned = user and user.get('is_banned', False)
-        _banned_cache[user_id] = is_banned
+        banned_cache.set(f"ban_{user_id}", is_banned)
         return is_banned
     return False
 
 
+async def get_user_balance(user_id: str) -> float:
+    """Get user balance - CACHED"""
+    cached = balance_cache.get(f"bal_{user_id}")
+    if cached is not None:
+        return cached
+    
+    if _users_service:
+        user = await _users_service.get_user(user_id)
+        if user:
+            balance = user.get('balance', 0.0)
+            balance_cache.set(f"bal_{user_id}", balance)
+            return balance
+    return 0.0
+
+
 async def send_banned_message(chat_id: int, bot):
-    """Send banned message to user"""
-    message = (
-        "━━━━━━━━━━━━━━━━━━━━\n"
-        "🚫 *ДОСТУП ЗАПРЕЩЁН*\n"
-        "━━━━━━━━━━━━━━━━━━━━\n\n"
-        "Ваш аккаунт заблокирован.\n\n"
-        "Свяжитесь с поддержкой для разблокировки.\n\n"
-        "━━━━━━━━━━━━━━━━━━━━"
+    """Send banned message"""
+    await bot.send_message(
+        chat_id=chat_id,
+        text="🚫 *ДОСТУП ЗАПРЕЩЁН*\n\nВаш аккаунт заблокирован.",
+        parse_mode="Markdown"
     )
-    await bot.send_message(chat_id=chat_id, text=message, parse_mode="Markdown")
 
 
 async def start_command(update, context):
-    """Handle /start command - ULTRA FAST"""
+    """Handle /start - ULTRA FAST"""
     global _users_service
-    import asyncio
     
     user_id = str(update.effective_user.id)
     chat_id = update.effective_chat.id
     
-    # Quick ban check from cache
-    if user_id in _banned_cache and _banned_cache[user_id]:
+    # Instant ban check from cache
+    if banned_cache.get(f"ban_{user_id}"):
         await send_banned_message(chat_id, context.bot)
         return
     
-    # Send logo IMMEDIATELY (no waiting for DB)
+    # Send photo IMMEDIATELY (no DB wait)
     logo_url = "https://customer-assets.emergentagent.com/job_shipnow-bot/artifacts/tnl64fud_JUST%20WHITE.png"
     
-    # Start background tasks
-    async def bg_tasks():
-        # Check ban in background
-        if await check_user_banned(user_id):
-            return
-        # Create user in background
+    # Background: create user, check ban
+    async def bg_work():
         if _users_service:
             tg_user = update.effective_user
             await _users_service.get_or_create_user(
@@ -88,28 +87,19 @@ async def start_command(update, context):
                 first_name=tg_user.first_name,
                 last_name=tg_user.last_name
             )
+    asyncio.create_task(bg_work())
     
-    # Run in parallel: send photo + background tasks
-    asyncio.create_task(bg_tasks())
-    
+    # Send photo first (instant feedback)
     await context.bot.send_photo(chat_id=chat_id, photo=logo_url)
     
-    # Get balance (quick if cached, or 0)
-    balance = 0.0
-    if _users_service:
-        try:
-            user = await _users_service.get_user(user_id)
-            if user:
-                balance = user.get('balance', 0.0)
-        except:
-            pass
+    # Get balance from cache or quick query
+    balance = balance_cache.get(f"bal_{user_id}") or 0.0
     
-    # Send welcome message
+    # Send menu
     telegram_service = TelegramService('production')
-    sent_message = await telegram_service.send_welcome_message(chat_id, balance)
-    
-    if sent_message:
-        context.user_data['last_menu_message_id'] = sent_message.message_id
+    sent = await telegram_service.send_welcome_message(chat_id, balance)
+    if sent:
+        context.user_data['last_menu_message_id'] = sent.message_id
 
 async def check_balance_callback(update, context):
     """Handle balance check button - sends new message"""
