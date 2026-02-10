@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from telegram import Update
+from telegram.error import TimedOut, NetworkError
 from config import get_settings, Settings
 from database import get_database
 import logging
@@ -47,10 +48,13 @@ async def telegram_webhook(
         await app.process_update(update)
         
         return {"status": "ok"}
+    
+    except (TimedOut, NetworkError) as e:
+        # Telegram timeout - not critical, just log and return OK
+        logger.warning(f"Telegram timeout (will retry): {e}")
+        return {"status": "ok", "warning": "timeout"}
         
     except Exception as e:
         logger.error(f"Webhook error: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
-        )
+        # Return OK to prevent Telegram from retrying
+        return {"status": "ok", "error": str(e)}
