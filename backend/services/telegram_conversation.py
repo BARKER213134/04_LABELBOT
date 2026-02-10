@@ -50,6 +50,31 @@ class TelegramConversationHandler:
         self.templates_service = templates_service
         self.user_data: Dict[str, Dict[str, Any]] = {}
     
+    async def _check_user_banned(self, user_id: str) -> bool:
+        """Check if user is banned"""
+        if self.users_service:
+            user = await self.users_service.get_user(user_id)
+            if user and user.get('is_banned', False):
+                return True
+        return False
+    
+    async def _send_banned_message(self, update: Update) -> int:
+        """Send banned message and end conversation"""
+        message = (
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "🚫 *ДОСТУП ЗАПРЕЩЁН*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Ваш аккаунт заблокирован.\n\n"
+            "Свяжитесь с поддержкой для разблокировки.\n\n"
+            "━━━━━━━━━━━━━━━━━━━━"
+        )
+        if update.callback_query:
+            await update.callback_query.answer()
+            await update.callback_query.message.reply_text(message, parse_mode=ParseMode.MARKDOWN)
+        else:
+            await update.message.reply_text(message, parse_mode=ParseMode.MARKDOWN)
+        return ConversationHandler.END
+    
     def get_user_data(self, user_id: str) -> Dict[str, Any]:
         """Get user's conversation data"""
         if user_id not in self.user_data:
