@@ -27,17 +27,13 @@ async def telegram_webhook(
 ):
     """
     Unified webhook handler for Telegram bot
-    Automatically uses correct bot based on ShipEngine environment
+    Uses production environment by default
     """
     try:
         update_data = await request.json()
-        logger.info(f"Received Telegram webhook")
         
-        # Получаем текущий ShipEngine environment из базы данных
-        env_config = await db.api_config.find_one({"_id": "api_config"})
-        current_env = env_config.get("environment", "sandbox") if env_config else "sandbox"
-        
-        logger.info(f"Using {current_env.upper()} environment for Telegram bot")
+        # Use production environment (faster - no DB query needed)
+        current_env = "production"
         
         # Get appropriate bot application (lazy load)
         get_or_create_app = _get_bot_app_module()
