@@ -1620,17 +1620,23 @@ class TelegramConversationHandler:
         data = self.get_user_data(user_id)
         
         # Remove the old message with cancel button
-        try:
-            msg_id = data.get('template_prompt_message_id')
-            chat_id = data.get('template_prompt_chat_id')
-            if msg_id and chat_id:
+        msg_id = data.get('template_prompt_message_id')
+        chat_id = data.get('template_prompt_chat_id')
+        logger.info(f"[TEMPLATE] Trying to remove cancel button. msg_id={msg_id}, chat_id={chat_id}")
+        
+        if msg_id and chat_id:
+            try:
                 await context.bot.edit_message_reply_markup(
                     chat_id=chat_id,
                     message_id=msg_id,
                     reply_markup=None
                 )
-        except Exception as e:
-            logger.debug(f"Could not remove cancel button: {e}")
+                logger.info(f"[TEMPLATE] Successfully removed cancel button")
+            except Exception as e:
+                logger.warning(f"[TEMPLATE] Could not remove cancel button: {e}")
+        else:
+            logger.warning(f"[TEMPLATE] No message_id or chat_id stored to remove button")
+        
         # Use current data (not last_order_data) since we're saving before creating label
         order_data = data
         
