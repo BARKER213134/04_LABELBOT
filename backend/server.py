@@ -38,6 +38,11 @@ app = FastAPI(
     redirect_slashes=False
 )
 
+# Root level health check for Kubernetes probes
+@app.get("/health")
+async def root_health_check():
+    return {"status": "healthy", "environment": settings.environment}
+
 # Create API router
 api_router = APIRouter(prefix="/api")
 
