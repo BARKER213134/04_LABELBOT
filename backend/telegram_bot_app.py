@@ -155,7 +155,7 @@ async def _safe_remove_buttons(query):
     """Remove buttons safely in background"""
     try:
         await query.edit_message_reply_markup(reply_markup=None)
-    except:
+    except Exception:
         pass
 
 
