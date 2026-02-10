@@ -105,6 +105,14 @@ async def check_balance_callback(update, context):
     global _users_service
     
     query = update.callback_query
+    user_id = str(update.effective_user.id)
+    
+    # Check if user is banned
+    if await check_user_banned(user_id):
+        await query.answer()
+        await send_banned_message(update.effective_chat.id, context.bot)
+        return
+    
     await query.answer()
     
     logger.info(f"check_balance_callback triggered by user {update.effective_user.id}")
