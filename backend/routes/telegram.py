@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status, BackgroundTasks
+from fastapi.responses import JSONResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from telegram import Update
 from telegram.error import TimedOut, NetworkError
@@ -6,6 +7,7 @@ from config import get_settings, Settings
 from database import get_database
 import logging
 import asyncio
+import time
 
 router = APIRouter(prefix="/telegram", tags=["telegram"])
 logger = logging.getLogger(__name__)
@@ -13,6 +15,10 @@ logger = logging.getLogger(__name__)
 # Pre-loaded bot application
 _cached_bot_app = None
 _bot_loading = False
+
+# Deduplication cache for processed update IDs (last 1000 updates)
+_processed_updates = {}
+_MAX_CACHED_UPDATES = 1000
 
 async def _preload_bot():
     """Preload bot application in background"""
