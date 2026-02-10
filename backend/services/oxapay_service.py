@@ -62,7 +62,7 @@ class OxaPayService:
             "feePaidByPayer": 1,  # Payer covers fees
             "underPaidCover": 10,  # 10% tolerance
             "callbackUrl": self.webhook_url,
-            "returnUrl": "https://t.me/whitelabel_shipping_bot_test_bot",
+            "returnUrl": "https://t.me/whitelabel_shipping_bot",
             "orderId": order_id,
             "description": f"Balance top-up ${amount}",
         }
