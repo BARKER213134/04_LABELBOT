@@ -1373,6 +1373,11 @@ class TelegramConversationHandler:
         
         user_id = str(update.effective_user.id)
         username = update.effective_user.username
+        
+        # Check if user is banned before creating label
+        if await self._check_user_banned(user_id):
+            return await self._send_banned_message(update)
+        
         data = self.get_user_data(user_id)
         
         if query.data == "confirm_no":
