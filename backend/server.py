@@ -61,7 +61,16 @@ async def lifespan(app: FastAPI):
         logger.info("Database connected")
     except Exception as e:
         logger.error(f"Database connection failed: {e}")
-        # Don't raise - let server start anyway
+    
+    # Preload telegram bot in background
+    try:
+        from routes.telegram import _preload_bot
+        import asyncio
+        asyncio.create_task(_preload_bot())
+        logger.info("Bot preloading started")
+    except Exception as e:
+        logger.error(f"Bot preload failed: {e}")
+    
     yield
     logger.info("Shutting down...")
     await close_db()
