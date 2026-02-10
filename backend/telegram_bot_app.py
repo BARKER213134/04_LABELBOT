@@ -28,15 +28,21 @@ _templates_service = None
 async def check_user_banned(user_id: str) -> bool:
     """Check if user is banned"""
     global _users_service
+    logger.info(f"[BAN CHECK] Checking ban status for user {user_id}")
     if _users_service:
         user = await _users_service.get_user(user_id)
-        if user and user.get('is_banned', False):
+        is_banned = user and user.get('is_banned', False)
+        logger.info(f"[BAN CHECK] User {user_id} is_banned: {is_banned}")
+        if is_banned:
             return True
+    else:
+        logger.warning(f"[BAN CHECK] _users_service is None!")
     return False
 
 
 async def send_banned_message(chat_id: int, bot):
     """Send banned message to user"""
+    logger.info(f"[BAN] Sending banned message to chat {chat_id}")
     message = (
         "━━━━━━━━━━━━━━━━━━━━\n"
         "🚫 *ДОСТУП ЗАПРЕЩЁН*\n"
@@ -54,11 +60,15 @@ async def start_command(update, context):
     from telegram import ReplyKeyboardRemove
     
     user_id = str(update.effective_user.id)
+    logger.info(f"[START] start_command called by user {user_id}")
     
     # Check if user is banned
     if await check_user_banned(user_id):
+        logger.info(f"[START] User {user_id} is banned, sending ban message")
         await send_banned_message(update.effective_chat.id, context.bot)
         return
+    
+    logger.info(f"[START] User {user_id} is not banned, continuing...")
     
     # Remove buttons from the previous menu message (keep the message text)
     try:
