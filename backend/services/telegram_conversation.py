@@ -1909,6 +1909,11 @@ class TelegramConversationHandler:
     async def reset_and_start(self, update: Update, context) -> int:
         """Reset conversation and show start menu"""
         user_id = str(update.effective_user.id)
+        
+        # Check if user is banned
+        if await self._check_user_banned(user_id):
+            return await self._send_banned_message(update)
+        
         self.clear_user_data(user_id)
         
         # Import here to avoid circular import
