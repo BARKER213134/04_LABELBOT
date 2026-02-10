@@ -797,10 +797,9 @@ async def handle_text_input(update, context):
 
 
 async def setup_bot_application(environment='sandbox'):
-    """Setup bot application with handlers - optimized for speed"""
+    """Setup bot application with handlers - ULTRA FAST"""
     settings = get_settings()
     
-    # Select bot token and API key based on environment
     if environment == 'production':
         bot_token = settings.telegram_bot_token_prod
         shipengine_key = settings.shipengine_production_key
@@ -808,17 +807,17 @@ async def setup_bot_application(environment='sandbox'):
         bot_token = settings.telegram_bot_token
         shipengine_key = settings.shipengine_sandbox_key
     
-    # Create application with optimized timeouts
+    # Create application with MINIMAL timeouts
     from telegram.ext import ApplicationBuilder
     from telegram.request import HTTPXRequest
     
-    # Optimized request settings for faster responses
+    # Ultra-fast request settings
     request = HTTPXRequest(
-        connection_pool_size=10,
-        connect_timeout=5.0,      # Connection timeout (seconds)
-        read_timeout=10.0,        # Read timeout (seconds)
-        write_timeout=10.0,       # Write timeout (seconds)
-        pool_timeout=3.0,         # Pool timeout (seconds)
+        connection_pool_size=20,     # More connections
+        connect_timeout=3.0,         # Faster connect
+        read_timeout=5.0,            # Faster read
+        write_timeout=5.0,           # Faster write
+        pool_timeout=1.0,            # Faster pool
     )
     
     application = (
@@ -826,10 +825,10 @@ async def setup_bot_application(environment='sandbox'):
         .token(bot_token)
         .request(request)
         .get_updates_request(request)
-        .connect_timeout(5.0)
-        .read_timeout(10.0)
-        .write_timeout(10.0)
-        .pool_timeout(3.0)
+        .connect_timeout(3.0)
+        .read_timeout(5.0)
+        .write_timeout(5.0)
+        .pool_timeout(1.0)
         .build()
     )
     
