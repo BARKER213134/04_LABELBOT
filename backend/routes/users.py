@@ -121,3 +121,146 @@ async def get_balance_history(
     """Get balance change history for a user"""
     history = await service.get_balance_history(telegram_id, limit)
     return history
+
+
+@router.post("/{telegram_id}/ban")
+async def ban_user(
+    telegram_id: str,
+    service: UsersService = Depends(get_users_service)
+):
+    """Ban a user and notify them"""
+    from telegram import Bot
+    from config import get_settings
+    
+    user = await service.get_user(telegram_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Update user status in database
+    db = Database.db
+    await db.users.update_one(
+        {"telegram_id": telegram_id},
+        {"$set": {"is_banned": True}}
+    )
+    
+    # Send notification to user
+    try:
+        settings = get_settings()
+        bot = Bot(token=settings.telegram_bot_token)
+        
+        message = (
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "🚫 *АККАУНТ ЗАБЛОКИРОВАН*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Ваш аккаунт был заблокирован администратором.\n\n"
+            "Если вы считаете, что это ошибка, "
+            "свяжитесь с поддержкой.\n\n"
+            "━━━━━━━━━━━━━━━━━━━━"
+        )
+        
+        await bot.send_message(
+            chat_id=int(telegram_id),
+            text=message,
+            parse_mode="Markdown"
+        )
+        logger.info(f"Ban notification sent to user {telegram_id}")
+    except Exception as e:
+        logger.error(f"Failed to send ban notification: {e}")
+    
+    return {"status": "success", "message": f"User {telegram_id} banned"}
+
+
+@router.post("/{telegram_id}/unban")
+async def unban_user(
+    telegram_id: str,
+    service: UsersService = Depends(get_users_service)
+):
+    """Unban a user and notify them"""
+    from telegram import Bot
+    from config import get_settings
+    
+    user = await service.get_user(telegram_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Update user status in database
+    db = Database.db
+    await db.users.update_one(
+        {"telegram_id": telegram_id},
+        {"$set": {"is_banned": False}}
+    )
+    
+    # Send notification to user
+    try:
+        settings = get_settings()
+        bot = Bot(token=settings.telegram_bot_token)
+        
+        message = (
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "✅ *АККАУНТ РАЗБЛОКИРОВАН*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Ваш аккаунт был разблокирован.\n"
+            "Вы снова можете пользоваться ботом!\n\n"
+            "Нажмите /start чтобы начать.\n\n"
+            "━━━━━━━━━━━━━━━━━━━━"
+        )
+        
+        await bot.send_message(
+            chat_id=int(telegram_id),
+            text=message,
+            parse_mode="Markdown"
+        )
+        logger.info(f"Unban notification sent to user {telegram_id}")
+    except Exception as e:
+        logger.error(f"Failed to send unban notification: {e}")
+    
+    return {"status": "success", "message": f"User {telegram_id} unbanned"}
+
+
+@router.delete("/{telegram_id}")
+async def delete_user(
+    telegram_id: str,
+    service: UsersService = Depends(get_users_service)
+):
+    """Delete a user and notify them"""
+    from telegram import Bot
+    from config import get_settings
+    
+    user = await service.get_user(telegram_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Send notification before deletion
+    try:
+        settings = get_settings()
+        bot = Bot(token=settings.telegram_bot_token)
+        
+        message = (
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "🗑 *АККАУНТ УДАЛЁН*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Ваш аккаунт был удалён администратором.\n\n"
+            "Все данные аккаунта удалены.\n"
+            "Нажмите /start чтобы создать новый аккаунт.\n\n"
+            "━━━━━━━━━━━━━━━━━━━━"
+        )
+        
+        await bot.send_message(
+            chat_id=int(telegram_id),
+            text=message,
+            parse_mode="Markdown"
+        )
+        logger.info(f"Delete notification sent to user {telegram_id}")
+    except Exception as e:
+        logger.error(f"Failed to send delete notification: {e}")
+    
+    # Delete user from database
+    db = Database.db
+    await db.users.delete_one({"telegram_id": telegram_id})
+    
+    # Also delete user's templates
+    await db.templates.delete_many({"user_id": telegram_id})
+    
+    logger.info(f"User {telegram_id} deleted from database")
+    
+    return {"status": "success", "message": f"User {telegram_id} deleted"}
