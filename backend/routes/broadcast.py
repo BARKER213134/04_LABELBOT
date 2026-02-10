@@ -45,8 +45,11 @@ async def send_broadcast(broadcast: BroadcastMessage):
     
     bot = Bot(token=bot_token)
     
-    # Get all users with telegram_id
-    users = await db.users.find({"telegram_id": {"$exists": True, "$ne": None}}).to_list(length=10000)
+    # Get all users with telegram_id (only fetch telegram_id field for efficiency)
+    users = await db.users.find(
+        {"telegram_id": {"$exists": True, "$ne": None}},
+        {"telegram_id": 1, "_id": 0}
+    ).to_list(length=10000)
     
     if not users:
         raise HTTPException(status_code=404, detail="No users found")
