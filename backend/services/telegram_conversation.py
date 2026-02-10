@@ -39,7 +39,8 @@ logger = logging.getLogger(__name__)
     TEMPLATE_USE,
     TEMPLATE_EDIT,
     TEMPLATE_SAVE_NAME,
-) = range(21)
+    TOPUP_AMOUNT,
+) = range(22)
 
 # Cache for user balances
 _balance_cache = {}
