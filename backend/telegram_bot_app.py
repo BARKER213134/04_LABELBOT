@@ -809,22 +809,19 @@ async def setup_bot_application(environment='sandbox'):
     
     # Ultra-fast request settings
     request = HTTPXRequest(
-        connection_pool_size=20,     # More connections
-        connect_timeout=3.0,         # Faster connect
-        read_timeout=5.0,            # Faster read
-        write_timeout=5.0,           # Faster write
-        pool_timeout=1.0,            # Faster pool
+        connection_pool_size=20,
+        connect_timeout=3.0,
+        read_timeout=5.0,
+        write_timeout=5.0,
+        pool_timeout=1.0,
     )
     
+    # Don't set timeouts again in builder when using custom request
     application = (
         ApplicationBuilder()
         .token(bot_token)
         .request(request)
         .get_updates_request(request)
-        .connect_timeout(3.0)
-        .read_timeout(5.0)
-        .write_timeout(5.0)
-        .pool_timeout(1.0)
         .build()
     )
     
