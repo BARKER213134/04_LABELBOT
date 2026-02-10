@@ -102,62 +102,61 @@ async def start_command(update, context):
         context.user_data['last_menu_message_id'] = sent.message_id
 
 async def check_balance_callback(update, context):
-    """Handle balance check button - sends new message"""
+    """Handle balance check - FAST"""
     global _users_service
     
     query = update.callback_query
+    await query.answer()  # Answer immediately
+    
     user_id = str(update.effective_user.id)
     
-    # Check if user is banned
-    if await check_user_banned(user_id):
-        await query.answer()
+    # Quick ban check
+    if banned_cache.get(f"ban_{user_id}"):
         await send_banned_message(update.effective_chat.id, context.bot)
         return
     
-    await query.answer()
+    # Remove old buttons in background
+    asyncio.create_task(_safe_remove_buttons(query))
     
-    logger.info(f"check_balance_callback triggered by user {update.effective_user.id}")
-    
-    # Remove buttons from old message (keep text)
-    try:
-        await query.edit_message_reply_markup(reply_markup=None)
-    except Exception:
-        pass
-    
-    user_id = str(update.effective_user.id)
-    balance = 0.0
+    # Get balance from cache or DB
+    balance = balance_cache.get(f"bal_{user_id}")
     total_orders = 0
     total_spent = 0.0
     
-    if _users_service:
+    if balance is None and _users_service:
         user = await _users_service.get_user(user_id)
         if user:
             balance = user.get('balance', 0.0)
             total_orders = user.get('total_orders', 0)
             total_spent = user.get('total_spent', 0.0)
+            balance_cache.set(f"bal_{user_id}", balance)
+    
+    balance = balance or 0.0
     
     text = (
-        "━━━━━━━━━━━━━━━━━━━━\n"
-        "💰 *ВАШ БАЛАНС*\n"
-        "━━━━━━━━━━━━━━━━━━━━\n\n"
+        "💰 *ВАШ БАЛАНС*\n\n"
         f"▫️ Доступно: *${balance:.2f}*\n"
         f"▫️ Заказов: {total_orders}\n"
         f"▫️ Потрачено: ${total_spent:.2f}\n\n"
-        "━━━━━━━━━━━━━━━━━━━━\n\n"
-        "💳 *Способы оплаты:*\n"
-        "▫️ BTC, ETH, USDT, LTC\n"
-        "▫️ Минимум: $10"
+        "💳 Оплата: BTC, ETH, USDT, LTC\n"
+        "Минимум: $10"
     )
     
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
     keyboard = [
-        [InlineKeyboardButton("💳 Пополнить баланс", callback_data="topup_balance")],
-        [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+        [InlineKeyboardButton("💳 Пополнить", callback_data="topup_balance")],
+        [InlineKeyboardButton("🏠 Меню", callback_data="back_to_menu")]
     ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
     
-    # Send as NEW message
-    await query.message.reply_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+    await query.message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+
+
+async def _safe_remove_buttons(query):
+    """Remove buttons safely in background"""
+    try:
+        await query.edit_message_reply_markup(reply_markup=None)
+    except:
+        pass
 
 
 async def topup_balance_callback(update, context):
