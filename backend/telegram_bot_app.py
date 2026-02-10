@@ -626,9 +626,18 @@ async def template_delete_callback(update, context):
 async def refund_info_callback(update, context):
     """Show refund information - sends new message"""
     query = update.callback_query
-    await query.answer()
     
-    logger.info(f"refund_info_callback triggered by user {update.effective_user.id}")
+    user_id = str(update.effective_user.id)
+    
+    logger.info(f"refund_info_callback triggered by user {user_id}")
+    
+    # Check if user is banned
+    if await check_user_banned(user_id):
+        await query.answer()
+        await send_banned_message(update.effective_chat.id, context.bot)
+        return
+    
+    await query.answer()
     
     # Remove buttons from old message (keep text)
     try:
