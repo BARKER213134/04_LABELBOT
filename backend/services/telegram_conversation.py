@@ -466,6 +466,7 @@ class TelegramConversationHandler:
                     f"❌ *{result}*\n\nПожалуйста, введите корректный номер телефона:",
                     parse_mode=ParseMode.MARKDOWN
                 )
+                await self._save_state(update.effective_chat.id, user_id, SHIP_FROM_PHONE)
                 return SHIP_FROM_PHONE
             data['shipFromPhone'] = phone
         else:
