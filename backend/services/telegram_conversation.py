@@ -83,15 +83,24 @@ class TelegramConversationHandler:
             await update.message.reply_text(message, parse_mode=ParseMode.MARKDOWN)
         return ConversationHandler.END
     
-    def get_user_data(self, user_id: str) -> Dict[str, Any]:
-        """Get user's conversation data (local cache - for backward compatibility)"""
+    def get_user_data(self, user_id: str, context=None) -> Dict[str, Any]:
+        """Get user's conversation data. 
+        Uses context.user_data if available (persisted via MongoPersistence),
+        otherwise falls back to local dict (for backward compatibility)
+        """
+        if context is not None:
+            # Use PTB's context.user_data which is persisted via MongoPersistence
+            return context.user_data
+        # Fallback to local dict (should be avoided)
         if user_id not in self.user_data:
             self.user_data[user_id] = {}
         return self.user_data[user_id]
     
-    def clear_user_data(self, user_id: str):
+    def clear_user_data(self, user_id: str, context=None):
         """Clear user's conversation data"""
-        if user_id in self.user_data:
+        if context is not None:
+            context.user_data.clear()
+        elif user_id in self.user_data:
             del self.user_data[user_id]
     
     def get_progress_bar(self, step: int) -> str:
