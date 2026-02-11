@@ -1204,6 +1204,7 @@ class TelegramConversationHandler:
                 "_(Улица, номер дома, квартира)_",
                 parse_mode=ParseMode.MARKDOWN
             )
+            await self._save_state(query.message.chat_id, user_id, SHIP_FROM_ADDRESS)
             return SHIP_FROM_ADDRESS
         elif edit_type == "edit_from_location":
             data['editing_field'] = 'from_location'
@@ -1212,6 +1213,7 @@ class TelegramConversationHandler:
                 "Введите новый город:",
                 parse_mode=ParseMode.MARKDOWN
             )
+            await self._save_state(query.message.chat_id, user_id, SHIP_FROM_CITY)
             return SHIP_FROM_CITY
         elif edit_type == "edit_from_phone":
             data['editing_field'] = 'from_phone'
@@ -1221,6 +1223,7 @@ class TelegramConversationHandler:
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
             await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+            await self._save_state(query.message.chat_id, user_id, SHIP_FROM_PHONE)
             return SHIP_FROM_PHONE
         
         elif edit_type == "edit_to_address":
@@ -1231,6 +1234,7 @@ class TelegramConversationHandler:
                 "_(Улица, номер дома, квартира)_",
                 parse_mode=ParseMode.MARKDOWN
             )
+            await self._save_state(query.message.chat_id, user_id, SHIP_TO_ADDRESS)
             return SHIP_TO_ADDRESS
         elif edit_type == "edit_to_location":
             data['editing_field'] = 'to_location'
@@ -1239,6 +1243,7 @@ class TelegramConversationHandler:
                 "Введите новый город:",
                 parse_mode=ParseMode.MARKDOWN
             )
+            await self._save_state(query.message.chat_id, user_id, SHIP_TO_CITY)
             return SHIP_TO_CITY
         elif edit_type == "edit_to_phone":
             data['editing_field'] = 'to_phone'
@@ -1248,6 +1253,7 @@ class TelegramConversationHandler:
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
             await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+            await self._save_state(query.message.chat_id, user_id, SHIP_TO_PHONE)
             return SHIP_TO_PHONE
         
         elif edit_type == "edit_weight":
@@ -1258,6 +1264,7 @@ class TelegramConversationHandler:
                 "_Например: 1 или 2.5_",
                 parse_mode=ParseMode.MARKDOWN
             )
+            await self._save_state(query.message.chat_id, user_id, PACKAGE_WEIGHT)
             return PACKAGE_WEIGHT
         elif edit_type == "edit_dimensions":
             data['editing_field'] = 'dimensions'
