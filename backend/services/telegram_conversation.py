@@ -328,7 +328,7 @@ class TelegramConversationHandler:
         await self._save_state(chat_id, user_id, SHIP_FROM_CITY)
         return SHIP_FROM_CITY
     
-    async def ship_from_city(self, update: Update, context) -> int:
+    async def    async def ship_from_city(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
         chat_id = update.effective_chat.id
         data = self.get_user_data(user_id)
@@ -399,7 +399,7 @@ class TelegramConversationHandler:
         await self._save_state(chat_id, user_id, SHIP_FROM_ZIP)
         return SHIP_FROM_ZIP
     
-     ship_from_zip(self, update: Update, context) -> int:
+        async def ship_from_zip(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
         chat_id = update.effective_chat.id
         zip_code = update.message.text.strip()
@@ -567,7 +567,7 @@ class TelegramConversationHandler:
         await self._save_state(chat_id, user_id, SHIP_TO_ADDRESS)
         return SHIP_TO_ADDRESS
     
-     ship_to_address(self, update: Update, context) -> int:
+        async def ship_to_address(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
         chat_id = update.effective_chat.id
         data = self.get_user_data(user_id)
@@ -633,7 +633,7 @@ class TelegramConversationHandler:
         await self._save_state(chat_id, user_id, SHIP_TO_STATE)
         return SHIP_TO_STATE
     
-     ship_to_state(self, update: Update, context) -> int:
+        async def ship_to_state(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
         chat_id = update.effective_chat.id
         state = update.message.text.strip().upper()
@@ -708,7 +708,7 @@ class TelegramConversationHandler:
         await self._save_state(chat_id, user_id, SHIP_TO_PHONE)
         return SHIP_TO_PHONE
     
-     ship_to_phone(self, update: Update, context) -> int:
+        async def ship_to_phone(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
         chat_id = update.effective_chat.id
         data = self.get_user_data(user_id)
