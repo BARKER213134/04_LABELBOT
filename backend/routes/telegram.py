@@ -8,6 +8,7 @@ from database import get_database, Database
 import logging
 import asyncio
 import time
+from datetime import datetime, timedelta
 
 router = APIRouter(prefix="/telegram", tags=["telegram"])
 logger = logging.getLogger(__name__)
@@ -19,9 +20,9 @@ _bot_loading = False
 _bot_lock = asyncio.Lock()
 _current_environment = None
 
-# Deduplication cache for processed update IDs (last 1000 updates)
-_processed_updates = {}
-_MAX_CACHED_UPDATES = 1000
+# Local cache for recent updates (in addition to MongoDB)
+_local_update_cache = {}
+_LOCAL_CACHE_SIZE = 500
 
 
 async def _get_current_environment(db=None) -> str:
@@ -30,7 +31,7 @@ async def _get_current_environment(db=None) -> str:
         if db is None:
             db = Database.db
         if db is None:
-            return "production"  # Default to production
+            return "production"
         
         config = await db.api_config.find_one({"_id": "api_config"})
         if config:
@@ -73,12 +74,10 @@ async def _get_bot_app(db=None):
     
     environment = await _get_current_environment(db)
     
-    # Log environment change
     if _current_environment != environment:
         logger.warning(f"[BOT] Environment changed: {_current_environment} -> {environment}")
         _current_environment = environment
     
-    # Return cached app or load new one
     if environment == "production":
         if _production_app is None:
             await _load_bot_for_environment("production")
@@ -89,27 +88,66 @@ async def _get_bot_app(db=None):
         return _sandbox_app
 
 
-def _is_duplicate_update(update_id: int) -> bool:
-    """Check if update was already processed (deduplication)"""
-    global _processed_updates
+async def _is_duplicate_update(update_id: int, db) -> bool:
+    """
+    Check if update was already processed - uses MongoDB for multi-pod sync
+    with local cache for speed
+    """
+    global _local_update_cache
     
     current_time = time.time()
     
-    # Cleanup old entries (older than 5 minutes)
-    if len(_processed_updates) > _MAX_CACHED_UPDATES:
-        cutoff = current_time - 300  # 5 minutes
-        _processed_updates = {
-            uid: ts for uid, ts in _processed_updates.items() 
+    # Check local cache first (fast path)
+    if update_id in _local_update_cache:
+        return True
+    
+    # Clean local cache if too large
+    if len(_local_update_cache) > _LOCAL_CACHE_SIZE:
+        cutoff = current_time - 60  # Keep last 60 seconds
+        _local_update_cache = {
+            uid: ts for uid, ts in _local_update_cache.items() 
             if ts > cutoff
         }
     
-    # Check if already processed
-    if update_id in _processed_updates:
-        return True
-    
-    # Mark as processed
-    _processed_updates[update_id] = current_time
-    return False
+    # Check MongoDB (shared across pods)
+    try:
+        existing = await db.telegram_updates.find_one({"_id": update_id})
+        if existing:
+            # Add to local cache
+            _local_update_cache[update_id] = current_time
+            return True
+        
+        # Not found - insert into MongoDB (atomic operation)
+        await db.telegram_updates.insert_one({
+            "_id": update_id,
+            "processed_at": datetime.utcnow()
+        })
+        
+        # Add to local cache
+        _local_update_cache[update_id] = current_time
+        return False
+        
+    except Exception as e:
+        # On duplicate key error - already processed
+        if "duplicate key" in str(e).lower() or "E11000" in str(e):
+            _local_update_cache[update_id] = current_time
+            return True
+        logger.error(f"[DEDUP] Error checking update {update_id}: {e}")
+        # On error, allow processing to avoid blocking
+        return False
+
+
+async def _cleanup_old_updates(db):
+    """Cleanup old update records (run periodically)"""
+    try:
+        cutoff = datetime.utcnow() - timedelta(hours=1)
+        result = await db.telegram_updates.delete_many({
+            "processed_at": {"$lt": cutoff}
+        })
+        if result.deleted_count > 0:
+            logger.info(f"[DEDUP] Cleaned up {result.deleted_count} old update records")
+    except Exception as e:
+        logger.error(f"[DEDUP] Cleanup error: {e}")
 
 
 @router.post("/webhook")
@@ -120,17 +158,17 @@ async def telegram_webhook(
 ):
     """
     Webhook handler - responds immediately to Telegram
-    Dynamically uses environment from DB settings
+    Uses MongoDB for update deduplication across pods
     """
     try:
         update_data = await request.json()
         update_id = update_data.get("update_id")
         
-        # Deduplicate updates FIRST - before any processing
-        if update_id and _is_duplicate_update(update_id):
+        # Deduplicate updates using MongoDB (multi-pod safe)
+        if update_id and await _is_duplicate_update(update_id, db):
             return JSONResponse(content={"status": "ok"})
         
-        # Get bot application for current environment (reads from DB)
+        # Get bot application for current environment
         app = await _get_bot_app(db)
         
         if app is None:
@@ -156,6 +194,9 @@ async def preload_bot(db: AsyncIOMotorDatabase = Depends(get_database)):
     """Endpoint to trigger bot preloading for current environment"""
     environment = await _get_current_environment(db)
     await _load_bot_for_environment(environment)
+    
+    # Cleanup old updates periodically
+    asyncio.create_task(_cleanup_old_updates(db))
     
     return {
         "status": "ok", 
