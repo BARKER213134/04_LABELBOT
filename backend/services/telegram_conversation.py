@@ -1068,12 +1068,14 @@ class TelegramConversationHandler:
     
     async def _show_rates(self, query, user_id: str, rates: List[Dict[str, Any]], context=None):
         """Display available rates with prices - 4 per carrier"""
-        # Carrier display settings
+        # Carrier display settings - map carrier codes to display info
         carrier_config = {
             'stamps_com': {'icon': '📦', 'name': 'USPS'},
             'usps': {'icon': '📦', 'name': 'USPS'},
             'fedex': {'icon': '✈️', 'name': 'FedEx'},
+            'fedex_walleted': {'icon': '✈️', 'name': 'FedEx'},
             'ups': {'icon': '🚚', 'name': 'UPS'},
+            'globalpost': {'icon': '🌍', 'name': 'GlobalPost'},
         }
         
         # Popular services to prioritize (in order of priority)
@@ -1081,7 +1083,9 @@ class TelegramConversationHandler:
             'stamps_com': ['usps_ground_advantage', 'usps_priority_mail', 'usps_first_class_mail', 'usps_priority_mail_express'],
             'usps': ['usps_ground_advantage', 'usps_priority_mail', 'usps_first_class_mail', 'usps_priority_mail_express'],
             'fedex': ['fedex_ground', 'fedex_home_delivery', 'fedex_2day', 'fedex_express_saver'],
+            'fedex_walleted': ['fedex_ground', 'fedex_home_delivery', 'fedex_2day', 'fedex_express_saver'],
             'ups': ['ups_ground', 'ups_3_day_select', 'ups_2nd_day_air', 'ups_next_day_air_saver'],
+            'globalpost': [],
         }
         
         # Get user balance
@@ -1118,8 +1122,8 @@ class TelegramConversationHandler:
         data = self.get_user_data(user_id, context)
         data['rate_map'] = {}
         
-        # Process each carrier
-        for carrier_code in ['stamps_com', 'fedex', 'ups']:
+        # Process each carrier - include all possible carrier codes
+        for carrier_code in ['stamps_com', 'usps', 'fedex', 'fedex_walleted', 'ups']:
             carrier_rates = rates_by_carrier.get(carrier_code, [])
             if not carrier_rates:
                 continue
