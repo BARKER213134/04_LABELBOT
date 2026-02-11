@@ -328,7 +328,7 @@ class TelegramConversationHandler:
         await self._save_state(chat_id, user_id, SHIP_FROM_CITY)
         return SHIP_FROM_CITY
     
-     ship_from_city(self, update: Update, context) -> int:
+    async def ship_from_city(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
         chat_id = update.effective_chat.id
         data = self.get_user_data(user_id)
