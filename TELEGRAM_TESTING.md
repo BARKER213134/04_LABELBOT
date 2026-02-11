@@ -23,7 +23,7 @@
 /help - Показать помощь
 
 💡 Для полного функционала используйте веб-дашборд:
-https://shiplabel-bot.preview.emergentagent.com
+https://shiptg-wizard.preview.emergentagent.com
 ```
 
 ### Тест команды /create
@@ -123,7 +123,7 @@ python3 setup_dual_webhooks.py
 Для тестирования production бота:
 
 1. **Переключите environment в Admin Panel**:
-   - Откройте: https://shiplabel-bot.preview.emergentagent.com/admin
+   - Откройте: https://shiptg-wizard.preview.emergentagent.com/admin
    - Выберите: "Production (Live)"
    - Нажмите: "Save Changes"
 
@@ -186,10 +186,10 @@ tail -50 /var/log/supervisor/backend.err.log | grep -i shipengine
 
 ```bash
 # Проверить текущий environment
-curl https://shiplabel-bot.preview.emergentagent.com/api/admin/api-config
+curl https://shiptg-wizard.preview.emergentagent.com/api/admin/api-config
 
 # Симулировать webhook
-API_URL="https://shiplabel-bot.preview.emergentagent.com"
+API_URL="https://shiptg-wizard.preview.emergentagent.com"
 curl -X POST "$API_URL/api/telegram/webhook" \
   -H "Content-Type: application/json" \
   -d '{"update_id":1,"message":{"message_id":1,"from":{"id":123,"first_name":"Test"},"chat":{"id":123,"type":"private"},"text":"/help","date":1705264800}}'
