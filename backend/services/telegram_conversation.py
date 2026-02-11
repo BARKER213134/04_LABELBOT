@@ -2020,11 +2020,9 @@ class TelegramConversationHandler:
                 CommandHandler('start', self.reset_and_start),
                 CommandHandler('cancel', self.cancel),
                 CallbackQueryHandler(self.back_to_menu_fallback, pattern="^back_to_menu$"),
-                # Fallback text handler - checks MongoDB when PTB state is lost
-                MessageHandler(filters.TEXT & ~filters.COMMAND, self.fallback_text_handler),
             ],
             name="label_creation",
-            persistent=False,  # Disable PTB caching - we use MongoDB directly
+            persistent=True,  # Use MongoPersistence for multi-pod state sync
             per_message=False,
             per_chat=True,
             per_user=True,
