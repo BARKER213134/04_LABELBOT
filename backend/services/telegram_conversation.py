@@ -280,6 +280,7 @@ class TelegramConversationHandler:
         if data.get('editing_field') == 'from_name_only':
             data['editing_field'] = None
             await self.show_review_summary(update.message, user_id)
+            await self._save_state(update.effective_chat.id, user_id, REVIEW_SUMMARY)
             return REVIEW_SUMMARY
         
         text = (
@@ -313,6 +314,7 @@ class TelegramConversationHandler:
         if data.get('editing_field') == 'from_address':
             data['editing_field'] = None
             await self.show_review_summary(update.message, user_id)
+            await self._save_state(update.effective_chat.id, user_id, REVIEW_SUMMARY)
             return REVIEW_SUMMARY
         
         text = (
@@ -345,6 +347,7 @@ class TelegramConversationHandler:
         if data.get('editing_field') == 'from_city_only':
             data['editing_field'] = None
             await self.show_review_summary(update.message, user_id)
+            await self._save_state(update.effective_chat.id, user_id, REVIEW_SUMMARY)
             return REVIEW_SUMMARY
         
         text = (
@@ -416,6 +419,7 @@ class TelegramConversationHandler:
         if data.get('editing_field') == 'from_location':
             data['editing_field'] = None
             await self.show_review_summary(update.message, user_id)
+            await self._save_state(update.effective_chat.id, user_id, REVIEW_SUMMARY)
             return REVIEW_SUMMARY
         
         text = (
@@ -468,6 +472,7 @@ class TelegramConversationHandler:
         if data.get('editing_field') == 'from_phone':
             data['editing_field'] = None
             await self.show_review_summary(update.message, user_id)
+            await self._save_state(update.effective_chat.id, user_id, REVIEW_SUMMARY)
             return REVIEW_SUMMARY
         
         text = (
@@ -549,6 +554,7 @@ class TelegramConversationHandler:
         if data.get('editing_field') == 'to_name_only':
             data['editing_field'] = None
             await self.show_review_summary(update.message, user_id)
+            await self._save_state(update.effective_chat.id, user_id, REVIEW_SUMMARY)
             return REVIEW_SUMMARY
         
         text = (
@@ -582,6 +588,7 @@ class TelegramConversationHandler:
         if data.get('editing_field') == 'to_address':
             data['editing_field'] = None
             await self.show_review_summary(update.message, user_id)
+            await self._save_state(update.effective_chat.id, user_id, REVIEW_SUMMARY)
             return REVIEW_SUMMARY
         
         text = (
@@ -614,6 +621,7 @@ class TelegramConversationHandler:
         if data.get('editing_field') == 'to_city_only':
             data['editing_field'] = None
             await self.show_review_summary(update.message, user_id)
+            await self._save_state(update.effective_chat.id, user_id, REVIEW_SUMMARY)
             return REVIEW_SUMMARY
         
         text = (
@@ -685,6 +693,7 @@ class TelegramConversationHandler:
         if data.get('editing_field') == 'to_location':
             data['editing_field'] = None
             await self.show_review_summary(update.message, user_id)
+            await self._save_state(update.effective_chat.id, user_id, REVIEW_SUMMARY)
             return REVIEW_SUMMARY
         
         text = (
@@ -725,6 +734,7 @@ class TelegramConversationHandler:
         if data.get('editing_field') == 'to_phone':
             data['editing_field'] = None
             await self.show_review_summary(update.message, user_id)
+            await self._save_state(update.effective_chat.id, user_id, REVIEW_SUMMARY)
             return REVIEW_SUMMARY
         
         text = (
@@ -818,6 +828,7 @@ class TelegramConversationHandler:
                 parse_mode=ParseMode.MARKDOWN
             )
             await self.show_review_summary(update.message, user_id)
+            await self._save_state(update.effective_chat.id, user_id, REVIEW_SUMMARY)
             return REVIEW_SUMMARY
         
         text = (
