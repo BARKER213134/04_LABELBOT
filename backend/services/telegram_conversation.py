@@ -239,7 +239,6 @@ class TelegramConversationHandler:
             logger.error(f"Failed to edit message for user {user_id}: {e}")
         
         # Save state to MongoDB for cross-pod sync
-        await self._save_state(chat_id, user_id, SHIP_FROM_NAME)
         
         return SHIP_FROM_NAME
     
@@ -272,7 +271,6 @@ class TelegramConversationHandler:
                 f"❌ *{error_msg}*\n\nПожалуйста, введите имя заново:",
                 parse_mode=ParseMode.MARKDOWN
             )
-            await self._save_state(update.effective_chat.id, user_id, SHIP_FROM_NAME)
             return SHIP_FROM_NAME
         
         data['shipFromName'] = name
@@ -281,7 +279,6 @@ class TelegramConversationHandler:
         if data.get('editing_field') == 'from_name_only':
             data['editing_field'] = None
             await self.show_review_summary(update.message, user_id)
-            await self._save_state(update.effective_chat.id, user_id, REVIEW_SUMMARY)
             return REVIEW_SUMMARY
         
         text = (
@@ -292,7 +289,6 @@ class TelegramConversationHandler:
         )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
-        await self._save_state(update.effective_chat.id, user_id, SHIP_FROM_ADDRESS)
         return SHIP_FROM_ADDRESS
     
     async def ship_from_address(self, update: Update, context) -> int:
@@ -307,7 +303,6 @@ class TelegramConversationHandler:
                 f"❌ *{error_msg}*\n\nПожалуйста, введите адрес заново:",
                 parse_mode=ParseMode.MARKDOWN
             )
-            await self._save_state(update.effective_chat.id, user_id, SHIP_FROM_ADDRESS)
             return SHIP_FROM_ADDRESS
         
         data['shipFromAddressLine1'] = address
@@ -316,7 +311,6 @@ class TelegramConversationHandler:
         if data.get('editing_field') == 'from_address':
             data['editing_field'] = None
             await self.show_review_summary(update.message, user_id)
-            await self._save_state(update.effective_chat.id, user_id, REVIEW_SUMMARY)
             return REVIEW_SUMMARY
         
         text = (
@@ -326,7 +320,6 @@ class TelegramConversationHandler:
         )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
-        await self._save_state(update.effective_chat.id, user_id, SHIP_FROM_CITY)
         return SHIP_FROM_CITY
     
     async def ship_from_city(self, update: Update, context) -> int:
@@ -341,7 +334,6 @@ class TelegramConversationHandler:
                 f"❌ *{error_msg}*\n\nПожалуйста, введите город заново:",
                 parse_mode=ParseMode.MARKDOWN
             )
-            await self._save_state(update.effective_chat.id, user_id, SHIP_FROM_CITY)
             return SHIP_FROM_CITY
         
         data['shipFromCity'] = city
@@ -350,7 +342,6 @@ class TelegramConversationHandler:
         if data.get('editing_field') == 'from_city_only':
             data['editing_field'] = None
             await self.show_review_summary(update.message, user_id)
-            await self._save_state(update.effective_chat.id, user_id, REVIEW_SUMMARY)
             return REVIEW_SUMMARY
         
         text = (
@@ -361,7 +352,6 @@ class TelegramConversationHandler:
         )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
-        await self._save_state(update.effective_chat.id, user_id, SHIP_FROM_STATE)
         return SHIP_FROM_STATE
     
     async def ship_from_state(self, update: Update, context) -> int:
@@ -388,7 +378,6 @@ class TelegramConversationHandler:
                 "Введите почтовый индекс (5 цифр):"
             )
             await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
-            await self._save_state(update.effective_chat.id, user_id, SHIP_FROM_ZIP)
             return SHIP_FROM_ZIP
         
         text = (
@@ -399,7 +388,6 @@ class TelegramConversationHandler:
         )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
-        await self._save_state(update.effective_chat.id, user_id, SHIP_FROM_ZIP)
         return SHIP_FROM_ZIP
     
     async def ship_from_zip(self, update: Update, context) -> int:
@@ -414,7 +402,6 @@ class TelegramConversationHandler:
                 "Пожалуйста, попробуйте еще раз:"
             )
             await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
-            await self._save_state(update.effective_chat.id, user_id, SHIP_FROM_ZIP)
             return SHIP_FROM_ZIP
         data = self.get_user_data(user_id)
         data['shipFromPostalCode'] = zip_code
@@ -423,7 +410,6 @@ class TelegramConversationHandler:
         if data.get('editing_field') == 'from_location':
             data['editing_field'] = None
             await self.show_review_summary(update.message, user_id)
-            await self._save_state(update.effective_chat.id, user_id, REVIEW_SUMMARY)
             return REVIEW_SUMMARY
         
         text = (
@@ -438,7 +424,6 @@ class TelegramConversationHandler:
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         await update.message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
-        await self._save_state(update.effective_chat.id, user_id, SHIP_FROM_PHONE)
         return SHIP_FROM_PHONE
     
     def validate_phone(self, phone: str) -> tuple[bool, str]:
@@ -466,7 +451,6 @@ class TelegramConversationHandler:
                     f"❌ *{result}*\n\nПожалуйста, введите корректный номер телефона:",
                     parse_mode=ParseMode.MARKDOWN
                 )
-                await self._save_state(update.effective_chat.id, user_id, SHIP_FROM_PHONE)
                 return SHIP_FROM_PHONE
             data['shipFromPhone'] = phone
         else:
@@ -477,7 +461,6 @@ class TelegramConversationHandler:
         if data.get('editing_field') == 'from_phone':
             data['editing_field'] = None
             await self.show_review_summary(update.message, user_id)
-            await self._save_state(update.effective_chat.id, user_id, REVIEW_SUMMARY)
             return REVIEW_SUMMARY
         
         text = (
@@ -493,7 +476,6 @@ class TelegramConversationHandler:
         )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
-        await self._save_state(update.effective_chat.id, user_id, SHIP_TO_NAME)
         return SHIP_TO_NAME
     
     async def skip_from_phone_callback(self, update: Update, context) -> int:
@@ -551,7 +533,6 @@ class TelegramConversationHandler:
                 f"❌ *{error_msg}*\n\nПожалуйста, введите имя заново:",
                 parse_mode=ParseMode.MARKDOWN
             )
-            await self._save_state(update.effective_chat.id, user_id, SHIP_TO_NAME)
             return SHIP_TO_NAME
         
         data['shipToName'] = name
@@ -560,7 +541,6 @@ class TelegramConversationHandler:
         if data.get('editing_field') == 'to_name_only':
             data['editing_field'] = None
             await self.show_review_summary(update.message, user_id)
-            await self._save_state(update.effective_chat.id, user_id, REVIEW_SUMMARY)
             return REVIEW_SUMMARY
         
         text = (
@@ -571,7 +551,6 @@ class TelegramConversationHandler:
         )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
-        await self._save_state(update.effective_chat.id, user_id, SHIP_TO_ADDRESS)
         return SHIP_TO_ADDRESS
     
     async def ship_to_address(self, update: Update, context) -> int:
@@ -586,7 +565,6 @@ class TelegramConversationHandler:
                 f"❌ *{error_msg}*\n\nПожалуйста, введите адрес заново:",
                 parse_mode=ParseMode.MARKDOWN
             )
-            await self._save_state(update.effective_chat.id, user_id, SHIP_TO_ADDRESS)
             return SHIP_TO_ADDRESS
         
         data['shipToAddressLine1'] = address
@@ -595,7 +573,6 @@ class TelegramConversationHandler:
         if data.get('editing_field') == 'to_address':
             data['editing_field'] = None
             await self.show_review_summary(update.message, user_id)
-            await self._save_state(update.effective_chat.id, user_id, REVIEW_SUMMARY)
             return REVIEW_SUMMARY
         
         text = (
@@ -605,7 +582,6 @@ class TelegramConversationHandler:
         )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
-        await self._save_state(update.effective_chat.id, user_id, SHIP_TO_CITY)
         return SHIP_TO_CITY
     
     async def ship_to_city(self, update: Update, context) -> int:
@@ -620,7 +596,6 @@ class TelegramConversationHandler:
                 f"❌ *{error_msg}*\n\nПожалуйста, введите город заново:",
                 parse_mode=ParseMode.MARKDOWN
             )
-            await self._save_state(update.effective_chat.id, user_id, SHIP_TO_CITY)
             return SHIP_TO_CITY
         
         data['shipToCity'] = city
@@ -629,7 +604,6 @@ class TelegramConversationHandler:
         if data.get('editing_field') == 'to_city_only':
             data['editing_field'] = None
             await self.show_review_summary(update.message, user_id)
-            await self._save_state(update.effective_chat.id, user_id, REVIEW_SUMMARY)
             return REVIEW_SUMMARY
         
         text = (
@@ -640,7 +614,6 @@ class TelegramConversationHandler:
         )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
-        await self._save_state(update.effective_chat.id, user_id, SHIP_TO_STATE)
         return SHIP_TO_STATE
     
     async def ship_to_state(self, update: Update, context) -> int:
@@ -654,7 +627,6 @@ class TelegramConversationHandler:
                 "Пожалуйста, попробуйте еще раз:"
             )
             await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
-            await self._save_state(update.effective_chat.id, user_id, SHIP_TO_STATE)
             return SHIP_TO_STATE
         data = self.get_user_data(user_id)
         data['shipToState'] = state
@@ -667,7 +639,6 @@ class TelegramConversationHandler:
                 "Введите почтовый индекс (5 цифр):"
             )
             await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
-            await self._save_state(update.effective_chat.id, user_id, SHIP_TO_ZIP)
             return SHIP_TO_ZIP
         
         text = (
@@ -678,7 +649,6 @@ class TelegramConversationHandler:
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
         logger.warning(f"[DEBUG] ship_to_state completed for user {user_id}, returning SHIP_TO_ZIP")
-        await self._save_state(update.effective_chat.id, user_id, SHIP_TO_ZIP)
         return SHIP_TO_ZIP
     
     async def ship_to_zip(self, update: Update, context) -> int:
@@ -692,7 +662,6 @@ class TelegramConversationHandler:
                 "Пожалуйста, попробуйте еще раз:"
             )
             await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
-            await self._save_state(update.effective_chat.id, user_id, SHIP_TO_ZIP)
             return SHIP_TO_ZIP
         data = self.get_user_data(user_id)
         data['shipToPostalCode'] = zip_code
@@ -701,7 +670,6 @@ class TelegramConversationHandler:
         if data.get('editing_field') == 'to_location':
             data['editing_field'] = None
             await self.show_review_summary(update.message, user_id)
-            await self._save_state(update.effective_chat.id, user_id, REVIEW_SUMMARY)
             return REVIEW_SUMMARY
         
         text = (
@@ -716,7 +684,6 @@ class TelegramConversationHandler:
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         await update.message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
-        await self._save_state(update.effective_chat.id, user_id, SHIP_TO_PHONE)
         return SHIP_TO_PHONE
     
     async def ship_to_phone(self, update: Update, context) -> int:
@@ -732,7 +699,6 @@ class TelegramConversationHandler:
                     f"❌ *{result}*\n\nПожалуйста, введите корректный номер телефона:",
                     parse_mode=ParseMode.MARKDOWN
                 )
-                await self._save_state(update.effective_chat.id, user_id, SHIP_TO_PHONE)
                 return SHIP_TO_PHONE
             data['shipToPhone'] = phone
         else:
@@ -743,7 +709,6 @@ class TelegramConversationHandler:
         if data.get('editing_field') == 'to_phone':
             data['editing_field'] = None
             await self.show_review_summary(update.message, user_id)
-            await self._save_state(update.effective_chat.id, user_id, REVIEW_SUMMARY)
             return REVIEW_SUMMARY
         
         text = (
@@ -760,7 +725,6 @@ class TelegramConversationHandler:
         )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
-        await self._save_state(update.effective_chat.id, user_id, PACKAGE_WEIGHT)
         return PACKAGE_WEIGHT
     
     async def skip_to_phone_callback(self, update: Update, context) -> int:
@@ -837,7 +801,6 @@ class TelegramConversationHandler:
                 parse_mode=ParseMode.MARKDOWN
             )
             await self.show_review_summary(update.message, user_id)
-            await self._save_state(update.effective_chat.id, user_id, REVIEW_SUMMARY)
             return REVIEW_SUMMARY
         
         text = (
@@ -849,7 +812,6 @@ class TelegramConversationHandler:
         )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
-        await self._save_state(update.effective_chat.id, user_id, PACKAGE_DIMENSIONS)
         return PACKAGE_DIMENSIONS
     
     async def package_dimensions(self, update: Update, context) -> int:
@@ -889,7 +851,6 @@ class TelegramConversationHandler:
         
         # Show review summary
         await self.show_review_summary(update.message, user_id)
-        await self._save_state(update.effective_chat.id, user_id, REVIEW_SUMMARY)
         return REVIEW_SUMMARY
     
     async def show_review_summary(self, message, user_id: str, from_template: bool = False, edit_message: bool = False):
@@ -997,7 +958,6 @@ class TelegramConversationHandler:
                 
                 # Show rates
                 await self._show_rates(query, user_id, rates)
-                await self._save_state(query.message.chat_id, user_id, SELECT_RATE)
                 return SELECT_RATE
                 
             except Exception as e:
@@ -1066,7 +1026,6 @@ class TelegramConversationHandler:
         
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
-        await self._save_state(query.message.chat_id, user_id, EDIT_SECTION)
         return EDIT_SECTION
     
     async def _fetch_rates(self, data: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -1215,7 +1174,6 @@ class TelegramConversationHandler:
         if edit_type == "back_to_review":
             # Go back to review summary - edit message to show summary
             await self.show_review_summary(query.message, user_id, edit_message=True)
-            await self._save_state(query.message.chat_id, user_id, REVIEW_SUMMARY)
             return REVIEW_SUMMARY
         
         # Handle different edit types - set editing_field flag
@@ -1227,7 +1185,6 @@ class TelegramConversationHandler:
                 "_(Улица, номер дома, квартира)_",
                 parse_mode=ParseMode.MARKDOWN
             )
-            await self._save_state(query.message.chat_id, user_id, SHIP_FROM_ADDRESS)
             return SHIP_FROM_ADDRESS
         elif edit_type == "edit_from_location":
             data['editing_field'] = 'from_location'
@@ -1236,7 +1193,6 @@ class TelegramConversationHandler:
                 "Введите новый город:",
                 parse_mode=ParseMode.MARKDOWN
             )
-            await self._save_state(query.message.chat_id, user_id, SHIP_FROM_CITY)
             return SHIP_FROM_CITY
         elif edit_type == "edit_from_phone":
             data['editing_field'] = 'from_phone'
@@ -1246,7 +1202,6 @@ class TelegramConversationHandler:
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
             await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
-            await self._save_state(query.message.chat_id, user_id, SHIP_FROM_PHONE)
             return SHIP_FROM_PHONE
         
         elif edit_type == "edit_to_address":
@@ -1257,7 +1212,6 @@ class TelegramConversationHandler:
                 "_(Улица, номер дома, квартира)_",
                 parse_mode=ParseMode.MARKDOWN
             )
-            await self._save_state(query.message.chat_id, user_id, SHIP_TO_ADDRESS)
             return SHIP_TO_ADDRESS
         elif edit_type == "edit_to_location":
             data['editing_field'] = 'to_location'
@@ -1266,7 +1220,6 @@ class TelegramConversationHandler:
                 "Введите новый город:",
                 parse_mode=ParseMode.MARKDOWN
             )
-            await self._save_state(query.message.chat_id, user_id, SHIP_TO_CITY)
             return SHIP_TO_CITY
         elif edit_type == "edit_to_phone":
             data['editing_field'] = 'to_phone'
@@ -1276,7 +1229,6 @@ class TelegramConversationHandler:
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
             await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
-            await self._save_state(query.message.chat_id, user_id, SHIP_TO_PHONE)
             return SHIP_TO_PHONE
         
         elif edit_type == "edit_weight":
@@ -1287,7 +1239,6 @@ class TelegramConversationHandler:
                 "_Например: 1 или 2.5_",
                 parse_mode=ParseMode.MARKDOWN
             )
-            await self._save_state(query.message.chat_id, user_id, PACKAGE_WEIGHT)
             return PACKAGE_WEIGHT
         elif edit_type == "edit_dimensions":
             data['editing_field'] = 'dimensions'
@@ -1298,7 +1249,6 @@ class TelegramConversationHandler:
                 "_Например: 12 8 6_",
                 parse_mode=ParseMode.MARKDOWN
             )
-            await self._save_state(query.message.chat_id, user_id, PACKAGE_DIMENSIONS)
             return PACKAGE_DIMENSIONS
         
         return EDIT_SECTION
@@ -1438,7 +1388,6 @@ class TelegramConversationHandler:
             reply_markup=reply_markup,
             parse_mode=ParseMode.MARKDOWN
         )
-        await self._save_state(query.message.chat_id, user_id, CONFIRM)
         return CONFIRM
     
     async def confirm_and_create(self, update: Update, context) -> int:
@@ -1679,7 +1628,6 @@ class TelegramConversationHandler:
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
-        await self._save_state(query.message.chat_id, user_id, TEMPLATE_SAVE_NAME)
         return TEMPLATE_SAVE_NAME
     
     async def save_template_name(self, update: Update, context) -> int:
@@ -1780,7 +1728,6 @@ class TelegramConversationHandler:
         
         # Show review summary with template data as NEW message
         await self.show_review_summary(query.message, user_id, from_template=True, edit_message=False)
-        await self._save_state(query.message.chat_id, user_id, REVIEW_SUMMARY)
         return REVIEW_SUMMARY
     
     async def edit_template(self, update: Update, context) -> int:
@@ -1837,7 +1784,6 @@ class TelegramConversationHandler:
         
         # Send as NEW message instead of editing
         await query.message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
-        await self._save_state(query.message.chat_id, user_id, TEMPLATE_EDIT)
         return TEMPLATE_EDIT
     
     async def save_template_changes(self, update: Update, context) -> int:
