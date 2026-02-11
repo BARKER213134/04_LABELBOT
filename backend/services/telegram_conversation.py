@@ -85,15 +85,34 @@ class TelegramConversationHandler:
         return ConversationHandler.END
     
     def get_user_data(self, user_id: str) -> Dict[str, Any]:
-        """Get user's conversation data"""
+        """Get user's conversation data (from memory cache)"""
         if user_id not in self.user_data:
             self.user_data[user_id] = {}
         return self.user_data[user_id]
+    
+    async def load_user_data(self, user_id: str) -> Dict[str, Any]:
+        """Load user data from MongoDB if not in memory"""
+        if user_id not in self.user_data or not self.user_data[user_id]:
+            state_doc = await self.state_service.get_state(user_id)
+            if state_doc and state_doc.get('data'):
+                self.user_data[user_id] = state_doc['data']
+                self.user_data[user_id]['_db_state'] = state_doc.get('state')
+        return self.get_user_data(user_id)
+    
+    async def save_user_state(self, user_id: str, state: int):
+        """Save user state to MongoDB"""
+        data = self.get_user_data(user_id)
+        await self.state_service.set_state(user_id, state, data)
     
     def clear_user_data(self, user_id: str):
         """Clear user's conversation data"""
         if user_id in self.user_data:
             del self.user_data[user_id]
+    
+    async def clear_user_data_and_state(self, user_id: str):
+        """Clear user data from memory and MongoDB"""
+        self.clear_user_data(user_id)
+        await self.state_service.clear_state(user_id)
     
     def get_progress_bar(self, step: int) -> str:
         """Generate progress bar for steps"""
