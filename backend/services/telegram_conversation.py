@@ -1406,6 +1406,7 @@ class TelegramConversationHandler:
             reply_markup=reply_markup,
             parse_mode=ParseMode.MARKDOWN
         )
+        await self._save_state(query.message.chat_id, user_id, CONFIRM)
         return CONFIRM
     
     async def confirm_and_create(self, update: Update, context) -> int:
