@@ -1066,7 +1066,7 @@ class TelegramConversationHandler:
         
         return await self.shipengine_service.get_rates(shipment_data)
     
-    async def _show_rates(self, query, user_id: str, rates: List[Dict[str, Any]]):
+    async def _show_rates(self, query, user_id: str, rates: List[Dict[str, Any]], context=None):
         """Display available rates with prices - 4 per carrier"""
         # Carrier display settings
         carrier_config = {
