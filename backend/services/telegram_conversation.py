@@ -114,6 +114,11 @@ class TelegramConversationHandler:
         self.clear_user_data(user_id)
         await self.state_service.clear_state(user_id)
     
+    async def _return_state(self, user_id: str, state: int) -> int:
+        """Save state to MongoDB and return it"""
+        await self.save_user_state(user_id, state)
+        return state
+    
     def get_progress_bar(self, step: int) -> str:
         """Generate progress bar for steps"""
         total_steps = 4
