@@ -1193,6 +1193,7 @@ class TelegramConversationHandler:
         if edit_type == "back_to_review":
             # Go back to review summary - edit message to show summary
             await self.show_review_summary(query.message, user_id, edit_message=True)
+            await self._save_state(query.message.chat_id, user_id, REVIEW_SUMMARY)
             return REVIEW_SUMMARY
         
         # Handle different edit types - set editing_field flag
