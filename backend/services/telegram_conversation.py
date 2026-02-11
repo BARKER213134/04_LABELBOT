@@ -2021,11 +2021,72 @@ class TelegramConversationHandler:
                 CommandHandler('start', self.reset_and_start),
                 CommandHandler('cancel', self.cancel),
                 CallbackQueryHandler(self.back_to_menu_fallback, pattern="^back_to_menu$"),
+                # Fallback text handler - checks MongoDB when PTB state is lost
+                MessageHandler(filters.TEXT & ~filters.COMMAND, self.fallback_text_handler),
             ],
-            name="label_creation",  # Unique name for persistence
-            persistent=True,        # Enable persistence
+            name="label_creation",
+            persistent=False,  # Disable PTB caching - we use MongoDB directly
             per_message=False,
             per_chat=True,
             per_user=True,
             allow_reentry=True,
         )
+    
+    async def fallback_text_handler(self, update: Update, context) -> int:
+        """Fallback handler - route based on MongoDB state when PTB state is lost"""
+        user_id = str(update.effective_user.id)
+        chat_id = update.effective_chat.id
+        
+        # Check MongoDB for saved state
+        try:
+            from database import Database
+            db = Database.db
+            doc = await db.ptb_conversations.find_one({
+                'name': 'label_creation',
+                'key': [chat_id, user_id]
+            })
+            
+            if not doc:
+                logger.warning(f"[FALLBACK] No state for user {user_id}, ignoring")
+                return ConversationHandler.END
+            
+            saved_state = doc.get('state')
+            logger.warning(f"[FALLBACK] Found state={saved_state} for user {user_id}, routing...")
+            
+            # Map state to handler
+            state_handlers = {
+                SHIP_FROM_NAME: self.ship_from_name,
+                SHIP_FROM_ADDRESS: self.ship_from_address,
+                SHIP_FROM_CITY: self.ship_from_city,
+                SHIP_FROM_STATE: self.ship_from_state,
+                SHIP_FROM_ZIP: self.ship_from_zip,
+                SHIP_FROM_PHONE: self.ship_from_phone,
+                SHIP_TO_NAME: self.ship_to_name,
+                SHIP_TO_ADDRESS: self.ship_to_address,
+                SHIP_TO_CITY: self.ship_to_city,
+                SHIP_TO_STATE: self.ship_to_state,
+                SHIP_TO_ZIP: self.ship_to_zip,
+                SHIP_TO_PHONE: self.ship_to_phone,
+                PACKAGE_WEIGHT: self.package_weight,
+                PACKAGE_DIMENSIONS: self.package_dimensions,
+                TEMPLATE_SAVE_NAME: self.save_template_name,
+            }
+            
+            handler = state_handlers.get(saved_state)
+            if handler:
+                result = await handler(update, context)
+                # Save new state to MongoDB
+                if result != ConversationHandler.END:
+                    await db.ptb_conversations.update_one(
+                        {'name': 'label_creation', 'key': [chat_id, user_id]},
+                        {'$set': {'state': result}},
+                        upsert=True
+                    )
+                return result
+            
+            logger.warning(f"[FALLBACK] Unknown state {saved_state}")
+            return ConversationHandler.END
+            
+        except Exception as e:
+            logger.error(f"[FALLBACK] Error: {e}")
+            return ConversationHandler.END
