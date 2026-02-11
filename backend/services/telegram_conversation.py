@@ -652,6 +652,7 @@ class TelegramConversationHandler:
                 "Введите почтовый индекс (5 цифр):"
             )
             await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+            await self._save_state(update.effective_chat.id, user_id, SHIP_TO_ZIP)
             return SHIP_TO_ZIP
         
         text = (
