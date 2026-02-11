@@ -270,6 +270,9 @@ class TelegramConversationHandler:
     
     async def ship_from_name(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
+        
+        # Load data from MongoDB if needed
+        await self.load_user_data(user_id)
         data = self.get_user_data(user_id)
         name = update.message.text.strip()
         
@@ -280,7 +283,7 @@ class TelegramConversationHandler:
                 f"❌ *{error_msg}*\n\nПожалуйста, введите имя заново:",
                 parse_mode=ParseMode.MARKDOWN
             )
-            return SHIP_FROM_NAME
+            return await self._return_state(user_id, SHIP_FROM_NAME)
         
         data['shipFromName'] = name
         
@@ -288,7 +291,7 @@ class TelegramConversationHandler:
         if data.get('editing_field') == 'from_name_only':
             data['editing_field'] = None
             await self.show_review_summary(update.message, user_id)
-            return REVIEW_SUMMARY
+            return await self._return_state(user_id, REVIEW_SUMMARY)
         
         text = (
             "✅ *Имя отправителя сохранено*\n\n"
@@ -298,7 +301,7 @@ class TelegramConversationHandler:
         )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
-        return SHIP_FROM_ADDRESS
+        return await self._return_state(user_id, SHIP_FROM_ADDRESS)
     
     async def ship_from_address(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
