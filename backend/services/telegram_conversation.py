@@ -185,7 +185,7 @@ class TelegramConversationHandler:
             return await self._send_banned_message(update)
         
         # Clear previous data
-        self.clear_user_data(user_id)
+        self.clear_user_data(user_id, context)
         
         # Ensure user exists
         db_user = await self._ensure_user(update)
@@ -222,7 +222,7 @@ class TelegramConversationHandler:
             return await self._send_banned_message(update)
         
         # Clear previous data
-        self.clear_user_data(user_id)
+        self.clear_user_data(user_id, context)
         
         # Ensure user exists
         db_user = await self._ensure_user(update)
@@ -1414,7 +1414,7 @@ class TelegramConversationHandler:
             reply_markup = InlineKeyboardMarkup(keyboard)
             
             await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
-            self.clear_user_data(user_id)
+            self.clear_user_data(user_id, context)
             return ConversationHandler.END
         
         if query.data == "back_to_rates":
@@ -1809,7 +1809,7 @@ class TelegramConversationHandler:
         
         # Send as NEW message instead of editing
         await query.message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
-        self.clear_user_data(user_id)
+        self.clear_user_data(user_id, context)
         return ConversationHandler.END
     
     async def download_label(self, update: Update, context) -> int:
@@ -1856,7 +1856,7 @@ class TelegramConversationHandler:
             await query.message.reply_text(f"❌ Ошибка: {str(e)}")
         
         # Clear data after download
-        self.clear_user_data(user_id)
+        self.clear_user_data(user_id, context)
         return ConversationHandler.END
     
     def _format_summary_text(self, data: Dict[str, Any]) -> str:
@@ -1899,7 +1899,7 @@ class TelegramConversationHandler:
         if await self._check_user_banned(user_id):
             return await self._send_banned_message(update)
         
-        self.clear_user_data(user_id)
+        self.clear_user_data(user_id, context)
         
         logger.info(f"back_to_menu_fallback triggered by user {user_id} - ending conversation")
         
@@ -1930,7 +1930,7 @@ class TelegramConversationHandler:
     async def cancel(self, update: Update, context) -> int:
         """Cancel the conversation"""
         user_id = str(update.effective_user.id)
-        self.clear_user_data(user_id)
+        self.clear_user_data(user_id, context)
         
         text = (
             "━━━━━━━━━━━━━━━━━━━━\n"
@@ -1956,7 +1956,7 @@ class TelegramConversationHandler:
         if await self._check_user_banned(user_id):
             return await self._send_banned_message(update)
         
-        self.clear_user_data(user_id)
+        self.clear_user_data(user_id, context)
         
         # Import here to avoid circular import
         from services.telegram_service import TelegramService
