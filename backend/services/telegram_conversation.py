@@ -322,6 +322,7 @@ class TelegramConversationHandler:
         )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        await self._save_state(update.effective_chat.id, user_id, SHIP_FROM_CITY)
         return SHIP_FROM_CITY
     
     async def ship_from_city(self, update: Update, context) -> int:
@@ -354,6 +355,7 @@ class TelegramConversationHandler:
         )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        await self._save_state(update.effective_chat.id, user_id, SHIP_FROM_STATE)
         return SHIP_FROM_STATE
     
     async def ship_from_state(self, update: Update, context) -> int:
@@ -390,6 +392,7 @@ class TelegramConversationHandler:
         )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        await self._save_state(update.effective_chat.id, user_id, SHIP_FROM_ZIP)
         return SHIP_FROM_ZIP
     
     async def ship_from_zip(self, update: Update, context) -> int:
@@ -426,6 +429,7 @@ class TelegramConversationHandler:
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         await update.message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+        await self._save_state(update.effective_chat.id, user_id, SHIP_FROM_PHONE)
         return SHIP_FROM_PHONE
     
     def validate_phone(self, phone: str) -> tuple[bool, str]:
@@ -478,6 +482,7 @@ class TelegramConversationHandler:
         )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        await self._save_state(update.effective_chat.id, user_id, SHIP_TO_NAME)
         return SHIP_TO_NAME
     
     async def skip_from_phone_callback(self, update: Update, context) -> int:
@@ -553,6 +558,7 @@ class TelegramConversationHandler:
         )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        await self._save_state(update.effective_chat.id, user_id, SHIP_TO_ADDRESS)
         return SHIP_TO_ADDRESS
     
     async def ship_to_address(self, update: Update, context) -> int:
@@ -584,6 +590,7 @@ class TelegramConversationHandler:
         )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        await self._save_state(update.effective_chat.id, user_id, SHIP_TO_CITY)
         return SHIP_TO_CITY
     
     async def ship_to_city(self, update: Update, context) -> int:
@@ -616,6 +623,7 @@ class TelegramConversationHandler:
         )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        await self._save_state(update.effective_chat.id, user_id, SHIP_TO_STATE)
         return SHIP_TO_STATE
     
     async def ship_to_state(self, update: Update, context) -> int:
@@ -653,6 +661,7 @@ class TelegramConversationHandler:
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
         logger.warning(f"[DEBUG] ship_to_state completed for user {user_id}, returning SHIP_TO_ZIP")
+        await self._save_state(update.effective_chat.id, user_id, SHIP_TO_ZIP)
         return SHIP_TO_ZIP
     
     async def ship_to_zip(self, update: Update, context) -> int:
@@ -688,6 +697,7 @@ class TelegramConversationHandler:
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         await update.message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+        await self._save_state(update.effective_chat.id, user_id, SHIP_TO_PHONE)
         return SHIP_TO_PHONE
     
     async def ship_to_phone(self, update: Update, context) -> int:
@@ -729,6 +739,7 @@ class TelegramConversationHandler:
         )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        await self._save_state(update.effective_chat.id, user_id, PACKAGE_WEIGHT)
         return PACKAGE_WEIGHT
     
     async def skip_to_phone_callback(self, update: Update, context) -> int:
@@ -816,6 +827,7 @@ class TelegramConversationHandler:
         )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        await self._save_state(update.effective_chat.id, user_id, PACKAGE_DIMENSIONS)
         return PACKAGE_DIMENSIONS
     
     async def package_dimensions(self, update: Update, context) -> int:
@@ -855,6 +867,7 @@ class TelegramConversationHandler:
         
         # Show review summary
         await self.show_review_summary(update.message, user_id)
+        await self._save_state(update.effective_chat.id, user_id, REVIEW_SUMMARY)
         return REVIEW_SUMMARY
     
     async def show_review_summary(self, message, user_id: str, from_template: bool = False, edit_message: bool = False):
