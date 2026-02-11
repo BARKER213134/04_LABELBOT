@@ -11,6 +11,7 @@ import logging
 from typing import Dict, Any, List
 import random
 from services.ai_messages import generate_thank_you_message
+from services.conversation_state import get_state_service
 
 # Reduce logging for speed
 logging.getLogger(__name__).setLevel(logging.WARNING)
@@ -55,6 +56,8 @@ class TelegramConversationHandler:
         self.users_service = users_service
         self.templates_service = templates_service
         self.user_data: Dict[str, Dict[str, Any]] = {}
+        # Initialize state service
+        self.state_service = get_state_service(db)
     
     async def _check_user_banned(self, user_id: str) -> bool:
         """Check if user is banned"""
