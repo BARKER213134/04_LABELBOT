@@ -173,6 +173,9 @@ class UsersService:
             }
         )
         
+        # Invalidate cache
+        _invalidate_balance_cache(telegram_id)
+        
         await self._log_balance_change(
             telegram_id, 
             -order_cost, 
