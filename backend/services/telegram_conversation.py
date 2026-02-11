@@ -953,7 +953,7 @@ class TelegramConversationHandler:
                 data['available_rates'] = rates
                 
                 # Show rates
-                await self._show_rates(query, user_id, rates)
+                await self._show_rates(query, user_id, rates, context)
                 return SELECT_RATE
                 
             except Exception as e:
@@ -1421,7 +1421,7 @@ class TelegramConversationHandler:
             # Go back to rate selection
             rates = data.get('available_rates', [])
             if rates:
-                await self._show_rates(query, user_id, rates)
+                await self._show_rates(query, user_id, rates, context)
                 return SELECT_RATE
             else:
                 # Refetch rates if not available
@@ -1432,7 +1432,7 @@ class TelegramConversationHandler:
                 try:
                     rates = await self._fetch_rates(data)
                     data['available_rates'] = rates
-                    await self._show_rates(query, user_id, rates)
+                    await self._show_rates(query, user_id, rates, context)
                     return SELECT_RATE
                 except Exception as e:
                     text = f"❌ Ошибка: {str(e)}"
