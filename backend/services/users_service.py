@@ -113,6 +113,9 @@ class UsersService:
             }
         )
         
+        # Invalidate cache
+        _invalidate_balance_cache(telegram_id)
+        
         # Log balance change
         await self._log_balance_change(telegram_id, amount, new_balance, reason)
         
