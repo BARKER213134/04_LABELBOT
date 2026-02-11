@@ -4,7 +4,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from telegram import Update
 from telegram.error import TimedOut, NetworkError
 from config import get_settings, Settings
-from database import get_database
+from database import get_database, Database
 import logging
 import asyncio
 import time
@@ -12,48 +12,81 @@ import time
 router = APIRouter(prefix="/telegram", tags=["telegram"])
 logger = logging.getLogger(__name__)
 
-# Pre-loaded bot application
-_cached_bot_app = None
+# Bot applications for both environments
+_sandbox_app = None
+_production_app = None
 _bot_loading = False
 _bot_lock = asyncio.Lock()
+_current_environment = None
 
 # Deduplication cache for processed update IDs (last 1000 updates)
 _processed_updates = {}
 _MAX_CACHED_UPDATES = 1000
 
-async def _preload_bot():
-    """Preload bot application"""
-    global _cached_bot_app, _bot_loading
-    async with _bot_lock:
-        if _cached_bot_app is None and not _bot_loading:
-            _bot_loading = True
-            try:
-                logger.warning("[BOT] Starting bot preload...")
-                from telegram_bot_app import get_or_create_app
-                _cached_bot_app = await get_or_create_app("production")
-                logger.warning("[BOT] Bot application preloaded successfully")
-            except Exception as e:
-                logger.error(f"[BOT] Failed to preload bot: {e}")
-            finally:
-                _bot_loading = False
 
-async def _get_bot_app():
-    """Get cached bot app or load it (with lock to prevent race conditions)"""
-    global _cached_bot_app
-    if _cached_bot_app is None:
-        await _preload_bot()
-    return _cached_bot_app
-
-# Start preloading bot in background when module loads
-def _start_preload():
+async def _get_current_environment(db=None) -> str:
+    """Get current environment from database settings"""
     try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            asyncio.create_task(_preload_bot())
-    except:
-        pass
+        if db is None:
+            db = Database.db
+        if db is None:
+            return "production"  # Default to production
+        
+        config = await db.api_config.find_one({"_id": "api_config"})
+        if config:
+            return config.get("environment", "production")
+        return "production"
+    except Exception as e:
+        logger.error(f"Error getting environment: {e}")
+        return "production"
 
-_start_preload()
+
+async def _load_bot_for_environment(environment: str):
+    """Load bot application for specific environment"""
+    global _sandbox_app, _production_app, _bot_loading
+    
+    async with _bot_lock:
+        if _bot_loading:
+            return
+        
+        _bot_loading = True
+        try:
+            from telegram_bot_app import get_or_create_app
+            
+            if environment == "production" and _production_app is None:
+                logger.warning("[BOT] Loading production bot...")
+                _production_app = await get_or_create_app("production")
+                logger.warning("[BOT] Production bot loaded")
+            elif environment == "sandbox" and _sandbox_app is None:
+                logger.warning("[BOT] Loading sandbox bot...")
+                _sandbox_app = await get_or_create_app("sandbox")
+                logger.warning("[BOT] Sandbox bot loaded")
+        except Exception as e:
+            logger.error(f"[BOT] Failed to load {environment} bot: {e}")
+        finally:
+            _bot_loading = False
+
+
+async def _get_bot_app(db=None):
+    """Get bot app for current environment from DB setting"""
+    global _sandbox_app, _production_app, _current_environment
+    
+    environment = await _get_current_environment(db)
+    
+    # Log environment change
+    if _current_environment != environment:
+        logger.warning(f"[BOT] Environment changed: {_current_environment} -> {environment}")
+        _current_environment = environment
+    
+    # Return cached app or load new one
+    if environment == "production":
+        if _production_app is None:
+            await _load_bot_for_environment("production")
+        return _production_app
+    else:
+        if _sandbox_app is None:
+            await _load_bot_for_environment("sandbox")
+        return _sandbox_app
 
 
 def _is_duplicate_update(update_id: int) -> bool:
@@ -87,6 +120,7 @@ async def telegram_webhook(
 ):
     """
     Webhook handler - responds immediately to Telegram
+    Dynamically uses environment from DB settings
     """
     try:
         update_data = await request.json()
@@ -96,8 +130,12 @@ async def telegram_webhook(
         if update_id and _is_duplicate_update(update_id):
             return JSONResponse(content={"status": "ok"})
         
-        # Get cached bot application (should be instant if preloaded)
-        app = await _get_bot_app()
+        # Get bot application for current environment (reads from DB)
+        app = await _get_bot_app(db)
+        
+        if app is None:
+            logger.error("[BOT] No bot application available")
+            return JSONResponse(content={"status": "error", "message": "Bot not loaded"})
         
         # Process update
         update = Update.de_json(update_data, app.bot)
@@ -114,7 +152,26 @@ async def telegram_webhook(
 
 
 @router.get("/preload")
-async def preload_bot():
-    """Endpoint to trigger bot preloading"""
-    await _preload_bot()
-    return {"status": "ok", "bot_loaded": _cached_bot_app is not None}
+async def preload_bot(db: AsyncIOMotorDatabase = Depends(get_database)):
+    """Endpoint to trigger bot preloading for current environment"""
+    environment = await _get_current_environment(db)
+    await _load_bot_for_environment(environment)
+    
+    return {
+        "status": "ok", 
+        "environment": environment,
+        "sandbox_loaded": _sandbox_app is not None,
+        "production_loaded": _production_app is not None
+    }
+
+
+@router.get("/status")
+async def bot_status(db: AsyncIOMotorDatabase = Depends(get_database)):
+    """Get current bot status and environment"""
+    environment = await _get_current_environment(db)
+    
+    return {
+        "current_environment": environment,
+        "sandbox_loaded": _sandbox_app is not None,
+        "production_loaded": _production_app is not None
+    }
