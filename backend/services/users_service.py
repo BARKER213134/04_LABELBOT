@@ -5,6 +5,16 @@ from models.user import User, UserCreate, UserBalanceUpdate
 
 logger = logging.getLogger(__name__)
 
+# Import cache for invalidation
+def _invalidate_balance_cache(telegram_id: str):
+    """Invalidate balance cache for a user"""
+    try:
+        from services.cache import balance_cache, user_cache
+        balance_cache.delete(f"bal_{telegram_id}")
+        user_cache.delete(f"user_{telegram_id}")
+    except Exception as e:
+        logger.warning(f"Failed to invalidate cache: {e}")
+
 
 class UsersService:
     """Service for managing users"""
