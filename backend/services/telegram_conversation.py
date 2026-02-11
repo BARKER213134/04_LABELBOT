@@ -2085,9 +2085,9 @@ class TelegramConversationHandler:
                 CommandHandler('start', self.reset_and_start),
                 CommandHandler('cancel', self.cancel),
                 CallbackQueryHandler(self.back_to_menu_fallback, pattern="^back_to_menu$"),
-                # Fallback for text messages when state is lost - check MongoDB
-                MessageHandler(filters.TEXT & ~filters.COMMAND, self.fallback_text_handler),
             ],
+            name="label_creation",  # Unique name for persistence
+            persistent=True,        # Enable persistence
             per_message=False,
             per_chat=True,
             per_user=True,
