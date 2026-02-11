@@ -11,7 +11,6 @@ import logging
 from typing import Dict, Any, List
 import random
 from services.ai_messages import generate_thank_you_message
-from services.conversation_state import get_state_service
 
 # Reduce logging for speed
 logging.getLogger(__name__).setLevel(logging.WARNING)
