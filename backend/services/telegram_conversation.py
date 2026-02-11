@@ -272,6 +272,7 @@ class TelegramConversationHandler:
                 f"❌ *{error_msg}*\n\nПожалуйста, введите имя заново:",
                 parse_mode=ParseMode.MARKDOWN
             )
+            await self._save_state(update.effective_chat.id, user_id, SHIP_FROM_NAME)
             return SHIP_FROM_NAME
         
         data['shipFromName'] = name
@@ -306,6 +307,7 @@ class TelegramConversationHandler:
                 f"❌ *{error_msg}*\n\nПожалуйста, введите адрес заново:",
                 parse_mode=ParseMode.MARKDOWN
             )
+            await self._save_state(update.effective_chat.id, user_id, SHIP_FROM_ADDRESS)
             return SHIP_FROM_ADDRESS
         
         data['shipFromAddressLine1'] = address
@@ -339,6 +341,7 @@ class TelegramConversationHandler:
                 f"❌ *{error_msg}*\n\nПожалуйста, введите город заново:",
                 parse_mode=ParseMode.MARKDOWN
             )
+            await self._save_state(update.effective_chat.id, user_id, SHIP_FROM_CITY)
             return SHIP_FROM_CITY
         
         data['shipFromCity'] = city
@@ -411,6 +414,7 @@ class TelegramConversationHandler:
                 "Пожалуйста, попробуйте еще раз:"
             )
             await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+            await self._save_state(update.effective_chat.id, user_id, SHIP_FROM_ZIP)
             return SHIP_FROM_ZIP
         data = self.get_user_data(user_id)
         data['shipFromPostalCode'] = zip_code
