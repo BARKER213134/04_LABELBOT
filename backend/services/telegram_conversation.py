@@ -975,6 +975,7 @@ class TelegramConversationHandler:
                 
                 # Show rates
                 await self._show_rates(query, user_id, rates)
+                await self._save_state(query.message.chat_id, user_id, SELECT_RATE)
                 return SELECT_RATE
                 
             except Exception as e:
