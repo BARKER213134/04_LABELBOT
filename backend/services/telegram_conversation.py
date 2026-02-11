@@ -709,6 +709,8 @@ class TelegramConversationHandler:
             await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
             return SHIP_TO_ZIP
         
+        # Load data from MongoDB if state was lost
+        await self.load_user_data(user_id)
         data = self.get_user_data(user_id)
         data['shipToPostalCode'] = zip_code
         
