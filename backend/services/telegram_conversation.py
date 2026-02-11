@@ -691,6 +691,7 @@ class TelegramConversationHandler:
                 "Пожалуйста, попробуйте еще раз:"
             )
             await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+            await self._save_state(update.effective_chat.id, user_id, SHIP_TO_ZIP)
             return SHIP_TO_ZIP
         data = self.get_user_data(user_id)
         data['shipToPostalCode'] = zip_code
