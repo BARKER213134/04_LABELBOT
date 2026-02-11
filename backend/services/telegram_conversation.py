@@ -242,19 +242,6 @@ class TelegramConversationHandler:
         
         return SHIP_FROM_NAME
     
-    async def _save_state(self, chat_id: int, user_id: str, state: int):
-        """Save conversation state to MongoDB"""
-        try:
-            from database import Database
-            await Database.db.ptb_conversations.update_one(
-                {'name': 'label_creation', 'key': [chat_id, int(user_id)]},
-                {'$set': {'name': 'label_creation', 'key': [chat_id, int(user_id)], 'state': state}},
-                upsert=True
-            )
-            logger.warning(f"[STATE] Saved state={state} for user {user_id}")
-        except Exception as e:
-            logger.error(f"[STATE] Failed to save: {e}")
-    
     # ===== SHIP FROM ADDRESS =====
     
     async def ship_from_name(self, update: Update, context) -> int:
