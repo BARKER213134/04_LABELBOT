@@ -290,6 +290,7 @@ class TelegramConversationHandler:
         )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        await self._save_state(update.effective_chat.id, user_id, SHIP_FROM_ADDRESS)
         return SHIP_FROM_ADDRESS
     
     async def ship_from_address(self, update: Update, context) -> int:
