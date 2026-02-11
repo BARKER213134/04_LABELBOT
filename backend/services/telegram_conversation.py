@@ -54,9 +54,9 @@ class TelegramConversationHandler:
         self.shipengine_service = shipengine_service
         self.users_service = users_service
         self.templates_service = templates_service
+        # Note: user_data is now managed by PTB persistence via context.user_data
+        # This local dict is kept for backward compatibility but will be phased out
         self.user_data: Dict[str, Dict[str, Any]] = {}
-        # Initialize state service
-        self.state_service = get_state_service(db)
     
     async def _check_user_banned(self, user_id: str) -> bool:
         """Check if user is banned"""
@@ -84,39 +84,15 @@ class TelegramConversationHandler:
         return ConversationHandler.END
     
     def get_user_data(self, user_id: str) -> Dict[str, Any]:
-        """Get user's conversation data (from memory cache)"""
+        """Get user's conversation data (local cache - for backward compatibility)"""
         if user_id not in self.user_data:
             self.user_data[user_id] = {}
         return self.user_data[user_id]
-    
-    async def load_user_data(self, user_id: str) -> Dict[str, Any]:
-        """Load user data from MongoDB if not in memory"""
-        if user_id not in self.user_data or not self.user_data[user_id]:
-            state_doc = await self.state_service.get_state(user_id)
-            if state_doc and state_doc.get('data'):
-                self.user_data[user_id] = state_doc['data']
-                self.user_data[user_id]['_db_state'] = state_doc.get('state')
-        return self.get_user_data(user_id)
-    
-    async def save_user_state(self, user_id: str, state: int):
-        """Save user state to MongoDB"""
-        data = self.get_user_data(user_id)
-        await self.state_service.set_state(user_id, state, data)
     
     def clear_user_data(self, user_id: str):
         """Clear user's conversation data"""
         if user_id in self.user_data:
             del self.user_data[user_id]
-    
-    async def clear_user_data_and_state(self, user_id: str):
-        """Clear user data from memory and MongoDB"""
-        self.clear_user_data(user_id)
-        await self.state_service.clear_state(user_id)
-    
-    async def _return_state(self, user_id: str, state: int) -> int:
-        """Save state to MongoDB and return it"""
-        await self.save_user_state(user_id, state)
-        return state
     
     def get_progress_bar(self, step: int) -> str:
         """Generate progress bar for steps"""
