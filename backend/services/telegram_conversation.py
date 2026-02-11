@@ -1268,6 +1268,7 @@ class TelegramConversationHandler:
                 "_Например: 12 8 6_",
                 parse_mode=ParseMode.MARKDOWN
             )
+            await self._save_state(query.message.chat_id, user_id, PACKAGE_DIMENSIONS)
             return PACKAGE_DIMENSIONS
         
         return EDIT_SECTION
