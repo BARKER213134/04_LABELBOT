@@ -205,7 +205,8 @@ class TelegramConversationHandler:
         await query.answer()
         
         user_id = str(update.effective_user.id)
-        logger.info(f"start_create_callback triggered by user {user_id}")
+        chat_id = update.effective_chat.id
+        logger.warning(f"[HANDLER] start_create_callback: user={user_id}, chat={chat_id}, returning SHIP_FROM_NAME={SHIP_FROM_NAME}")
         
         # Check if user is banned
         if await self._check_user_banned(user_id):
