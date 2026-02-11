@@ -297,6 +297,7 @@ class TelegramConversationHandler:
     
     async def ship_from_address(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
+        chat_id = update.effective_chat.id
         data = self.get_user_data(user_id)
         address = update.message.text.strip()
         
@@ -324,10 +325,12 @@ class TelegramConversationHandler:
         )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        await self._save_state(chat_id, user_id, SHIP_FROM_CITY)
         return SHIP_FROM_CITY
     
-    async def ship_from_city(self, update: Update, context) -> int:
+     ship_from_city(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
+        chat_id = update.effective_chat.id
         data = self.get_user_data(user_id)
         city = update.message.text.strip()
         
@@ -360,6 +363,7 @@ class TelegramConversationHandler:
     
     async def ship_from_state(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
+        chat_id = update.effective_chat.id
         state = update.message.text.strip().upper()
         
         if len(state) != 2 or not state.isalpha():
@@ -392,10 +396,12 @@ class TelegramConversationHandler:
         )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        await self._save_state(chat_id, user_id, SHIP_FROM_ZIP)
         return SHIP_FROM_ZIP
     
-    async def ship_from_zip(self, update: Update, context) -> int:
+     ship_from_zip(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
+        chat_id = update.effective_chat.id
         zip_code = update.message.text.strip()
         
         if not zip_code.isdigit() or len(zip_code) != 5:
@@ -444,6 +450,7 @@ class TelegramConversationHandler:
     
     async def ship_from_phone(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
+        chat_id = update.effective_chat.id
         data = self.get_user_data(user_id)
         
         phone = update.message.text.strip()
@@ -480,9 +487,10 @@ class TelegramConversationHandler:
         )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        await self._save_state(chat_id, user_id, SHIP_TO_NAME)
         return SHIP_TO_NAME
     
-    async def skip_from_phone_callback(self, update: Update, context) -> int:
+     skip_from_phone_callback(self, update: Update, context) -> int:
         """Handle skip button for from phone"""
         query = update.callback_query
         await query.answer()
@@ -527,6 +535,7 @@ class TelegramConversationHandler:
     
     async def ship_to_name(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
+        chat_id = update.effective_chat.id
         data = self.get_user_data(user_id)
         name = update.message.text.strip()
         
@@ -555,10 +564,12 @@ class TelegramConversationHandler:
         )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        await self._save_state(chat_id, user_id, SHIP_TO_ADDRESS)
         return SHIP_TO_ADDRESS
     
-    async def ship_to_address(self, update: Update, context) -> int:
+     ship_to_address(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
+        chat_id = update.effective_chat.id
         data = self.get_user_data(user_id)
         address = update.message.text.strip()
         
@@ -590,6 +601,7 @@ class TelegramConversationHandler:
     
     async def ship_to_city(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
+        chat_id = update.effective_chat.id
         data = self.get_user_data(user_id)
         city = update.message.text.strip()
         
@@ -618,10 +630,12 @@ class TelegramConversationHandler:
         )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        await self._save_state(chat_id, user_id, SHIP_TO_STATE)
         return SHIP_TO_STATE
     
-    async def ship_to_state(self, update: Update, context) -> int:
+     ship_to_state(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
+        chat_id = update.effective_chat.id
         state = update.message.text.strip().upper()
         
         logger.warning(f"[DEBUG] ship_to_state called for user {user_id}, input: '{state}'")
@@ -659,6 +673,7 @@ class TelegramConversationHandler:
     
     async def ship_to_zip(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
+        chat_id = update.effective_chat.id
         zip_code = update.message.text.strip()
         
         if not zip_code.isdigit() or len(zip_code) != 5:
@@ -690,10 +705,12 @@ class TelegramConversationHandler:
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         await update.message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+        await self._save_state(chat_id, user_id, SHIP_TO_PHONE)
         return SHIP_TO_PHONE
     
-    async def ship_to_phone(self, update: Update, context) -> int:
+     ship_to_phone(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
+        chat_id = update.effective_chat.id
         data = self.get_user_data(user_id)
         
         phone = update.message.text.strip()
@@ -779,6 +796,7 @@ class TelegramConversationHandler:
     
     async def package_weight(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
+        chat_id = update.effective_chat.id
         data = self.get_user_data(user_id)
         
         try:
@@ -818,10 +836,12 @@ class TelegramConversationHandler:
         )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        await self._save_state(chat_id, user_id, PACKAGE_DIMENSIONS)
         return PACKAGE_DIMENSIONS
     
-    async def package_dimensions(self, update: Update, context) -> int:
+     package_dimensions(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
+        chat_id = update.effective_chat.id
         data = self.get_user_data(user_id)
         
         try:
