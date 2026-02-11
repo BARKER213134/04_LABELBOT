@@ -2059,7 +2059,7 @@ class TelegramConversationHandler:
             db = Database.db
             doc = await db.ptb_conversations.find_one({
                 'name': 'label_creation',
-                'key': [chat_id, user_id]
+                'key': [chat_id, int(user_id)]  # key format matches _save_state
             })
             
             if not doc:
@@ -2094,7 +2094,7 @@ class TelegramConversationHandler:
                 # Save new state to MongoDB
                 if result != ConversationHandler.END:
                     await db.ptb_conversations.update_one(
-                        {'name': 'label_creation', 'key': [chat_id, user_id]},
+                        {'name': 'label_creation', 'key': [chat_id, int(user_id)]},
                         {'$set': {'state': result}},
                         upsert=True
                     )
