@@ -1689,6 +1689,8 @@ class TelegramConversationHandler:
         user_id = str(update.effective_user.id)
         template_name = update.message.text.strip()[:50]
         
+        # Load data from MongoDB if state was lost
+        await self.load_user_data(user_id)
         data = self.get_user_data(user_id)
         
         # Remove the old message with cancel button
