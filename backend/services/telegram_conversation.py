@@ -1593,7 +1593,7 @@ class TelegramConversationHandler:
         await query.answer()
         
         user_id = str(update.effective_user.id)
-        await self.show_review_summary(query.message, user_id, edit_message=True)
+        await self.show_review_summary(query.message, user_id, context, edit_message=True)
         return REVIEW_SUMMARY
     
     async def save_template_prompt(self, update: Update, context) -> int:
