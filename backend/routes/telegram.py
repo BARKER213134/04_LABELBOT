@@ -95,6 +95,21 @@ async def telegram_webhook(
         
         # Log incoming update for debugging
         msg = update_data.get("message", {})
+        callback = update_data.get("callback_query", {})
+        
+        if msg:
+            text = msg.get("text", "")[:50]
+            user_id = msg.get("from", {}).get("id", "?")
+            logger.warning(f"[WEBHOOK] update_id={update_id}, user={user_id}, text='{text}'")
+        elif callback:
+            user_id = callback.get("from", {}).get("id", "?")
+            cb_data = callback.get("data", "")
+            logger.warning(f"[WEBHOOK] update_id={update_id}, user={user_id}, callback='{cb_data}'")
+        else:
+            logger.warning(f"[WEBHOOK] update_id={update_id}, unknown update type")
+        
+        # Log incoming update for debugging
+        msg = update_data.get("message", {})
         text = msg.get("text", "")[:50] if msg else ""
         user_id = msg.get("from", {}).get("id", "?") if msg else "?"
         logger.warning(f"[WEBHOOK] update_id={update_id}, user={user_id}, text='{text}'")
