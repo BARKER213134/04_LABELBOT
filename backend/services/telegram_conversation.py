@@ -1645,6 +1645,7 @@ class TelegramConversationHandler:
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+        await self._save_state(query.message.chat_id, user_id, TEMPLATE_SAVE_NAME)
         return TEMPLATE_SAVE_NAME
     
     async def save_template_name(self, update: Update, context) -> int:
