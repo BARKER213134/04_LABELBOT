@@ -431,16 +431,6 @@ class TelegramConversationHandler:
         # Load data from MongoDB if state was lost
         await self.load_user_data(user_id)
         data = self.get_user_data(user_id)
-        data['shipFromZip'] = zip_code
-                "❌ *Некорректный формат*\n\n"
-                "ZIP код должен содержать ровно 5 цифр.\n"
-                "_Например: 94102_\n\n"
-                "Пожалуйста, попробуйте еще раз:"
-            )
-            await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
-            return SHIP_FROM_ZIP
-        
-        data = self.get_user_data(user_id)
         data['shipFromPostalCode'] = zip_code
         
         # Check if we're in edit mode - editing location chain
