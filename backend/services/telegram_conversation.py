@@ -257,7 +257,7 @@ class TelegramConversationHandler:
         user_id = str(update.effective_user.id)
         logger.warning(f"[HANDLER] ship_from_name called for user {user_id}")
         
-        data = self.get_user_data(user_id)
+        data = self.get_user_data(user_id, context)
         name = update.message.text.strip()
         
         # Validate name
@@ -289,7 +289,7 @@ class TelegramConversationHandler:
     
     async def ship_from_address(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
-        data = self.get_user_data(user_id)
+        data = self.get_user_data(user_id, context)
         address = update.message.text.strip()
         
         # Validate address
@@ -320,7 +320,7 @@ class TelegramConversationHandler:
     
     async def ship_from_city(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
-        data = self.get_user_data(user_id)
+        data = self.get_user_data(user_id, context)
         city = update.message.text.strip()
         
         # Validate city
@@ -363,7 +363,7 @@ class TelegramConversationHandler:
             )
             await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
             return SHIP_FROM_STATE
-        data = self.get_user_data(user_id)
+        data = self.get_user_data(user_id, context)
         data['shipFromState'] = state
         
         # Check if we're in edit mode - editing location chain (city -> state -> zip)
@@ -399,7 +399,7 @@ class TelegramConversationHandler:
             )
             await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
             return SHIP_FROM_ZIP
-        data = self.get_user_data(user_id)
+        data = self.get_user_data(user_id, context)
         data['shipFromPostalCode'] = zip_code
         
         # Check if we're in edit mode - editing location chain
@@ -436,7 +436,7 @@ class TelegramConversationHandler:
     
     async def ship_from_phone(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
-        data = self.get_user_data(user_id)
+        data = self.get_user_data(user_id, context)
         
         phone = update.message.text.strip()
         if phone.lower() not in ['пропустить', 'skip']:
@@ -480,7 +480,7 @@ class TelegramConversationHandler:
         await query.answer()
         
         user_id = str(update.effective_user.id)
-        data = self.get_user_data(user_id)
+        data = self.get_user_data(user_id, context)
         
         # Generate random phone
         random_phone = self.generate_random_phone()
@@ -519,7 +519,7 @@ class TelegramConversationHandler:
     
     async def ship_to_name(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
-        data = self.get_user_data(user_id)
+        data = self.get_user_data(user_id, context)
         name = update.message.text.strip()
         
         # Validate name
@@ -551,7 +551,7 @@ class TelegramConversationHandler:
     
     async def ship_to_address(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
-        data = self.get_user_data(user_id)
+        data = self.get_user_data(user_id, context)
         address = update.message.text.strip()
         
         # Validate address
@@ -582,7 +582,7 @@ class TelegramConversationHandler:
     
     async def ship_to_city(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
-        data = self.get_user_data(user_id)
+        data = self.get_user_data(user_id, context)
         city = update.message.text.strip()
         
         # Validate city
@@ -624,7 +624,7 @@ class TelegramConversationHandler:
             )
             await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
             return SHIP_TO_STATE
-        data = self.get_user_data(user_id)
+        data = self.get_user_data(user_id, context)
         data['shipToState'] = state
         
         # Check if we're in edit mode - editing location chain (city -> state -> zip)
@@ -659,7 +659,7 @@ class TelegramConversationHandler:
             )
             await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
             return SHIP_TO_ZIP
-        data = self.get_user_data(user_id)
+        data = self.get_user_data(user_id, context)
         data['shipToPostalCode'] = zip_code
         
         # Check if we're in edit mode - editing location chain
@@ -684,7 +684,7 @@ class TelegramConversationHandler:
     
     async def ship_to_phone(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
-        data = self.get_user_data(user_id)
+        data = self.get_user_data(user_id, context)
         
         phone = update.message.text.strip()
         if phone.lower() not in ['пропустить', 'skip']:
@@ -729,7 +729,7 @@ class TelegramConversationHandler:
         await query.answer()
         
         user_id = str(update.effective_user.id)
-        data = self.get_user_data(user_id)
+        data = self.get_user_data(user_id, context)
         
         # Generate random phone
         random_phone = self.generate_random_phone()
@@ -769,7 +769,7 @@ class TelegramConversationHandler:
     
     async def package_weight(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
-        data = self.get_user_data(user_id)
+        data = self.get_user_data(user_id, context)
         
         try:
             weight_lbs = float(update.message.text.strip())
@@ -812,7 +812,7 @@ class TelegramConversationHandler:
     
     async def package_dimensions(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
-        data = self.get_user_data(user_id)
+        data = self.get_user_data(user_id, context)
         
         try:
             dimensions = update.message.text.strip().split()
@@ -851,7 +851,7 @@ class TelegramConversationHandler:
     
     async def show_review_summary(self, message, user_id: str, from_template: bool = False, edit_message: bool = False):
         """Show summary with edit options"""
-        data = self.get_user_data(user_id)
+        data = self.get_user_data(user_id, context)
         
         if from_template:
             header = (
@@ -926,7 +926,7 @@ class TelegramConversationHandler:
         
         if edit_choice == "continue_to_carrier":
             user_id = str(update.effective_user.id)
-            data = self.get_user_data(user_id)
+            data = self.get_user_data(user_id, context)
             
             # Show loading message
             await query.edit_message_text(
@@ -1115,7 +1115,7 @@ class TelegramConversationHandler:
         
         keyboard = []
         rate_index = 0
-        data = self.get_user_data(user_id)
+        data = self.get_user_data(user_id, context)
         data['rate_map'] = {}
         
         # Process each carrier
@@ -1163,7 +1163,7 @@ class TelegramConversationHandler:
         await query.answer()
         
         user_id = str(update.effective_user.id)
-        data = self.get_user_data(user_id)
+        data = self.get_user_data(user_id, context)
         
         edit_type = query.data
         
@@ -1262,7 +1262,7 @@ class TelegramConversationHandler:
         if await self._check_user_banned(user_id):
             return await self._send_banned_message(update)
         
-        data = self.get_user_data(user_id)
+        data = self.get_user_data(user_id, context)
         
         callback_data = query.data
         
@@ -1397,7 +1397,7 @@ class TelegramConversationHandler:
         if await self._check_user_banned(user_id):
             return await self._send_banned_message(update)
         
-        data = self.get_user_data(user_id)
+        data = self.get_user_data(user_id, context)
         
         if query.data == "confirm_no":
             text = (
@@ -1495,7 +1495,7 @@ class TelegramConversationHandler:
             label_url = result.get('labelDownloadUrl', '')
             
             # Store data for potential template save
-            self.get_user_data(user_id)['last_order_data'] = data.copy()
+            self.get_user_data(user_id, context)['last_order_data'] = data.copy()
             
             success_message = (
                 "━━━━━━━━━━━━━━━━━━━━\n"
@@ -1605,7 +1605,7 @@ class TelegramConversationHandler:
         logger.info(f"save_template_prompt called for user {user_id}")
         
         # Check if we have data
-        data = self.get_user_data(user_id)
+        data = self.get_user_data(user_id, context)
         logger.info(f"User data keys: {list(data.keys())}")
         
         # Store message info for later editing
@@ -1630,7 +1630,7 @@ class TelegramConversationHandler:
         """Save template with given name"""
         user_id = str(update.effective_user.id)
         template_name = update.message.text.strip()[:50]
-        data = self.get_user_data(user_id)
+        data = self.get_user_data(user_id, context)
         
         # Remove the old message with cancel button
         msg_id = data.get('template_prompt_message_id')
@@ -1715,7 +1715,7 @@ class TelegramConversationHandler:
         
         # Load template data into user_data
         template_data = self.templates_service.template_to_user_data(template)
-        data = self.get_user_data(user_id)
+        data = self.get_user_data(user_id, context)
         data.update(template_data)
         data['using_template'] = template_id
         
@@ -1755,7 +1755,7 @@ class TelegramConversationHandler:
         
         # Load template data into user_data
         template_data = self.templates_service.template_to_user_data(template)
-        data = self.get_user_data(user_id)
+        data = self.get_user_data(user_id, context)
         data.update(template_data)
         data['editing_template_id'] = template_id
         data['editing_template_name'] = template.get('name')
@@ -1788,7 +1788,7 @@ class TelegramConversationHandler:
         await query.answer()
         
         user_id = str(update.effective_user.id)
-        data = self.get_user_data(user_id)
+        data = self.get_user_data(user_id, context)
         template_id = data.get('editing_template_id')
         template_name = data.get('editing_template_name', 'Шаблон')
         
@@ -1818,7 +1818,7 @@ class TelegramConversationHandler:
         await query.answer("📥 Загрузка лейбла...")
         
         user_id = str(update.effective_user.id)
-        data = self.get_user_data(user_id)
+        data = self.get_user_data(user_id, context)
         
         label_url = data.get('label_url')
         tracking_number = data.get('tracking_number', 'label')
