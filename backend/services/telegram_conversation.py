@@ -260,6 +260,7 @@ class TelegramConversationHandler:
     
     async def ship_from_name(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
+        chat_id = update.effective_chat.id
         logger.warning(f"[HANDLER] ship_from_name called for user {user_id}")
         
         data = self.get_user_data(user_id)
@@ -280,6 +281,7 @@ class TelegramConversationHandler:
         if data.get('editing_field') == 'from_name_only':
             data['editing_field'] = None
             await self.show_review_summary(update.message, user_id)
+            await self._save_state(chat_id, user_id, REVIEW_SUMMARY)
             return REVIEW_SUMMARY
         
         text = (
@@ -290,6 +292,7 @@ class TelegramConversationHandler:
         )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        await self._save_state(chat_id, user_id, SHIP_FROM_ADDRESS)
         return SHIP_FROM_ADDRESS
     
     async def ship_from_address(self, update: Update, context) -> int:
