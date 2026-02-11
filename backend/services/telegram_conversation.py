@@ -1746,6 +1746,7 @@ class TelegramConversationHandler:
         
         # Show review summary with template data as NEW message
         await self.show_review_summary(query.message, user_id, from_template=True, edit_message=False)
+        await self._save_state(query.message.chat_id, user_id, REVIEW_SUMMARY)
         return REVIEW_SUMMARY
     
     async def edit_template(self, update: Update, context) -> int:
