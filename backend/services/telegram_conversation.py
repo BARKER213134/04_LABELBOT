@@ -229,7 +229,8 @@ class TelegramConversationHandler:
         if await self._check_user_banned(user_id):
             return await self._send_banned_message(update)
         
-        self.clear_user_data(user_id)
+        # Clear previous data
+        await self.clear_user_data_and_state(user_id)
         
         # Ensure user exists
         db_user = await self._ensure_user(update)
@@ -254,6 +255,10 @@ class TelegramConversationHandler:
             logger.info(f"Successfully edited message for user {user_id}")
         except Exception as e:
             logger.error(f"Failed to edit message for user {user_id}: {e}")
+        
+        # Save state to MongoDB
+        await self.save_user_state(user_id, SHIP_FROM_NAME)
+        
         return SHIP_FROM_NAME
     
     # ===== SHIP FROM ADDRESS =====
