@@ -235,11 +235,26 @@ class TelegramConversationHandler:
         # Edit message to remove old buttons
         try:
             await query.edit_message_text(text, parse_mode=ParseMode.MARKDOWN)
-            logger.info(f"Successfully edited message for user {user_id}")
         except Exception as e:
             logger.error(f"Failed to edit message for user {user_id}: {e}")
         
+        # Save state to MongoDB for cross-pod sync
+        await self._save_state(chat_id, user_id, SHIP_FROM_NAME)
+        
         return SHIP_FROM_NAME
+    
+    async def _save_state(self, chat_id: int, user_id: str, state: int):
+        """Save conversation state to MongoDB"""
+        try:
+            from database import Database
+            await Database.db.ptb_conversations.update_one(
+                {'name': 'label_creation', 'key': [chat_id, int(user_id)]},
+                {'$set': {'name': 'label_creation', 'key': [chat_id, int(user_id)], 'state': state}},
+                upsert=True
+            )
+            logger.warning(f"[STATE] Saved state={state} for user {user_id}")
+        except Exception as e:
+            logger.error(f"[STATE] Failed to save: {e}")
     
     # ===== SHIP FROM ADDRESS =====
     
