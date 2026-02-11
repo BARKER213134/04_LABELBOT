@@ -86,50 +86,31 @@ async def telegram_webhook(
     db: AsyncIOMotorDatabase = Depends(get_database)
 ):
     """
-    Unified webhook handler for Telegram bot
-    Processes synchronously to maintain conversation state
+    Webhook handler - responds immediately to Telegram
     """
     try:
         update_data = await request.json()
         update_id = update_data.get("update_id")
         
-        # Log incoming update for debugging
-        msg = update_data.get("message", {})
-        callback = update_data.get("callback_query", {})
-        
-        if msg:
-            text = msg.get("text", "")[:50]
-            user_id = msg.get("from", {}).get("id", "?")
-            logger.warning(f"[WEBHOOK] update_id={update_id}, user={user_id}, text='{text}'")
-        elif callback:
-            user_id = callback.get("from", {}).get("id", "?")
-            cb_data = callback.get("data", "")
-            logger.warning(f"[WEBHOOK] update_id={update_id}, user={user_id}, callback='{cb_data}'")
-        else:
-            logger.warning(f"[WEBHOOK] update_id={update_id}, unknown update type")
-        
-        # Deduplicate updates - Telegram may retry if response is slow
+        # Deduplicate updates FIRST - before any processing
         if update_id and _is_duplicate_update(update_id):
-            logger.warning(f"[WEBHOOK] Duplicate update {update_id} ignored")
             return JSONResponse(content={"status": "ok"})
         
-        # Get cached bot application
+        # Get cached bot application (should be instant if preloaded)
         app = await _get_bot_app()
         
-        # Process update synchronously to maintain conversation state
+        # Process update
         update = Update.de_json(update_data, app.bot)
         await app.process_update(update)
         
-        logger.warning(f"[WEBHOOK] update_id={update_id} processed OK")
         return JSONResponse(content={"status": "ok"})
     
-    except (TimedOut, NetworkError) as e:
-        logger.warning(f"Telegram timeout: {e}")
+    except (TimedOut, NetworkError):
         return JSONResponse(content={"status": "ok"})
         
     except Exception as e:
-        logger.error(f"Webhook error: {e}", exc_info=True)
-        return JSONResponse(content={"status": "ok", "error": str(e)})
+        logger.error(f"Webhook error: {e}")
+        return JSONResponse(content={"status": "ok"})
 
 
 @router.get("/preload")
