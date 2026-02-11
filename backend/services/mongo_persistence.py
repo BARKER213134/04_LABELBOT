@@ -4,9 +4,9 @@ Stores conversation states, user_data, chat_data, and bot_data in MongoDB
 Always reads from DB to support multi-pod deployments
 """
 import logging
+import time
 from typing import Dict, Any, Optional, Tuple
 from telegram.ext import BasePersistence, PersistenceInput
-from copy import deepcopy
 
 logger = logging.getLogger(__name__)
 
@@ -34,39 +34,42 @@ class MongoPersistence(BasePersistence):
     
     async def get_conversations(self, name: str) -> Dict[Tuple, Any]:
         """Get all conversations for a handler by name - ALWAYS from MongoDB"""
+        start = time.time()
         conversations = {}
         try:
             async for doc in self.conversations_collection.find({'name': name}):
                 key = tuple(doc.get('key', []))
                 state = doc.get('state')
                 conversations[key] = state
-            logger.debug(f"Loaded {len(conversations)} conversations for '{name}'")
+            elapsed = (time.time() - start) * 1000
+            logger.warning(f"[PERSIST] get_conversations('{name}'): {len(conversations)} items, {elapsed:.1f}ms")
         except Exception as e:
-            logger.error(f"Error loading conversations: {e}")
+            logger.error(f"[PERSIST] Error loading conversations: {e}")
         return conversations
     
     async def update_conversation(
         self, name: str, key: Tuple[int, ...], new_state: Optional[object]
     ) -> None:
         """Update conversation state - immediately to MongoDB"""
+        start = time.time()
         try:
             if new_state is None:
-                # End conversation - remove from storage
                 await self.conversations_collection.delete_one({
                     'name': name,
                     'key': list(key)
                 })
-                logger.debug(f"Deleted conversation {name}/{key}")
+                elapsed = (time.time() - start) * 1000
+                logger.warning(f"[PERSIST] delete_conversation('{name}', {key}): {elapsed:.1f}ms")
             else:
-                # Update conversation state
                 await self.conversations_collection.update_one(
                     {'name': name, 'key': list(key)},
                     {'$set': {'name': name, 'key': list(key), 'state': new_state}},
                     upsert=True
                 )
-                logger.debug(f"Saved conversation {name}/{key} = {new_state}")
+                elapsed = (time.time() - start) * 1000
+                logger.warning(f"[PERSIST] save_conversation('{name}', {key}, state={new_state}): {elapsed:.1f}ms")
         except Exception as e:
-            logger.error(f"Error updating conversation: {e}")
+            logger.error(f"[PERSIST] Error updating conversation: {e}")
     
     # ===== User Data - ALWAYS read from DB =====
     
