@@ -646,8 +646,6 @@ class TelegramConversationHandler:
         user_id = str(update.effective_user.id)
         state = update.message.text.strip().upper()
         
-        logger.warning(f"[DEBUG] ship_to_state called for user {user_id}, input: '{state}'")
-        
         if len(state) != 2 or not state.isalpha():
             text = (
                 "❌ *Некорректный формат*\n\n"
@@ -655,6 +653,7 @@ class TelegramConversationHandler:
                 "Пожалуйста, попробуйте еще раз:"
             )
             await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+            await self._save_state(update.effective_chat.id, user_id, SHIP_TO_STATE)
             return SHIP_TO_STATE
         data = self.get_user_data(user_id)
         data['shipToState'] = state
