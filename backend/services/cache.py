@@ -33,5 +33,5 @@ class FastCache:
 
 # Global caches
 user_cache = FastCache(ttl=300)      # 5 min for user data
-balance_cache = FastCache(ttl=60)    # 1 min for balance
+balance_cache = FastCache(ttl=10)    # 10 sec for balance (shorter for fresher data)
 banned_cache = FastCache(ttl=600)    # 10 min for ban status
