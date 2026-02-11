@@ -416,6 +416,18 @@ class TelegramConversationHandler:
         if not zip_code.isdigit() or len(zip_code) != 5:
             text = (
                 "❌ *Некорректный формат*\n\n"
+                "ZIP код должен состоять из 5 цифр.\n"
+                "_Например: 94102, 10001_\n\n"
+                "Пожалуйста, попробуйте еще раз:"
+            )
+            await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+            return SHIP_FROM_ZIP
+        
+        # Load data from MongoDB if state was lost
+        await self.load_user_data(user_id)
+        data = self.get_user_data(user_id)
+        data['shipFromZip'] = zip_code
+                "❌ *Некорректный формат*\n\n"
                 "ZIP код должен содержать ровно 5 цифр.\n"
                 "_Например: 94102_\n\n"
                 "Пожалуйста, попробуйте еще раз:"
