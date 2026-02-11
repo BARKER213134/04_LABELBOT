@@ -1803,6 +1803,7 @@ class TelegramConversationHandler:
         
         # Send as NEW message instead of editing
         await query.message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+        await self._save_state(query.message.chat_id, user_id, TEMPLATE_EDIT)
         return TEMPLATE_EDIT
     
     async def save_template_changes(self, update: Update, context) -> int:
