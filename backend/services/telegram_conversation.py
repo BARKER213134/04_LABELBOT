@@ -1723,7 +1723,7 @@ class TelegramConversationHandler:
         await self.templates_service.increment_use_count(template_id)
         
         # Show review summary with template data as NEW message
-        await self.show_review_summary(query.message, user_id, from_template=True, edit_message=False)
+        await self.show_review_summary(query.message, user_id, context, from_template=True, edit_message=False)
         return REVIEW_SUMMARY
     
     async def edit_template(self, update: Update, context) -> int:
