@@ -29,6 +29,15 @@ async def connect_db():
         )
         Database.db = Database.client[settings.db_name]
         logger.info(f"Connected to MongoDB: {settings.db_name}")
+        
+        # Create TTL index for telegram_updates (auto-cleanup after 1 hour)
+        try:
+            await Database.db.telegram_updates.create_index(
+                "processed_at",
+                expireAfterSeconds=3600  # 1 hour TTL
+            )
+        except Exception as idx_err:
+            logger.debug(f"Index may already exist: {idx_err}")
             
     except Exception as e:
         logger.error(f"Failed to connect to MongoDB: {e}")
