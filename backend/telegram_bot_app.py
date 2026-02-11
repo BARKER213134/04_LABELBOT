@@ -63,7 +63,7 @@ async def send_banned_message(chat_id: int, bot):
 
 
 async def start_command(update, context):
-    """Handle /start - ULTRA FAST"""
+    """Handle /start"""
     global _users_service
     
     user_id = str(update.effective_user.id)
@@ -77,23 +77,23 @@ async def start_command(update, context):
     # Send photo IMMEDIATELY (no DB wait)
     logo_url = "https://customer-assets.emergentagent.com/job_shipnow-bot/artifacts/tnl64fud_JUST%20WHITE.png"
     
-    # Background: create user, check ban
-    async def bg_work():
-        if _users_service:
-            tg_user = update.effective_user
-            await _users_service.get_or_create_user(
-                telegram_id=str(tg_user.id),
-                username=tg_user.username,
-                first_name=tg_user.first_name,
-                last_name=tg_user.last_name
-            )
-    asyncio.create_task(bg_work())
-    
     # Send photo first (instant feedback)
     await context.bot.send_photo(chat_id=chat_id, photo=logo_url)
     
-    # Get balance from cache or quick query
-    balance = balance_cache.get(f"bal_{user_id}") or 0.0
+    # Get fresh balance from DB (not just cache)
+    balance = 0.0
+    if _users_service:
+        tg_user = update.effective_user
+        user = await _users_service.get_or_create_user(
+            telegram_id=str(tg_user.id),
+            username=tg_user.username,
+            first_name=tg_user.first_name,
+            last_name=tg_user.last_name
+        )
+        if user:
+            balance = user.get('balance', 0.0)
+            # Update cache
+            balance_cache.set(f"bal_{user_id}", balance)
     
     # Send menu
     telegram_service = TelegramService('production')
