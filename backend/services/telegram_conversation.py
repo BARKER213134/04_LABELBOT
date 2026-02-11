@@ -849,7 +849,7 @@ class TelegramConversationHandler:
         await self.show_review_summary(update.message, user_id)
         return REVIEW_SUMMARY
     
-    async def show_review_summary(self, message, user_id: str, from_template: bool = False, edit_message: bool = False):
+    async def show_review_summary(self, message, user_id: str, context=None, from_template: bool = False, edit_message: bool = False):
         """Show summary with edit options"""
         data = self.get_user_data(user_id, context)
         
