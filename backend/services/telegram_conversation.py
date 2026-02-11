@@ -244,8 +244,8 @@ class TelegramConversationHandler:
     
     async def ship_from_name(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
+        logger.warning(f"[HANDLER] ship_from_name called for user {user_id}")
         
-        # Load data from MongoDB if needed
         data = self.get_user_data(user_id)
         name = update.message.text.strip()
         
