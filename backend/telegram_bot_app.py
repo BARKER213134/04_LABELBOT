@@ -416,7 +416,7 @@ async def check_payment_status_callback(update, context):
         await query.answer(f"❌ Ошибка: {str(e)}", show_alert=True)
 
 async def back_to_menu_callback(update, context):
-    """Back to menu - FAST"""
+    """Back to menu"""
     global _users_service
     
     query = update.callback_query
@@ -427,8 +427,13 @@ async def back_to_menu_callback(update, context):
         await send_banned_message(update.effective_chat.id, context.bot)
         return
     
-    # Get balance from cache
-    balance = balance_cache.get(f"bal_{user_id}") or 0.0
+    # Get fresh balance from DB
+    balance = 0.0
+    if _users_service:
+        user = await _users_service.get_user(user_id)
+        if user:
+            balance = user.get('balance', 0.0)
+            balance_cache.set(f"bal_{user_id}", balance)
     
     asyncio.create_task(_safe_remove_buttons(query))
     
