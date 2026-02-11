@@ -305,6 +305,8 @@ class TelegramConversationHandler:
     
     async def ship_from_address(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
+        # Load data from MongoDB if state was lost
+        await self.load_user_data(user_id)
         data = self.get_user_data(user_id)
         address = update.message.text.strip()
         
@@ -336,6 +338,8 @@ class TelegramConversationHandler:
     
     async def ship_from_city(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
+        # Load data from MongoDB if state was lost
+        await self.load_user_data(user_id)
         data = self.get_user_data(user_id)
         city = update.message.text.strip()
         
@@ -454,6 +458,8 @@ class TelegramConversationHandler:
     
     async def ship_from_phone(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
+        # Load data from MongoDB if state was lost
+        await self.load_user_data(user_id)
         data = self.get_user_data(user_id)
         
         phone = update.message.text.strip()
@@ -537,6 +543,8 @@ class TelegramConversationHandler:
     
     async def ship_to_name(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
+        # Load data from MongoDB if state was lost
+        await self.load_user_data(user_id)
         data = self.get_user_data(user_id)
         name = update.message.text.strip()
         
@@ -569,6 +577,8 @@ class TelegramConversationHandler:
     
     async def ship_to_address(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
+        # Load data from MongoDB if state was lost
+        await self.load_user_data(user_id)
         data = self.get_user_data(user_id)
         address = update.message.text.strip()
         
@@ -600,6 +610,8 @@ class TelegramConversationHandler:
     
     async def ship_to_city(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
+        # Load data from MongoDB if state was lost
+        await self.load_user_data(user_id)
         data = self.get_user_data(user_id)
         city = update.message.text.strip()
         
@@ -706,6 +718,8 @@ class TelegramConversationHandler:
     
     async def ship_to_phone(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
+        # Load data from MongoDB if state was lost
+        await self.load_user_data(user_id)
         data = self.get_user_data(user_id)
         
         phone = update.message.text.strip()
@@ -791,6 +805,8 @@ class TelegramConversationHandler:
     
     async def package_weight(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
+        # Load data from MongoDB if state was lost
+        await self.load_user_data(user_id)
         data = self.get_user_data(user_id)
         
         try:
@@ -834,6 +850,8 @@ class TelegramConversationHandler:
     
     async def package_dimensions(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
+        # Load data from MongoDB if state was lost
+        await self.load_user_data(user_id)
         data = self.get_user_data(user_id)
         
         try:
