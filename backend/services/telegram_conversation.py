@@ -1044,6 +1044,7 @@ class TelegramConversationHandler:
         
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+        await self._save_state(query.message.chat_id, user_id, EDIT_SECTION)
         return EDIT_SECTION
     
     async def _fetch_rates(self, data: Dict[str, Any]) -> List[Dict[str, Any]]:
