@@ -756,17 +756,22 @@ async def setup_bot_application(environment='sandbox'):
         pool_timeout=3.0,
     )
     
+    # Connect to database BEFORE building application
+    await connect_db()
+    db = Database.db
+    
+    # Create MongoDB persistence for state management across pods
+    from services.mongo_persistence import MongoPersistence
+    persistence = MongoPersistence(db)
+    
     application = (
         ApplicationBuilder()
         .token(bot_token)
         .request(request)
         .get_updates_request(request)
+        .persistence(persistence)
         .build()
     )
-    
-    # Connect to database
-    await connect_db()
-    db = Database.db
     
     # Create services
     orders_service = OrdersService(db)
