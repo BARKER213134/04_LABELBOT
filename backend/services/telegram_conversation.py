@@ -274,7 +274,7 @@ class TelegramConversationHandler:
         # Check if we're in edit mode - editing only name
         if data.get('editing_field') == 'from_name_only':
             data['editing_field'] = None
-            await self.show_review_summary(update.message, user_id)
+            await self.show_review_summary(update.message, user_id, context)
             return REVIEW_SUMMARY
         
         text = (
@@ -306,7 +306,7 @@ class TelegramConversationHandler:
         # Check if we're in edit mode - editing address chain
         if data.get('editing_field') == 'from_address':
             data['editing_field'] = None
-            await self.show_review_summary(update.message, user_id)
+            await self.show_review_summary(update.message, user_id, context)
             return REVIEW_SUMMARY
         
         text = (
@@ -337,7 +337,7 @@ class TelegramConversationHandler:
         # Check if we're in edit mode - editing location chain
         if data.get('editing_field') == 'from_city_only':
             data['editing_field'] = None
-            await self.show_review_summary(update.message, user_id)
+            await self.show_review_summary(update.message, user_id, context)
             return REVIEW_SUMMARY
         
         text = (
@@ -405,7 +405,7 @@ class TelegramConversationHandler:
         # Check if we're in edit mode - editing location chain
         if data.get('editing_field') == 'from_location':
             data['editing_field'] = None
-            await self.show_review_summary(update.message, user_id)
+            await self.show_review_summary(update.message, user_id, context)
             return REVIEW_SUMMARY
         
         text = (
@@ -456,7 +456,7 @@ class TelegramConversationHandler:
         # Check if we're in edit mode
         if data.get('editing_field') == 'from_phone':
             data['editing_field'] = None
-            await self.show_review_summary(update.message, user_id)
+            await self.show_review_summary(update.message, user_id, context)
             return REVIEW_SUMMARY
         
         text = (
@@ -494,7 +494,7 @@ class TelegramConversationHandler:
                 f"✅ *Телефон сохранен:* {random_phone}\n_(сгенерирован автоматически)_",
                 parse_mode=ParseMode.MARKDOWN
             )
-            await self.show_review_summary(query.message, user_id)
+            await self.show_review_summary(query.message, user_id, context)
             return REVIEW_SUMMARY
         
         text = (
@@ -536,7 +536,7 @@ class TelegramConversationHandler:
         # Check if we're in edit mode - editing only name
         if data.get('editing_field') == 'to_name_only':
             data['editing_field'] = None
-            await self.show_review_summary(update.message, user_id)
+            await self.show_review_summary(update.message, user_id, context)
             return REVIEW_SUMMARY
         
         text = (
@@ -568,7 +568,7 @@ class TelegramConversationHandler:
         # Check if we're in edit mode - editing address only
         if data.get('editing_field') == 'to_address':
             data['editing_field'] = None
-            await self.show_review_summary(update.message, user_id)
+            await self.show_review_summary(update.message, user_id, context)
             return REVIEW_SUMMARY
         
         text = (
@@ -599,7 +599,7 @@ class TelegramConversationHandler:
         # Check if we're in edit mode - editing city only
         if data.get('editing_field') == 'to_city_only':
             data['editing_field'] = None
-            await self.show_review_summary(update.message, user_id)
+            await self.show_review_summary(update.message, user_id, context)
             return REVIEW_SUMMARY
         
         text = (
@@ -665,7 +665,7 @@ class TelegramConversationHandler:
         # Check if we're in edit mode - editing location chain
         if data.get('editing_field') == 'to_location':
             data['editing_field'] = None
-            await self.show_review_summary(update.message, user_id)
+            await self.show_review_summary(update.message, user_id, context)
             return REVIEW_SUMMARY
         
         text = (
@@ -704,7 +704,7 @@ class TelegramConversationHandler:
         # Check if we're in edit mode
         if data.get('editing_field') == 'to_phone':
             data['editing_field'] = None
-            await self.show_review_summary(update.message, user_id)
+            await self.show_review_summary(update.message, user_id, context)
             return REVIEW_SUMMARY
         
         text = (
@@ -743,7 +743,7 @@ class TelegramConversationHandler:
                 f"✅ *Телефон сохранен:* {random_phone}\n_(сгенерирован автоматически)_",
                 parse_mode=ParseMode.MARKDOWN
             )
-            await self.show_review_summary(query.message, user_id)
+            await self.show_review_summary(query.message, user_id, context)
             return REVIEW_SUMMARY
         
         text = (
@@ -796,7 +796,7 @@ class TelegramConversationHandler:
                 f"✅ *Вес сохранен* ({weight_lbs} lbs)",
                 parse_mode=ParseMode.MARKDOWN
             )
-            await self.show_review_summary(update.message, user_id)
+            await self.show_review_summary(update.message, user_id, context)
             return REVIEW_SUMMARY
         
         text = (
@@ -846,7 +846,7 @@ class TelegramConversationHandler:
             )
         
         # Show review summary
-        await self.show_review_summary(update.message, user_id)
+        await self.show_review_summary(update.message, user_id, context)
         return REVIEW_SUMMARY
     
     async def show_review_summary(self, message, user_id: str, context=None, from_template: bool = False, edit_message: bool = False):
@@ -1273,7 +1273,7 @@ class TelegramConversationHandler:
                 await query.edit_message_reply_markup(reply_markup=None)
             except Exception:
                 pass
-            await self.show_review_summary(query.message, user_id)
+            await self.show_review_summary(query.message, user_id, context)
             return REVIEW_SUMMARY
         
         # Get selected rate
