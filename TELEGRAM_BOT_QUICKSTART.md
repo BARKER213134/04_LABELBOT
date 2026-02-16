@@ -119,7 +119,7 @@
 ### Веб-дашборд:
 
 Для полного функционала используйте:
-https://shiptg-wizard.preview.emergentagent.com
+https://labelgen-5.preview.emergentagent.com
 
 **В дашборде можно:**
 - Просмотреть все заказы
