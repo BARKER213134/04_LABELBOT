@@ -63,6 +63,17 @@ export const ordersAPI = {
     const response = await axios.get(`${API}/orders/${orderId}`);
     return response.data;
   },
+  
+  // Admin protected endpoints
+  getAdminOrders: async (params = {}) => {
+    const response = await adminAxios.get(`${API}/orders/admin/list`, { params });
+    return response.data;
+  },
+  
+  getStatistics: async () => {
+    const response = await adminAxios.get(`${API}/orders/admin/statistics`);
+    return response.data;
+  },
 };
 
 export const adminAPI = {
