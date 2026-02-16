@@ -13,33 +13,86 @@ from datetime import datetime, timedelta
 router = APIRouter(prefix="/telegram", tags=["telegram"])
 logger = logging.getLogger(__name__)
 
-# Bot applications for both environments
+# Bot applications - cached globally
 _sandbox_app = None
 _production_app = None
 _bot_loading = False
 _bot_lock = asyncio.Lock()
-_current_environment = None
 
-# Local cache for recent updates (in addition to MongoDB)
+# Environment cache - avoid DB hit on every request
+_cached_environment = None
+_environment_cache_time = 0
+_ENVIRONMENT_CACHE_TTL = 60  # Cache environment for 60 seconds
+
+# Deduplication - aggressive local caching
 _local_update_cache = {}
-_LOCAL_CACHE_SIZE = 500
+_LOCAL_CACHE_SIZE = 2000  # Increased cache size
+_LOCAL_CACHE_TTL = 300  # 5 minutes
 
 
-async def _get_current_environment(db=None) -> str:
-    """Get current environment from database settings"""
+def _is_duplicate_local(update_id: int) -> bool:
+    """Fast local-only deduplication check"""
+    global _local_update_cache
+    
+    current_time = time.time()
+    
+    # Check local cache
+    if update_id in _local_update_cache:
+        return True
+    
+    # Cleanup old entries if cache is too large
+    if len(_local_update_cache) > _LOCAL_CACHE_SIZE:
+        cutoff = current_time - _LOCAL_CACHE_TTL
+        _local_update_cache = {
+            uid: ts for uid, ts in _local_update_cache.items() 
+            if ts > cutoff
+        }
+    
+    # Add to local cache immediately
+    _local_update_cache[update_id] = current_time
+    return False
+
+
+async def _mark_update_processed(update_id: int, db):
+    """Mark update as processed in MongoDB (non-blocking background task)"""
+    try:
+        await db.telegram_updates.update_one(
+            {"_id": update_id},
+            {"$setOnInsert": {"_id": update_id, "processed_at": datetime.utcnow()}},
+            upsert=True
+        )
+    except Exception as e:
+        pass  # Ignore errors - local cache is primary
+
+
+async def _get_current_environment_cached(db=None) -> str:
+    """Get environment with aggressive caching"""
+    global _cached_environment, _environment_cache_time
+    
+    current_time = time.time()
+    
+    # Return cached value if valid
+    if _cached_environment and (current_time - _environment_cache_time) < _ENVIRONMENT_CACHE_TTL:
+        return _cached_environment
+    
+    # Fetch from DB
     try:
         if db is None:
             db = Database.db
         if db is None:
-            return "production"
+            return _cached_environment or "production"
         
         config = await db.api_config.find_one({"_id": "api_config"})
         if config:
-            return config.get("environment", "production")
-        return "production"
+            _cached_environment = config.get("environment", "production")
+        else:
+            _cached_environment = "production"
+        
+        _environment_cache_time = current_time
+        return _cached_environment
+        
     except Exception as e:
-        logger.error(f"Error getting environment: {e}")
-        return "production"
+        return _cached_environment or "production"
 
 
 async def _load_bot_for_environment(environment: str):
@@ -69,14 +122,10 @@ async def _load_bot_for_environment(environment: str):
 
 
 async def _get_bot_app(db=None):
-    """Get bot app for current environment from DB setting"""
-    global _sandbox_app, _production_app, _current_environment
+    """Get bot app with cached environment"""
+    global _sandbox_app, _production_app
     
-    environment = await _get_current_environment(db)
-    
-    if _current_environment != environment:
-        logger.warning(f"[BOT] Environment changed: {_current_environment} -> {environment}")
-        _current_environment = environment
+    environment = await _get_current_environment_cached(db)
     
     if environment == "production":
         if _production_app is None:
@@ -88,70 +137,6 @@ async def _get_bot_app(db=None):
         return _sandbox_app
 
 
-async def _is_duplicate_update(update_id: int, db) -> bool:
-    """
-    Check if update was already processed - ATOMIC operation for multi-pod sync
-    Uses find_one_and_update with upsert for atomicity
-    """
-    global _local_update_cache
-    
-    current_time = time.time()
-    
-    # Check local cache first (fast path)
-    if update_id in _local_update_cache:
-        return True
-    
-    # Clean local cache if too large
-    if len(_local_update_cache) > _LOCAL_CACHE_SIZE:
-        cutoff = current_time - 60
-        _local_update_cache = {
-            uid: ts for uid, ts in _local_update_cache.items() 
-            if ts > cutoff
-        }
-    
-    # ATOMIC check-and-insert using find_one_and_update
-    try:
-        result = await db.telegram_updates.find_one_and_update(
-            {"_id": update_id},
-            {
-                "$setOnInsert": {
-                    "_id": update_id,
-                    "processed_at": datetime.utcnow()
-                }
-            },
-            upsert=True,
-            return_document=False  # Returns None if document was just created
-        )
-        
-        # Add to local cache
-        _local_update_cache[update_id] = current_time
-        
-        # If result is not None, document existed = duplicate
-        if result is not None:
-            return True
-        
-        # Document was just created = not duplicate
-        return False
-        
-    except Exception as e:
-        logger.error(f"[DEDUP] Error: {e}")
-        # On any error, check local cache one more time
-        return update_id in _local_update_cache
-
-
-async def _cleanup_old_updates(db):
-    """Cleanup old update records (run periodically)"""
-    try:
-        cutoff = datetime.utcnow() - timedelta(hours=1)
-        result = await db.telegram_updates.delete_many({
-            "processed_at": {"$lt": cutoff}
-        })
-        if result.deleted_count > 0:
-            logger.info(f"[DEDUP] Cleaned up {result.deleted_count} old update records")
-    except Exception as e:
-        logger.error(f"[DEDUP] Cleanup error: {e}")
-
-
 @router.post("/webhook")
 async def telegram_webhook(
     request: Request,
@@ -159,26 +144,32 @@ async def telegram_webhook(
     db: AsyncIOMotorDatabase = Depends(get_database)
 ):
     """
-    Webhook handler - responds IMMEDIATELY to Telegram
-    Deduplication is atomic, processing is synchronous to ensure state is saved
+    Ultra-fast webhook handler
+    - Local-first deduplication (no DB hit for duplicates)
+    - Cached environment (no DB hit for env check)
+    - Background MongoDB write
     """
     try:
         update_data = await request.json()
         update_id = update_data.get("update_id")
         
-        # IMMEDIATELY check deduplication (atomic MongoDB operation)
-        if update_id and await _is_duplicate_update(update_id, db):
+        # FAST: Local-only deduplication first
+        if update_id and _is_duplicate_local(update_id):
             return JSONResponse(content={"status": "ok"})
         
-        # Get bot application
+        # Get bot application (uses cached environment)
         app = await _get_bot_app(db)
         
         if app is None:
             return JSONResponse(content={"status": "ok"})
         
-        # Process update synchronously to ensure state is saved before response
+        # Process update
         update = Update.de_json(update_data, app.bot)
         await app.process_update(update)
+        
+        # Background: Mark in MongoDB for cross-pod sync (don't wait)
+        if update_id:
+            asyncio.create_task(_mark_update_processed(update_id, db))
         
         return JSONResponse(content={"status": "ok"})
     
@@ -198,7 +189,7 @@ async def _preload_bot():
             logger.warning("[BOT] Database not ready, skipping preload")
             return
         
-        environment = await _get_current_environment(db)
+        environment = await _get_current_environment_cached(db)
         await _load_bot_for_environment(environment)
         logger.warning(f"[BOT] Bot application preloaded successfully for {environment}")
     except Exception as e:
@@ -207,12 +198,9 @@ async def _preload_bot():
 
 @router.get("/preload")
 async def preload_bot(db: AsyncIOMotorDatabase = Depends(get_database)):
-    """Endpoint to trigger bot preloading for current environment"""
-    environment = await _get_current_environment(db)
+    """Endpoint to trigger bot preloading"""
+    environment = await _get_current_environment_cached(db)
     await _load_bot_for_environment(environment)
-    
-    # Cleanup old updates periodically
-    asyncio.create_task(_cleanup_old_updates(db))
     
     return {
         "status": "ok", 
@@ -224,11 +212,34 @@ async def preload_bot(db: AsyncIOMotorDatabase = Depends(get_database)):
 
 @router.get("/status")
 async def bot_status(db: AsyncIOMotorDatabase = Depends(get_database)):
-    """Get current bot status and environment"""
-    environment = await _get_current_environment(db)
+    """Get current bot status"""
+    environment = await _get_current_environment_cached(db)
     
     return {
         "current_environment": environment,
         "sandbox_loaded": _sandbox_app is not None,
-        "production_loaded": _production_app is not None
+        "production_loaded": _production_app is not None,
+        "cache_size": len(_local_update_cache)
     }
+
+
+@router.post("/clear-env-cache")
+async def clear_environment_cache():
+    """Clear environment cache (call after changing environment in admin)"""
+    global _cached_environment, _environment_cache_time
+    _cached_environment = None
+    _environment_cache_time = 0
+    return {"status": "ok", "message": "Environment cache cleared"}
+
+
+async def _cleanup_old_updates(db):
+    """Cleanup old update records"""
+    try:
+        cutoff = datetime.utcnow() - timedelta(hours=1)
+        result = await db.telegram_updates.delete_many({
+            "processed_at": {"$lt": cutoff}
+        })
+        if result.deleted_count > 0:
+            logger.info(f"[DEDUP] Cleaned up {result.deleted_count} old update records")
+    except Exception as e:
+        pass
