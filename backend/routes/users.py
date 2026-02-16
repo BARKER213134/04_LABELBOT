@@ -64,8 +64,9 @@ async def update_balance(
         new_balance = user.get('balance', 0)
         
         # Check if user has a pending order (waiting for payment)
+        db = Database.db
         pending_order = await db.orders.find_one({
-            "telegram_user_id": telegram_id,
+            "telegram_user_id": update.telegram_id,
             "status": "pending"
         })
         
