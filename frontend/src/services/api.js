@@ -3,6 +3,51 @@ import axios from 'axios';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
+// Admin credentials - stored in sessionStorage after login
+let adminAuth = null;
+
+export const setAdminAuth = (username, password) => {
+  adminAuth = btoa(`${username}:${password}`);
+  sessionStorage.setItem('adminAuth', adminAuth);
+};
+
+export const getAdminAuth = () => {
+  if (!adminAuth) {
+    adminAuth = sessionStorage.getItem('adminAuth');
+  }
+  return adminAuth;
+};
+
+export const clearAdminAuth = () => {
+  adminAuth = null;
+  sessionStorage.removeItem('adminAuth');
+};
+
+export const isAdminLoggedIn = () => {
+  return !!getAdminAuth();
+};
+
+// Create axios instance for admin requests
+const adminAxios = axios.create();
+adminAxios.interceptors.request.use((config) => {
+  const auth = getAdminAuth();
+  if (auth) {
+    config.headers.Authorization = `Basic ${auth}`;
+  }
+  return config;
+});
+
+adminAxios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      clearAdminAuth();
+      window.location.reload();
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const ordersAPI = {
   createOrder: async (orderData) => {
     const response = await axios.post(`${API}/orders/create`, orderData);
@@ -21,13 +66,24 @@ export const ordersAPI = {
 };
 
 export const adminAPI = {
+  login: async (username, password) => {
+    setAdminAuth(username, password);
+    try {
+      const response = await adminAxios.get(`${API}/admin/api-config`);
+      return response.data;
+    } catch (error) {
+      clearAdminAuth();
+      throw error;
+    }
+  },
+  
   getConfig: async () => {
-    const response = await axios.get(`${API}/admin/api-config`);
+    const response = await adminAxios.get(`${API}/admin/api-config`);
     return response.data;
   },
   
   updateConfig: async (config) => {
-    const response = await axios.post(`${API}/admin/api-config`, config);
+    const response = await adminAxios.post(`${API}/admin/api-config`, config);
     return response.data;
   },
 };
