@@ -183,3 +183,116 @@ async def get_order(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve order"
         )
+
+
+@router.get("/admin/statistics")
+async def get_order_statistics(
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_database),
+    admin: str = Depends(verify_admin)
+):
+    """Get order statistics (protected)"""
+    check_rate_limit(get_client_ip(request), api_limiter)
+    
+    try:
+        # Get all completed orders with label info
+        pipeline = [
+            {"$match": {"status": "label_created"}},
+            {"$group": {
+                "_id": None,
+                "totalOrders": {"$sum": 1},
+                "totalLabelCost": {"$sum": {"$ifNull": ["$labelCost", 0]}},
+                "totalUserPaid": {"$sum": {"$ifNull": ["$userPaid", 0]}},
+                "totalProfit": {"$sum": {"$ifNull": ["$profit", 0]}},
+            }}
+        ]
+        
+        result = await db.orders.aggregate(pipeline).to_list(1)
+        stats = result[0] if result else {
+            "totalOrders": 0,
+            "totalLabelCost": 0,
+            "totalUserPaid": 0,
+            "totalProfit": 0,
+        }
+        
+        # Remove MongoDB _id
+        stats.pop("_id", None)
+        
+        # Get orders with low profit (< $10)
+        low_profit_count = await db.orders.count_documents({
+            "status": "label_created",
+            "$or": [
+                {"profit": {"$lt": 10}},
+                {"profit": {"$exists": False}}
+            ]
+        })
+        
+        stats["lowProfitOrders"] = low_profit_count
+        
+        return stats
+        
+    except Exception as e:
+        logger.error(f"Error getting statistics: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get statistics"
+        )
+
+
+@router.get("/admin/list")
+async def list_orders_admin(
+    request: Request,
+    skip: int = 0,
+    limit: int = 50,
+    db: AsyncIOMotorDatabase = Depends(get_database),
+    admin: str = Depends(verify_admin)
+):
+    """List orders with profit info (protected)"""
+    check_rate_limit(get_client_ip(request), api_limiter)
+    
+    try:
+        cursor = db.orders.find(
+            {"status": "label_created"},
+            {
+                "_id": 0,
+                "id": 1,
+                "carrier": 1,
+                "serviceCode": 1,
+                "labelCost": 1,
+                "userPaid": 1,
+                "profit": 1,
+                "trackingNumber": 1,
+                "telegram_username": 1,
+                "createdAt": 1,
+                "shipFromCity": {"$ifNull": ["$shipFromAddress.city", ""]},
+                "shipToCity": {"$ifNull": ["$shipToAddress.city", ""]},
+            }
+        ).skip(skip).limit(limit).sort("createdAt", -1)
+        
+        orders = await cursor.to_list(length=limit)
+        
+        # Calculate profit for orders that don't have it
+        for order in orders:
+            if order.get("profit") is None:
+                label_cost = order.get("labelCost") or 0
+                user_paid = order.get("userPaid") or 0
+                order["profit"] = user_paid - label_cost
+            
+            # Mark low profit orders
+            order["isLowProfit"] = order.get("profit", 0) < 10
+        
+        total = await db.orders.count_documents({"status": "label_created"})
+        
+        return {
+            "items": orders,
+            "total": total,
+            "skip": skip,
+            "limit": limit,
+        }
+        
+    except Exception as e:
+        logger.error(f"Error listing orders: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to list orders"
+        )
