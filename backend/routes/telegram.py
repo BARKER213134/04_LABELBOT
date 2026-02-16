@@ -159,39 +159,26 @@ async def telegram_webhook(
     db: AsyncIOMotorDatabase = Depends(get_database)
 ):
     """
-    Webhook handler - responds immediately to Telegram
-    Uses MongoDB for update deduplication across pods
+    Webhook handler - responds IMMEDIATELY to Telegram
+    Deduplication is atomic, processing is synchronous to ensure state is saved
     """
     try:
         update_data = await request.json()
         update_id = update_data.get("update_id")
         
-        # Log incoming update for debugging
-        message = update_data.get("message", {})
-        callback = update_data.get("callback_query", {})
-        user_id = message.get("from", {}).get("id") or callback.get("from", {}).get("id")
-        text = message.get("text", "")[:50] if message else ""
-        callback_data = callback.get("data", "") if callback else ""
-        
-        logger.warning(f"[WEBHOOK] update_id={update_id}, user={user_id}, text='{text}', callback='{callback_data}'")
-        
-        # Deduplicate updates using MongoDB (multi-pod safe)
+        # IMMEDIATELY check deduplication (atomic MongoDB operation)
         if update_id and await _is_duplicate_update(update_id, db):
-            logger.warning(f"[WEBHOOK] Duplicate update {update_id}, skipping")
             return JSONResponse(content={"status": "ok"})
         
-        # Get bot application for current environment
+        # Get bot application
         app = await _get_bot_app(db)
         
         if app is None:
-            logger.error("[BOT] No bot application available")
-            return JSONResponse(content={"status": "error", "message": "Bot not loaded"})
+            return JSONResponse(content={"status": "ok"})
         
-        # Process update
+        # Process update synchronously to ensure state is saved before response
         update = Update.de_json(update_data, app.bot)
-        logger.warning(f"[WEBHOOK] Processing update {update_id}...")
         await app.process_update(update)
-        logger.warning(f"[WEBHOOK] Update {update_id} processed")
         
         return JSONResponse(content={"status": "ok"})
     
