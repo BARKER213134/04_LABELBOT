@@ -86,6 +86,12 @@ async def notify_user_balance_credited(telegram_id: str, amount: float):
         user = await users_service.get_user(telegram_id)
         current_balance = user.get('balance', 0) if user else 0
         
+        # Check if user has a pending order (waiting for payment)
+        pending_order = await db.orders.find_one({
+            "telegram_user_id": telegram_id,
+            "status": "pending"
+        })
+        
         text = (
             "━━━━━━━━━━━━━━━━━━━━\n"
             "✅ *БАЛАНС ПОПОЛНЕН*\n"
@@ -96,11 +102,16 @@ async def notify_user_balance_credited(telegram_id: str, amount: float):
             "━━━━━━━━━━━━━━━━━━━━"
         )
         
-        # Add buttons to continue order or go to main menu
-        keyboard = [
-            [InlineKeyboardButton("📦 Продолжить заказ", callback_data="create_label")],
-            [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
-        ]
+        # Show "Continue order" button ONLY if user has pending order
+        if pending_order:
+            keyboard = [
+                [InlineKeyboardButton("📦 Продолжить заказ", callback_data="create_label")],
+                [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+            ]
+        else:
+            keyboard = [
+                [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+            ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         await bot.send_message(
