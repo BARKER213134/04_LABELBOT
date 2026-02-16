@@ -201,6 +201,21 @@ async def telegram_webhook(
         return JSONResponse(content={"status": "ok"})
 
 
+async def _preload_bot():
+    """Preload bot during server startup"""
+    try:
+        db = Database.db
+        if db is None:
+            logger.warning("[BOT] Database not ready, skipping preload")
+            return
+        
+        environment = await _get_current_environment(db)
+        await _load_bot_for_environment(environment)
+        logger.warning(f"[BOT] Bot application preloaded successfully for {environment}")
+    except Exception as e:
+        logger.error(f"[BOT] Preload failed: {e}")
+
+
 @router.get("/preload")
 async def preload_bot(db: AsyncIOMotorDatabase = Depends(get_database)):
     """Endpoint to trigger bot preloading for current environment"""
