@@ -140,6 +140,7 @@ const OrdersList = () => {
             <thead>
               <tr style={{ borderBottom: '1px solid #1E293B' }}>
                 <th className="text-left py-3 px-4" style={{ color: '#94A3B8', fontWeight: 500 }}>Tracking #</th>
+                <th className="text-left py-3 px-4" style={{ color: '#94A3B8', fontWeight: 500 }}>User</th>
                 <th className="text-left py-3 px-4" style={{ color: '#94A3B8', fontWeight: 500 }}>Carrier</th>
                 <th className="text-left py-3 px-4" style={{ color: '#94A3B8', fontWeight: 500 }}>Route</th>
                 <th className="text-left py-3 px-4" style={{ color: '#94A3B8', fontWeight: 500 }}>Status</th>
