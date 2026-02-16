@@ -59,7 +59,7 @@ async def update_balance(
         from config import get_settings
         import traceback
         
-        logger.info(f"[BALANCE] Preparing to send notification to {update.telegram_id}")
+        print(f"[BALANCE] Preparing to send notification to {update.telegram_id}")
         
         settings = get_settings()
         bot = Bot(token=settings.telegram_bot_token)
@@ -73,7 +73,7 @@ async def update_balance(
             "status": "pending"
         })
         
-        logger.info(f"[BALANCE] Has pending order: {bool(pending_order)}")
+        print(f"[BALANCE] Has pending order: {bool(pending_order)}")
         
         if update.amount > 0:
             # Balance added
@@ -115,7 +115,7 @@ async def update_balance(
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
         
-        logger.info(f"[BALANCE] Sending message to chat_id={update.telegram_id}")
+        print(f"[BALANCE] Sending message to chat_id={update.telegram_id}")
         
         result = await bot.send_message(
             chat_id=int(update.telegram_id),
@@ -123,10 +123,10 @@ async def update_balance(
             parse_mode="Markdown",
             reply_markup=reply_markup
         )
-        logger.info(f"[BALANCE] Notification sent successfully to {update.telegram_id}, message_id={result.message_id}")
+        print(f"[BALANCE] Notification sent successfully to {update.telegram_id}, message_id={result.message_id}")
     except Exception as e:
-        logger.error(f"[BALANCE] Failed to send notification: {e}")
-        logger.error(f"[BALANCE] Full traceback: {traceback.format_exc()}")
+        print(f"[BALANCE] Failed to send notification: {e}")
+        print(f"[BALANCE] Full traceback: {traceback.format_exc()}")
         # Don't fail the request if notification fails
     
     return user
