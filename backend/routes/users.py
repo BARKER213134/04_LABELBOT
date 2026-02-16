@@ -57,9 +57,6 @@ async def update_balance(
     try:
         from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
         from config import get_settings
-        import traceback
-        
-        print(f"[BALANCE] Preparing to send notification to {update.telegram_id}")
         
         settings = get_settings()
         bot = Bot(token=settings.telegram_bot_token)
@@ -72,8 +69,6 @@ async def update_balance(
             "telegram_user_id": update.telegram_id,
             "status": "pending"
         })
-        
-        print(f"[BALANCE] Has pending order: {bool(pending_order)}")
         
         if update.amount > 0:
             # Balance added
@@ -115,18 +110,15 @@ async def update_balance(
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
         
-        print(f"[BALANCE] Sending message to chat_id={update.telegram_id}")
-        
-        result = await bot.send_message(
+        await bot.send_message(
             chat_id=int(update.telegram_id),
             text=message,
             parse_mode="Markdown",
             reply_markup=reply_markup
         )
-        print(f"[BALANCE] Notification sent successfully to {update.telegram_id}, message_id={result.message_id}")
+        logger.warning(f"[BALANCE] Notification sent to {update.telegram_id}")
     except Exception as e:
-        print(f"[BALANCE] Failed to send notification: {e}")
-        print(f"[BALANCE] Full traceback: {traceback.format_exc()}")
+        logger.warning(f"[BALANCE] Failed to send notification to {update.telegram_id}: {e}")
         # Don't fail the request if notification fails
     
     return user
