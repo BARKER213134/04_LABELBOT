@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Check, AlertCircle, Lock, LogOut } from 'lucide-react';
+import { Settings, Check, AlertCircle, Lock, LogOut, BarChart3 } from 'lucide-react';
 import { adminAPI, isAdminLoggedIn, clearAdminAuth, setAdminAuth } from '../services/api';
 import { toast } from 'sonner';
+import OrderStatistics from './OrderStatistics';
 
 const AdminLogin = ({ onLogin }) => {
   const [username, setUsername] = useState('admin');
