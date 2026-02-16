@@ -143,6 +143,7 @@ async def telegram_webhook(
 ):
     """
     Secure webhook handler with:
+    - Maintenance mode check
     - Rate limiting per user
     - Telegram update validation
     - Fast deduplication
@@ -156,6 +157,32 @@ async def telegram_webhook(
             return JSONResponse(content={"status": "ok"})
         
         update_data = await request.json()
+        
+        # Check maintenance mode
+        from routes.admin import get_maintenance_mode
+        is_maintenance = await get_maintenance_mode(db)
+        
+        if is_maintenance:
+            # In maintenance mode - send message and ignore update
+            user_id = None
+            if "message" in update_data:
+                user_id = update_data["message"].get("from", {}).get("id")
+            elif "callback_query" in update_data:
+                user_id = update_data["callback_query"].get("from", {}).get("id")
+            
+            if user_id:
+                try:
+                    from telegram import Bot
+                    bot = Bot(token=settings.telegram_bot_token)
+                    await bot.send_message(
+                        chat_id=user_id,
+                        text="🔧 *Бот на техническом обслуживании*\n\nПожалуйста, подождите. Мы скоро вернёмся!",
+                        parse_mode="Markdown"
+                    )
+                except:
+                    pass
+            
+            return JSONResponse(content={"status": "ok"})
         
         # Validate Telegram update structure
         if not validate_telegram_webhook(settings.telegram_bot_token_prod, update_data):
