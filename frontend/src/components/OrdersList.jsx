@@ -173,6 +173,11 @@ const OrdersList = () => {
                       </span>
                     </td>
                     <td className="py-3 px-4">
+                      <span style={{ color: '#60A5FA', fontSize: '0.875rem' }}>
+                        {order.telegram_username ? `@${order.telegram_username}` : order.telegram_user_id || 'N/A'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">
                       <span className="uppercase font-medium">{order.carrier}</span>
                     </td>
                     <td className="py-3 px-4" style={{ color: '#94A3B8' }}>
