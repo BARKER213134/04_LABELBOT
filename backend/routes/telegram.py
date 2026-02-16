@@ -164,8 +164,18 @@ async def telegram_webhook(
         update_data = await request.json()
         update_id = update_data.get("update_id")
         
+        # Log incoming update for debugging
+        message = update_data.get("message", {})
+        callback = update_data.get("callback_query", {})
+        user_id = message.get("from", {}).get("id") or callback.get("from", {}).get("id")
+        text = message.get("text", "")[:50] if message else ""
+        callback_data = callback.get("data", "") if callback else ""
+        
+        logger.warning(f"[WEBHOOK] update_id={update_id}, user={user_id}, text='{text}', callback='{callback_data}'")
+        
         # Deduplicate updates using MongoDB (multi-pod safe)
         if update_id and await _is_duplicate_update(update_id, db):
+            logger.warning(f"[WEBHOOK] Duplicate update {update_id}, skipping")
             return JSONResponse(content={"status": "ok"})
         
         # Get bot application for current environment
@@ -177,7 +187,9 @@ async def telegram_webhook(
         
         # Process update
         update = Update.de_json(update_data, app.bot)
+        logger.warning(f"[WEBHOOK] Processing update {update_id}...")
         await app.process_update(update)
+        logger.warning(f"[WEBHOOK] Update {update_id} processed")
         
         return JSONResponse(content={"status": "ok"})
     
