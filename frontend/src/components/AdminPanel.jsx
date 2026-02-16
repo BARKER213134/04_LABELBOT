@@ -179,10 +179,46 @@ const AdminPanel = () => {
           </button>
         </div>
 
-        {/* Security Badge */}
-        <div className="mb-6 px-4 py-2 rounded-lg bg-green-500/10 border border-green-500/30 flex items-center gap-2">
-          <Lock className="w-4 h-4 text-green-500" />
-          <span className="text-green-400 text-sm">Защищённое соединение</span>
+        {/* Security Badge + Maintenance Status */}
+        <div className="mb-6 flex items-center justify-between">
+          <div className="px-4 py-2 rounded-lg bg-green-500/10 border border-green-500/30 flex items-center gap-2">
+            <Lock className="w-4 h-4 text-green-500" />
+            <span className="text-green-400 text-sm">Защищённое соединение</span>
+          </div>
+          
+          {/* Maintenance Mode Toggle */}
+          <div className={`px-4 py-2 rounded-lg flex items-center gap-3 ${
+            maintenanceMode 
+              ? 'bg-red-500/20 border border-red-500/30' 
+              : 'bg-green-500/10 border border-green-500/30'
+          }`}>
+            <span className={`text-sm ${maintenanceMode ? 'text-red-400' : 'text-green-400'}`}>
+              {maintenanceMode ? '🔧 Бот на обслуживании' : '✅ Бот работает'}
+            </span>
+            <button
+              onClick={handleMaintenanceToggle}
+              disabled={maintenanceLoading}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all disabled:opacity-50 ${
+                maintenanceMode
+                  ? 'bg-green-500 hover:bg-green-600 text-white'
+                  : 'bg-red-500 hover:bg-red-600 text-white'
+              }`}
+            >
+              {maintenanceLoading ? (
+                <span>Отправка...</span>
+              ) : maintenanceMode ? (
+                <>
+                  <Power className="w-4 h-4" />
+                  Включить бота
+                </>
+              ) : (
+                <>
+                  <Wrench className="w-4 h-4" />
+                  Вкл. обслуживание
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}
