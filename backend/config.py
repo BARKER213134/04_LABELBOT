@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: str = "*"
     
+    # Admin Security
+    admin_password: str = ""
+    
     class Config:
         env_file = ".env"
         case_sensitive = False
