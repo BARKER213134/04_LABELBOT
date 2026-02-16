@@ -62,6 +62,17 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Database connection failed: {e}")
     
+    # Initialize security
+    try:
+        from services.security import set_admin_password
+        if settings.admin_password:
+            set_admin_password(settings.admin_password)
+            logger.info("Admin security initialized")
+        else:
+            logger.warning("[SECURITY] Admin password not set!")
+    except Exception as e:
+        logger.error(f"Security init failed: {e}")
+    
     # Preload telegram bot SYNCHRONOUSLY to ensure it's ready
     try:
         from routes.telegram import _preload_bot
