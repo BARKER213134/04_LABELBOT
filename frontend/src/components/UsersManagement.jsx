@@ -129,9 +129,41 @@ const UsersManagement = () => {
     );
   }
 
+  // Calculate total balance of all users
+  const totalUsersBalance = users.reduce((sum, user) => sum + (user.balance || 0), 0);
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold text-gray-800 mb-6">Управление пользователями</h1>
+      
+      {/* Total Balance Summary Card */}
+      <div className="mb-6 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg shadow-lg p-6 text-white">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm opacity-80 mb-1">Общий баланс всех пользователей</p>
+            <p className="text-3xl font-bold">${totalUsersBalance.toFixed(2)}</p>
+          </div>
+          <div className="bg-white/20 rounded-full p-4">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+        </div>
+        <div className="mt-4 pt-4 border-t border-white/20 flex gap-6 text-sm">
+          <div>
+            <span className="opacity-70">Пользователей: </span>
+            <span className="font-semibold">{users.length}</span>
+          </div>
+          <div>
+            <span className="opacity-70">С балансом: </span>
+            <span className="font-semibold">{users.filter(u => u.balance > 0).length}</span>
+          </div>
+          <div>
+            <span className="opacity-70">Средний баланс: </span>
+            <span className="font-semibold">${users.length > 0 ? (totalUsersBalance / users.length).toFixed(2) : '0.00'}</span>
+          </div>
+        </div>
+      </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Users List */}
