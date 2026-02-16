@@ -132,7 +132,7 @@ const AdminPanel = () => {
 
   return (
     <div className="min-h-screen p-8" style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)' }}>
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
@@ -154,7 +154,37 @@ const AdminPanel = () => {
           <span className="text-green-400 text-sm">Защищённое соединение</span>
         </div>
 
-        {/* API Configuration Card */}
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+              activeTab === 'settings'
+                ? 'bg-orange-500 text-white'
+                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+            }`}
+          >
+            <Settings className="w-4 h-4" />
+            Настройки
+          </button>
+          <button
+            onClick={() => setActiveTab('statistics')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+              activeTab === 'statistics'
+                ? 'bg-orange-500 text-white'
+                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+            }`}
+          >
+            <BarChart3 className="w-4 h-4" />
+            Статистика
+          </button>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'statistics' ? (
+          <OrderStatistics />
+        ) : (
+        /* API Configuration Card */
         <div className="rounded-2xl p-6" style={{ background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)' }}>
           <div className="flex items-center gap-3 mb-2">
             <Settings className="w-6 h-6 text-orange-500" />
