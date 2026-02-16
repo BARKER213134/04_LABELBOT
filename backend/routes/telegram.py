@@ -90,8 +90,8 @@ async def _get_bot_app(db=None):
 
 async def _is_duplicate_update(update_id: int, db) -> bool:
     """
-    Check if update was already processed - uses MongoDB for multi-pod sync
-    with local cache for speed
+    Check if update was already processed - ATOMIC operation for multi-pod sync
+    Uses find_one_and_update with upsert for atomicity
     """
     global _local_update_cache
     
@@ -103,38 +103,40 @@ async def _is_duplicate_update(update_id: int, db) -> bool:
     
     # Clean local cache if too large
     if len(_local_update_cache) > _LOCAL_CACHE_SIZE:
-        cutoff = current_time - 60  # Keep last 60 seconds
+        cutoff = current_time - 60
         _local_update_cache = {
             uid: ts for uid, ts in _local_update_cache.items() 
             if ts > cutoff
         }
     
-    # Check MongoDB (shared across pods)
+    # ATOMIC check-and-insert using find_one_and_update
     try:
-        existing = await db.telegram_updates.find_one({"_id": update_id})
-        if existing:
-            # Add to local cache
-            _local_update_cache[update_id] = current_time
-            return True
-        
-        # Not found - insert into MongoDB (atomic operation)
-        await db.telegram_updates.insert_one({
-            "_id": update_id,
-            "processed_at": datetime.utcnow()
-        })
+        result = await db.telegram_updates.find_one_and_update(
+            {"_id": update_id},
+            {
+                "$setOnInsert": {
+                    "_id": update_id,
+                    "processed_at": datetime.utcnow()
+                }
+            },
+            upsert=True,
+            return_document=False  # Returns None if document was just created
+        )
         
         # Add to local cache
         _local_update_cache[update_id] = current_time
+        
+        # If result is not None, document existed = duplicate
+        if result is not None:
+            return True
+        
+        # Document was just created = not duplicate
         return False
         
     except Exception as e:
-        # On duplicate key error - already processed
-        if "duplicate key" in str(e).lower() or "E11000" in str(e):
-            _local_update_cache[update_id] = current_time
-            return True
-        logger.error(f"[DEDUP] Error checking update {update_id}: {e}")
-        # On error, allow processing to avoid blocking
-        return False
+        logger.error(f"[DEDUP] Error: {e}")
+        # On any error, check local cache one more time
+        return update_id in _local_update_cache
 
 
 async def _cleanup_old_updates(db):
