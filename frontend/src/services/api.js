@@ -97,6 +97,22 @@ export const adminAPI = {
     const response = await adminAxios.post(`${API}/admin/api-config`, config);
     return response.data;
   },
+  
+  // Maintenance mode
+  getMaintenanceStatus: async () => {
+    const response = await adminAxios.get(`${API}/admin/maintenance`);
+    return response.data;
+  },
+  
+  enableMaintenance: async () => {
+    const response = await adminAxios.post(`${API}/admin/maintenance/enable`);
+    return response.data;
+  },
+  
+  disableMaintenance: async () => {
+    const response = await adminAxios.post(`${API}/admin/maintenance/disable`);
+    return response.data;
+  },
 };
 
 export const statisticsAPI = {
