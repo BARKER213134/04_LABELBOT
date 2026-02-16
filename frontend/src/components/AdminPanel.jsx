@@ -70,11 +70,14 @@ const AdminPanel = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [selectedEnv, setSelectedEnv] = useState('sandbox');
-  const [activeTab, setActiveTab] = useState('settings'); // 'settings' or 'statistics'
+  const [activeTab, setActiveTab] = useState('settings');
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [maintenanceLoading, setMaintenanceLoading] = useState(false);
 
   useEffect(() => {
     if (isLoggedIn) {
       loadConfig();
+      loadMaintenanceStatus();
     }
   }, [isLoggedIn]);
 
@@ -92,6 +95,34 @@ const AdminPanel = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadMaintenanceStatus = async () => {
+    try {
+      const data = await adminAPI.getMaintenanceStatus();
+      setMaintenanceMode(data.enabled);
+    } catch (error) {
+      console.error('Error loading maintenance status:', error);
+    }
+  };
+
+  const handleMaintenanceToggle = async () => {
+    setMaintenanceLoading(true);
+    try {
+      if (maintenanceMode) {
+        const result = await adminAPI.disableMaintenance();
+        toast.success(`Бот включен! Уведомлено ${result.users_notified} пользователей`);
+        setMaintenanceMode(false);
+      } else {
+        const result = await adminAPI.enableMaintenance();
+        toast.success(`Режим обслуживания включен! Уведомлено ${result.users_notified} пользователей`);
+        setMaintenanceMode(true);
+      }
+    } catch (error) {
+      toast.error('Ошибка при переключении режима');
+    } finally {
+      setMaintenanceLoading(false);
     }
   };
 
