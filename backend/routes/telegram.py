@@ -5,6 +5,10 @@ from telegram import Update
 from telegram.error import TimedOut, NetworkError
 from config import get_settings, Settings
 from database import get_database, Database
+from services.security import (
+    webhook_limiter, validate_telegram_webhook, 
+    get_telegram_user_id, get_client_ip
+)
 import logging
 import asyncio
 import time
@@ -19,15 +23,18 @@ _production_app = None
 _bot_loading = False
 _bot_lock = asyncio.Lock()
 
-# Environment cache - avoid DB hit on every request
+# Environment cache
 _cached_environment = None
 _environment_cache_time = 0
-_ENVIRONMENT_CACHE_TTL = 60  # Cache environment for 60 seconds
+_ENVIRONMENT_CACHE_TTL = 60
 
-# Deduplication - aggressive local caching
+# Deduplication
 _local_update_cache = {}
-_LOCAL_CACHE_SIZE = 2000  # Increased cache size
-_LOCAL_CACHE_TTL = 300  # 5 minutes
+_LOCAL_CACHE_SIZE = 2000
+_LOCAL_CACHE_TTL = 300
+
+# Blocked IPs (for severe abuse)
+_blocked_ips = set()
 
 
 def _is_duplicate_local(update_id: int) -> bool:
@@ -36,11 +43,9 @@ def _is_duplicate_local(update_id: int) -> bool:
     
     current_time = time.time()
     
-    # Check local cache
     if update_id in _local_update_cache:
         return True
     
-    # Cleanup old entries if cache is too large
     if len(_local_update_cache) > _LOCAL_CACHE_SIZE:
         cutoff = current_time - _LOCAL_CACHE_TTL
         _local_update_cache = {
@@ -48,34 +53,31 @@ def _is_duplicate_local(update_id: int) -> bool:
             if ts > cutoff
         }
     
-    # Add to local cache immediately
     _local_update_cache[update_id] = current_time
     return False
 
 
 async def _mark_update_processed(update_id: int, db):
-    """Mark update as processed in MongoDB (non-blocking background task)"""
+    """Mark update as processed in MongoDB"""
     try:
         await db.telegram_updates.update_one(
             {"_id": update_id},
             {"$setOnInsert": {"_id": update_id, "processed_at": datetime.utcnow()}},
             upsert=True
         )
-    except Exception as e:
-        pass  # Ignore errors - local cache is primary
+    except:
+        pass
 
 
 async def _get_current_environment_cached(db=None) -> str:
-    """Get environment with aggressive caching"""
+    """Get environment with caching"""
     global _cached_environment, _environment_cache_time
     
     current_time = time.time()
     
-    # Return cached value if valid
     if _cached_environment and (current_time - _environment_cache_time) < _ENVIRONMENT_CACHE_TTL:
         return _cached_environment
     
-    # Fetch from DB
     try:
         if db is None:
             db = Database.db
@@ -83,20 +85,16 @@ async def _get_current_environment_cached(db=None) -> str:
             return _cached_environment or "production"
         
         config = await db.api_config.find_one({"_id": "api_config"})
-        if config:
-            _cached_environment = config.get("environment", "production")
-        else:
-            _cached_environment = "production"
-        
+        _cached_environment = config.get("environment", "production") if config else "production"
         _environment_cache_time = current_time
         return _cached_environment
         
-    except Exception as e:
+    except:
         return _cached_environment or "production"
 
 
 async def _load_bot_for_environment(environment: str):
-    """Load bot application for specific environment"""
+    """Load bot application"""
     global _sandbox_app, _production_app, _bot_loading
     
     async with _bot_lock:
@@ -122,7 +120,7 @@ async def _load_bot_for_environment(environment: str):
 
 
 async def _get_bot_app(db=None):
-    """Get bot app with cached environment"""
+    """Get bot app"""
     global _sandbox_app, _production_app
     
     environment = await _get_current_environment_cached(db)
@@ -144,20 +142,43 @@ async def telegram_webhook(
     db: AsyncIOMotorDatabase = Depends(get_database)
 ):
     """
-    Ultra-fast webhook handler
-    - Local-first deduplication (no DB hit for duplicates)
-    - Cached environment (no DB hit for env check)
-    - Background MongoDB write
+    Secure webhook handler with:
+    - Rate limiting per user
+    - Telegram update validation
+    - Fast deduplication
     """
     try:
+        # Get client IP for rate limiting fallback
+        client_ip = get_client_ip(request)
+        
+        # Block known bad IPs
+        if client_ip in _blocked_ips:
+            return JSONResponse(content={"status": "ok"})
+        
         update_data = await request.json()
+        
+        # Validate Telegram update structure
+        if not validate_telegram_webhook(settings.telegram_bot_token_prod, update_data):
+            logger.warning(f"[SECURITY] Invalid webhook from {client_ip}")
+            return JSONResponse(content={"status": "ok"})
+        
         update_id = update_data.get("update_id")
         
-        # FAST: Local-only deduplication first
+        # Get user ID for rate limiting
+        user_id = get_telegram_user_id(update_data)
+        rate_limit_key = f"tg_{user_id}" if user_id != "unknown" else f"ip_{client_ip}"
+        
+        # Rate limiting (120 requests/minute per user)
+        allowed, remaining = webhook_limiter.is_allowed(rate_limit_key)
+        if not allowed:
+            logger.warning(f"[SECURITY] Rate limit exceeded: {rate_limit_key}")
+            return JSONResponse(content={"status": "ok"})
+        
+        # Deduplication
         if update_id and _is_duplicate_local(update_id):
             return JSONResponse(content={"status": "ok"})
         
-        # Get bot application (uses cached environment)
+        # Get bot application
         app = await _get_bot_app(db)
         
         if app is None:
@@ -167,7 +188,7 @@ async def telegram_webhook(
         update = Update.de_json(update_data, app.bot)
         await app.process_update(update)
         
-        # Background: Mark in MongoDB for cross-pod sync (don't wait)
+        # Background MongoDB write
         if update_id:
             asyncio.create_task(_mark_update_processed(update_id, db))
         
@@ -186,19 +207,18 @@ async def _preload_bot():
     try:
         db = Database.db
         if db is None:
-            logger.warning("[BOT] Database not ready, skipping preload")
             return
         
         environment = await _get_current_environment_cached(db)
         await _load_bot_for_environment(environment)
-        logger.warning(f"[BOT] Bot application preloaded successfully for {environment}")
+        logger.warning(f"[BOT] Bot preloaded for {environment}")
     except Exception as e:
         logger.error(f"[BOT] Preload failed: {e}")
 
 
 @router.get("/preload")
 async def preload_bot(db: AsyncIOMotorDatabase = Depends(get_database)):
-    """Endpoint to trigger bot preloading"""
+    """Preload bot endpoint"""
     environment = await _get_current_environment_cached(db)
     await _load_bot_for_environment(environment)
     
@@ -212,7 +232,7 @@ async def preload_bot(db: AsyncIOMotorDatabase = Depends(get_database)):
 
 @router.get("/status")
 async def bot_status(db: AsyncIOMotorDatabase = Depends(get_database)):
-    """Get current bot status"""
+    """Bot status"""
     environment = await _get_current_environment_cached(db)
     
     return {
@@ -225,21 +245,8 @@ async def bot_status(db: AsyncIOMotorDatabase = Depends(get_database)):
 
 @router.post("/clear-env-cache")
 async def clear_environment_cache():
-    """Clear environment cache (call after changing environment in admin)"""
+    """Clear environment cache"""
     global _cached_environment, _environment_cache_time
     _cached_environment = None
     _environment_cache_time = 0
-    return {"status": "ok", "message": "Environment cache cleared"}
-
-
-async def _cleanup_old_updates(db):
-    """Cleanup old update records"""
-    try:
-        cutoff = datetime.utcnow() - timedelta(hours=1)
-        result = await db.telegram_updates.delete_many({
-            "processed_at": {"$lt": cutoff}
-        })
-        if result.deleted_count > 0:
-            logger.info(f"[DEDUP] Cleaned up {result.deleted_count} old update records")
-    except Exception as e:
-        pass
+    return {"status": "ok"}
