@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Search, Filter, ExternalLink } from 'lucide-react';
+import { Package, Filter, ExternalLink, AlertTriangle } from 'lucide-react';
 import { ordersAPI } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 
@@ -42,6 +42,17 @@ const OrdersList = () => {
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  // Calculate profit for each order
+  const getProfit = (order) => {
+    const labelCost = order.labelCost || 0;
+    const userPaid = order.userPaid || (labelCost + 10); // Default markup $10
+    return userPaid - labelCost;
+  };
+
+  const isLowProfit = (order) => {
+    return getProfit(order) < 10;
   };
 
   return (
@@ -130,64 +141,85 @@ const OrdersList = () => {
               <tr style={{ borderBottom: '1px solid #1E293B' }}>
                 <th className="text-left py-3 px-4" style={{ color: '#94A3B8', fontWeight: 500 }}>Tracking #</th>
                 <th className="text-left py-3 px-4" style={{ color: '#94A3B8', fontWeight: 500 }}>Carrier</th>
-                <th className="text-left py-3 px-4" style={{ color: '#94A3B8', fontWeight: 500 }}>From</th>
-                <th className="text-left py-3 px-4" style={{ color: '#94A3B8', fontWeight: 500 }}>To</th>
+                <th className="text-left py-3 px-4" style={{ color: '#94A3B8', fontWeight: 500 }}>Route</th>
                 <th className="text-left py-3 px-4" style={{ color: '#94A3B8', fontWeight: 500 }}>Status</th>
-                <th className="text-left py-3 px-4" style={{ color: '#94A3B8', fontWeight: 500 }}>Cost</th>
+                <th className="text-right py-3 px-4" style={{ color: '#94A3B8', fontWeight: 500 }}>ShipEngine</th>
+                <th className="text-right py-3 px-4" style={{ color: '#94A3B8', fontWeight: 500 }}>User Paid</th>
+                <th className="text-right py-3 px-4" style={{ color: '#94A3B8', fontWeight: 500 }}>Profit</th>
                 <th className="text-left py-3 px-4" style={{ color: '#94A3B8', fontWeight: 500 }}>Created</th>
                 <th className="text-left py-3 px-4" style={{ color: '#94A3B8', fontWeight: 500 }}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {orders.map((order, index) => (
-                <tr
-                  key={order.id || index}
-                  data-testid={`order-row-${index}`}
-                  style={{ borderBottom: '1px solid #1E293B' }}
-                  className="hover:bg-white/5 transition-colors"
-                >
-                  <td className="py-3 px-4">
-                    <span className="mono" style={{ fontSize: '0.875rem' }}>
-                      {order.trackingNumber || 'Pending'}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="uppercase font-medium">{order.carrier}</span>
-                  </td>
-                  <td className="py-3 px-4" style={{ color: '#94A3B8' }}>
-                    {order.shipFromAddress?.city}, {order.shipFromAddress?.state}
-                  </td>
-                  <td className="py-3 px-4" style={{ color: '#94A3B8' }}>
-                    {order.shipToAddress?.city}, {order.shipToAddress?.state}
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className={`status-badge status-${order.status}`}>
-                      {order.status?.replace('_', ' ')}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    ${order.labelCost?.toFixed(2) || '0.00'}
-                  </td>
-                  <td className="py-3 px-4" style={{ color: '#94A3B8', fontSize: '0.875rem' }}>
-                    {formatDate(order.createdAt)}
-                  </td>
-                  <td className="py-3 px-4">
-                    {order.labelDownloadUrl && (
-                      <a
-                        data-testid={`download-label-${index}`}
-                        href={order.labelDownloadUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-primary hover:text-primary/80"
-                        style={{ color: '#F97316' }}
+              {orders.map((order, index) => {
+                const profit = getProfit(order);
+                const lowProfit = isLowProfit(order);
+                const userPaid = order.userPaid || ((order.labelCost || 0) + 10);
+                
+                return (
+                  <tr
+                    key={order.id || index}
+                    data-testid={`order-row-${index}`}
+                    style={{ 
+                      borderBottom: '1px solid #1E293B',
+                      backgroundColor: lowProfit && order.status === 'label_created' ? 'rgba(239, 68, 68, 0.1)' : 'transparent'
+                    }}
+                    className="hover:bg-white/5 transition-colors"
+                  >
+                    <td className="py-3 px-4">
+                      <span className="mono" style={{ fontSize: '0.875rem' }}>
+                        {order.trackingNumber || 'Pending'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className="uppercase font-medium">{order.carrier}</span>
+                    </td>
+                    <td className="py-3 px-4" style={{ color: '#94A3B8' }}>
+                      {order.shipFromAddress?.city}, {order.shipFromAddress?.state} → {order.shipToAddress?.city}, {order.shipToAddress?.state}
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className={`status-badge status-${order.status}`}>
+                        {order.status?.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-right" style={{ color: '#EF4444' }}>
+                      ${(order.labelCost || 0).toFixed(2)}
+                    </td>
+                    <td className="py-3 px-4 text-right" style={{ color: '#22C55E' }}>
+                      ${userPaid.toFixed(2)}
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <span 
+                        className="font-medium flex items-center justify-end gap-1"
+                        style={{ color: lowProfit ? '#EF4444' : '#22C55E' }}
                       >
-                        <ExternalLink size={16} />
-                        <span>Label</span>
-                      </a>
-                    )}
-                  </td>
-                </tr>
-              ))}
+                        ${profit.toFixed(2)}
+                        {lowProfit && order.status === 'label_created' && (
+                          <AlertTriangle size={14} />
+                        )}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4" style={{ color: '#94A3B8', fontSize: '0.875rem' }}>
+                      {formatDate(order.createdAt)}
+                    </td>
+                    <td className="py-3 px-4">
+                      {order.labelDownloadUrl && (
+                        <a
+                          data-testid={`download-label-${index}`}
+                          href={order.labelDownloadUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-primary hover:text-primary/80"
+                          style={{ color: '#F97316' }}
+                        >
+                          <ExternalLink size={16} />
+                          <span>Label</span>
+                        </a>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
