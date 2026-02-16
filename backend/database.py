@@ -9,35 +9,37 @@ class Database:
     db: AsyncIOMotorDatabase = None
 
 async def connect_db():
-    """Initialize database connection - ULTRA FAST"""
+    """Initialize database connection - OPTIMIZED for 50+ concurrent users"""
     try:
         settings = get_settings()
         mongo_url = settings.mongo_url
         
         Database.client = AsyncIOMotorClient(
             mongo_url, 
-            serverSelectionTimeoutMS=3000,
-            connectTimeoutMS=3000,
-            socketTimeoutMS=3000,
-            maxPoolSize=20,
-            minPoolSize=5,
-            maxIdleTimeMS=10000,
+            # Timeouts
+            serverSelectionTimeoutMS=5000,
+            connectTimeoutMS=5000,
+            socketTimeoutMS=10000,
+            
+            # Connection Pool - optimized for 50+ users
+            maxPoolSize=50,        # Max connections per pod
+            minPoolSize=10,        # Keep 10 connections warm
+            maxIdleTimeMS=30000,   # Close idle connections after 30s
+            waitQueueTimeoutMS=5000,  # Wait max 5s for connection
+            
+            # Reliability
             retryWrites=True,
             retryReads=True,
-            w=1,  # Faster writes (no waiting for replication)
-            journal=False,  # Faster writes (no journaling)
+            
+            # Performance
+            w=1,                   # Fast writes (acknowledge from primary only)
+            readPreference='primaryPreferred',  # Read from primary, fallback to secondary
+            
+            # Compression for faster data transfer
+            compressors=['zstd', 'zlib', 'snappy'],
         )
         Database.db = Database.client[settings.db_name]
-        logger.info(f"Connected to MongoDB: {settings.db_name}")
-        
-        # Create TTL index for telegram_updates (auto-cleanup after 1 hour)
-        try:
-            await Database.db.telegram_updates.create_index(
-                "processed_at",
-                expireAfterSeconds=3600  # 1 hour TTL
-            )
-        except Exception as idx_err:
-            logger.debug(f"Index may already exist: {idx_err}")
+        logger.info(f"Connected to MongoDB: {settings.db_name} (pool: 10-50)")
             
     except Exception as e:
         logger.error(f"Failed to connect to MongoDB: {e}")
