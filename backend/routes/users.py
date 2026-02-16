@@ -63,6 +63,12 @@ async def update_balance(
         
         new_balance = user.get('balance', 0)
         
+        # Check if user has a pending order (waiting for payment)
+        pending_order = await db.orders.find_one({
+            "telegram_user_id": telegram_id,
+            "status": "pending"
+        })
+        
         if update.amount > 0:
             # Balance added
             message = (
@@ -75,11 +81,16 @@ async def update_balance(
                 f"▫️ Стало: *${new_balance:.2f}*\n\n"
                 "━━━━━━━━━━━━━━━━━━━━"
             )
-            # Add buttons for balance top-up
-            keyboard = [
-                [InlineKeyboardButton("📦 Продолжить заказ", callback_data="create_label")],
-                [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
-            ]
+            # Show "Continue order" button ONLY if user has pending order
+            if pending_order:
+                keyboard = [
+                    [InlineKeyboardButton("📦 Продолжить заказ", callback_data="create_label")],
+                    [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+                ]
+            else:
+                keyboard = [
+                    [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+                ]
             reply_markup = InlineKeyboardMarkup(keyboard)
         else:
             # Balance deducted
