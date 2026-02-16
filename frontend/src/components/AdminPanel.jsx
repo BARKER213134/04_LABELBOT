@@ -70,6 +70,7 @@ const AdminPanel = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [selectedEnv, setSelectedEnv] = useState('sandbox');
+  const [activeTab, setActiveTab] = useState('settings'); // 'settings' or 'statistics'
 
   useEffect(() => {
     if (isLoggedIn) {
