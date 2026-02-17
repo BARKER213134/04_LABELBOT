@@ -1972,7 +1972,7 @@ class TelegramConversationHandler:
             logger.debug(f"Could not remove buttons from message: {e}")
         
         # Send new welcome message (like /start)
-        from backend.services.telegram_service import TelegramService
+        from services.telegram_service import TelegramService
         telegram_service = TelegramService()
         sent_message = await telegram_service.send_welcome_message(query.message.chat_id, balance)
         
@@ -2014,7 +2014,7 @@ class TelegramConversationHandler:
         self.clear_user_data(user_id, context)
         
         # Import here to avoid circular import
-        from backend.services.telegram_service import TelegramService
+        from services.telegram_service import TelegramService
         telegram_service = TelegramService()
         await telegram_service.send_welcome_message(update.effective_chat.id)
         
