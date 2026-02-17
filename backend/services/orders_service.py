@@ -94,15 +94,19 @@ class OrdersService:
                 
                 # Update order with label information
                 label_cost = label_response.get("shipment_cost", {}).get("amount", 0)
-                user_paid = order_data.get('total_cost', 0)  # Price with $10 markup
-                profit = user_paid - label_cost if label_cost and user_paid else 0
+                
+                # ALWAYS ensure $10 markup - recalculate based on actual label cost
+                # Even if estimated price was different, we charge actual + $10
+                from services.shipengine_service import RATE_MARKUP
+                user_paid = label_cost + RATE_MARKUP  # Always add $10 markup to actual cost
+                profit = RATE_MARKUP  # Profit is always the markup amount
                 
                 update_data = {
                     "labelId": label_response.get("label_id"),
                     "trackingNumber": label_response.get("tracking_number"),
                     "labelCost": label_cost,  # Original ShipEngine price
-                    "userPaid": user_paid,    # Price user paid (with markup)
-                    "profit": profit,          # Profit per label
+                    "userPaid": user_paid,    # Actual cost + $10 markup
+                    "profit": profit,          # Always $10
                     "labelDownloadUrl": label_response.get("label_download", {}).get("pdf"),
                     "status": OrderStatus.LABEL_CREATED.value,
                     "shipDate": datetime.utcnow(),
