@@ -1985,7 +1985,7 @@ class TelegramConversationHandler:
         self.clear_user_data(user_id, context)
         
         # Import here to avoid circular import
-        from services.telegram_service import TelegramService
+        from backend.services.telegram_service import TelegramService
         telegram_service = TelegramService()
         await telegram_service.send_welcome_message(update.effective_chat.id)
         
