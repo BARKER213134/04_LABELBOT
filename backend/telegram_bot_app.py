@@ -442,6 +442,72 @@ async def back_to_menu_callback(update, context):
     if sent:
         context.user_data['last_menu_message_id'] = sent.message_id
 
+async def continue_order_callback(update, context):
+    """Continue creating label after balance top-up"""
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+    from database import Database
+    
+    query = update.callback_query
+    await query.answer()
+    
+    user_id = str(update.effective_user.id)
+    chat_id = update.effective_chat.id
+    
+    # Check if user is banned
+    if banned_cache.get(f"ban_{user_id}"):
+        await send_banned_message(chat_id, context.bot)
+        return
+    
+    # Remove buttons from old message
+    try:
+        await query.edit_message_reply_markup(reply_markup=None)
+    except Exception:
+        pass
+    
+    # Check if there's saved order data
+    db = Database.db
+    pending_order = await db.pending_label_orders.find_one({"telegram_id": user_id})
+    
+    if pending_order and pending_order.get("order_data"):
+        # Restore order data to user context
+        order_data = pending_order.get("order_data", {})
+        context.user_data.update(order_data)
+        
+        # Delete the pending order record
+        await db.pending_label_orders.delete_one({"telegram_id": user_id})
+        
+        # Show message that we're continuing
+        text = (
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "📦 *ПРОДОЛЖЕНИЕ ЗАКАЗА*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Ваши данные сохранены!\n"
+            "Нажмите кнопку ниже чтобы продолжить создание лейбла.\n\n"
+            "━━━━━━━━━━━━━━━━━━━━"
+        )
+        keyboard = [
+            [InlineKeyboardButton("📦 Создать лейбл", callback_data="start_create")],
+            [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await context.bot.send_message(chat_id, text, parse_mode="Markdown", reply_markup=reply_markup)
+    else:
+        # No pending order - go back to menu
+        text = (
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "ℹ️ *ИНФОРМАЦИЯ*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Нет сохранённого заказа.\n"
+            "Начните создание нового лейбла.\n\n"
+            "━━━━━━━━━━━━━━━━━━━━"
+        )
+        keyboard = [
+            [InlineKeyboardButton("📦 Создать лейбл", callback_data="start_create")],
+            [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await context.bot.send_message(chat_id, text, parse_mode="Markdown", reply_markup=reply_markup)
+
 async def templates_menu_callback(update, context):
     """Templates menu - FAST"""
     global _templates_service
