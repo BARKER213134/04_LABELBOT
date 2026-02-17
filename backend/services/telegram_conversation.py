@@ -1454,8 +1454,27 @@ class TelegramConversationHandler:
                 current_balance = db_user.get('balance', 0) if db_user else 0
                 needed = total_cost - current_balance
                 
-                # Set flag that user is waiting for balance to continue order
-                data['waiting_for_balance'] = True
+                # Set flag that user is waiting for balance to continue order - store in MongoDB directly
+                try:
+                    from database import Database
+                    await Database.db.pending_label_orders.update_one(
+                        {"telegram_id": user_id},
+                        {"$set": {
+                            "telegram_id": user_id,
+                            "waiting_for_balance": True,
+                            "total_cost": total_cost,
+                            "order_data": {
+                                "ship_from": data.get("ship_from"),
+                                "ship_to": data.get("ship_to"),
+                                "package": data.get("package"),
+                                "selected_rate": data.get("selected_rate")
+                            },
+                            "updated_at": datetime.now(timezone.utc)
+                        }},
+                        upsert=True
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to save pending order status: {e}")
                 
                 text = (
                     "━━━━━━━━━━━━━━━━━━━━\n"
