@@ -63,12 +63,16 @@ async def update_balance(
         
         new_balance = user.get('balance', 0)
         
-        # Check if user has a pending order (waiting for payment)
+        # Check if user is actively creating a label (has conversation state with waiting_for_balance flag)
         db = Database.db
-        pending_order = await db.orders.find_one({
-            "telegram_user_id": update.telegram_id,
-            "status": "pending"
-        })
+        user_state = await db.ptb_user_data.find_one({"_id": int(update.telegram_id)})
+        is_creating_label = False
+        
+        if user_state and user_state.get("data"):
+            state_data = user_state.get("data", {})
+            has_label_data = state_data.get("ship_from") or state_data.get("ship_to")
+            waiting_for_balance = state_data.get("waiting_for_balance", False)
+            is_creating_label = has_label_data and waiting_for_balance
         
         if update.amount > 0:
             # Balance added
@@ -82,8 +86,8 @@ async def update_balance(
                 f"▫️ Стало: *${new_balance:.2f}*\n\n"
                 "━━━━━━━━━━━━━━━━━━━━"
             )
-            # Show "Continue order" button ONLY if user has pending order
-            if pending_order:
+            # Show "Continue order" button ONLY if user is actively creating a label
+            if is_creating_label:
                 keyboard = [
                     [InlineKeyboardButton("📦 Продолжить заказ", callback_data="create_label")],
                     [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
