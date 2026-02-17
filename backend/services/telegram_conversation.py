@@ -1671,11 +1671,11 @@ class TelegramConversationHandler:
                     message_id=msg_id,
                     reply_markup=None
                 )
-                logger.info(f"[TEMPLATE] Successfully removed cancel button")
+                logger.info("[TEMPLATE] Successfully removed cancel button")
             except Exception as e:
                 logger.warning(f"[TEMPLATE] Could not remove cancel button: {e}")
         else:
-            logger.warning(f"[TEMPLATE] No message_id or chat_id stored to remove button")
+            logger.warning("[TEMPLATE] No message_id or chat_id stored to remove button")
         
         # Use current data (not last_order_data) since we're saving before creating label
         order_data = data
