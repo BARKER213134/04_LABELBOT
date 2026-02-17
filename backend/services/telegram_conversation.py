@@ -1454,6 +1454,9 @@ class TelegramConversationHandler:
                 current_balance = db_user.get('balance', 0) if db_user else 0
                 needed = total_cost - current_balance
                 
+                # Set flag that user is waiting for balance to continue order
+                data['waiting_for_balance'] = True
+                
                 text = (
                     "━━━━━━━━━━━━━━━━━━━━\n"
                     "❌ *НЕДОСТАТОЧНО СРЕДСТВ*\n"
