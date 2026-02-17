@@ -1456,7 +1456,7 @@ class TelegramConversationHandler:
                 
                 # Set flag that user is waiting for balance to continue order - store in MongoDB directly
                 try:
-                    from database import Database
+                    from backend.database import Database
                     await Database.db.pending_label_orders.update_one(
                         {"telegram_id": user_id},
                         {"$set": {
