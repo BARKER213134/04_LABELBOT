@@ -86,17 +86,16 @@ async def notify_user_balance_credited(telegram_id: str, amount: float):
         user = await users_service.get_user(telegram_id)
         current_balance = user.get('balance', 0) if user else 0
         
-        # Check if user is actively creating a label (has conversation state with label data)
-        # This is more accurate than checking for pending orders
-        user_state = await db.ptb_user_data.find_one({"_id": int(telegram_id)})
-        is_creating_label = False
+        # Check if user is actively waiting for balance to continue order
+        pending_label = await db.pending_label_orders.find_one({
+            "telegram_id": telegram_id,
+            "waiting_for_balance": True
+        })
+        is_creating_label = pending_label is not None
         
-        if user_state and user_state.get("data"):
-            state_data = user_state.get("data", {})
-            # User is creating label if they have ship_from or ship_to data and waiting_for_balance flag
-            has_label_data = state_data.get("ship_from") or state_data.get("ship_to")
-            waiting_for_balance = state_data.get("waiting_for_balance", False)
-            is_creating_label = has_label_data and waiting_for_balance
+        # Clear the pending flag after reading
+        if is_creating_label:
+            await db.pending_label_orders.delete_one({"telegram_id": telegram_id})
         
         text = (
             "━━━━━━━━━━━━━━━━━━━━\n"
