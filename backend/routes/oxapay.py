@@ -108,8 +108,8 @@ async def notify_user_balance_credited(telegram_id: str, amount: float):
             "━━━━━━━━━━━━━━━━━━━━"
         )
         
-        # Show "Continue order" button ONLY if user has pending order
-        if pending_order:
+        # Show "Continue order" button ONLY if user is actively creating a label
+        if is_creating_label:
             keyboard = [
                 [InlineKeyboardButton("📦 Продолжить заказ", callback_data="create_label")],
                 [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
