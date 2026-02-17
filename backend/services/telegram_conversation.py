@@ -10,7 +10,7 @@ from telegram.constants import ParseMode, ChatAction
 import logging
 from typing import Dict, Any, List
 import random
-from services.ai_messages import generate_thank_you_message
+from backend.services.ai_messages import generate_thank_you_message
 
 # Reduce logging for speed
 logging.getLogger(__name__).setLevel(logging.WARNING)
