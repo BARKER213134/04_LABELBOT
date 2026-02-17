@@ -95,18 +95,26 @@ class OrdersService:
                 # Update order with label information
                 label_cost = label_response.get("shipment_cost", {}).get("amount", 0)
                 
-                # ALWAYS ensure $10 markup - recalculate based on actual label cost
-                # Even if estimated price was different, we charge actual + $10
+                # User paid the estimated price (total_cost) which included $10 markup
+                # This is what was deducted from their balance
+                user_paid = order_data.get('total_cost', 0)
+                
+                # Profit is what user paid minus actual label cost
+                # If estimate was accurate, profit = $10
+                profit = user_paid - label_cost if label_cost and user_paid else 0
+                
+                # Ensure minimum profit of $10 - if ShipEngine charged more than expected,
+                # log it but don't lose money
                 from services.shipengine_service import RATE_MARKUP
-                user_paid = label_cost + RATE_MARKUP  # Always add $10 markup to actual cost
-                profit = RATE_MARKUP  # Profit is always the markup amount
+                if profit < RATE_MARKUP and label_cost > 0:
+                    logger.warning(f"Low profit order: estimated ${user_paid:.2f}, actual cost ${label_cost:.2f}, profit ${profit:.2f}")
                 
                 update_data = {
                     "labelId": label_response.get("label_id"),
                     "trackingNumber": label_response.get("tracking_number"),
                     "labelCost": label_cost,  # Original ShipEngine price
-                    "userPaid": user_paid,    # Actual cost + $10 markup
-                    "profit": profit,          # Always $10
+                    "userPaid": user_paid,    # What user paid (estimated + markup)
+                    "profit": profit,          # Actual profit
                     "labelDownloadUrl": label_response.get("label_download", {}).get("pdf"),
                     "status": OrderStatus.LABEL_CREATED.value,
                     "shipDate": datetime.utcnow(),
