@@ -1943,7 +1943,7 @@ class TelegramConversationHandler:
             logger.debug(f"Could not remove buttons from message: {e}")
         
         # Send new welcome message (like /start)
-        from services.telegram_service import TelegramService
+        from backend.services.telegram_service import TelegramService
         telegram_service = TelegramService()
         sent_message = await telegram_service.send_welcome_message(query.message.chat_id, balance)
         
