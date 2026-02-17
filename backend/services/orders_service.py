@@ -134,6 +134,7 @@ class OrdersService:
                     "labelId": label_response.get("label_id"),
                     "trackingNumber": label_response.get("tracking_number"),
                     "cost": label_response.get("shipment_cost", {}).get("amount"),
+                    "userPaid": user_paid,  # Actual cost + $10 markup - for balance deduction
                     "labelDownloadUrl": label_response.get("label_download", {}).get("pdf"),
                     "carrier": order_data.get('carrier'),
                 }
