@@ -873,6 +873,7 @@ async def setup_bot_application(environment='sandbox'):
     application.add_handler(CallbackQueryHandler(topup_balance_callback, pattern="^topup_balance$"))
     application.add_handler(CallbackQueryHandler(cancel_topup_callback, pattern="^cancel_topup$"))
     application.add_handler(CallbackQueryHandler(check_payment_status_callback, pattern="^check_payment_"))
+    application.add_handler(CallbackQueryHandler(continue_order_callback, pattern="^create_label$"))
     application.add_handler(CallbackQueryHandler(back_to_menu_callback, pattern="^back_to_menu$"))
     application.add_handler(CallbackQueryHandler(templates_menu_callback, pattern="^templates_menu$"))
     application.add_handler(CallbackQueryHandler(template_view_callback, pattern="^tpl_view_"))
