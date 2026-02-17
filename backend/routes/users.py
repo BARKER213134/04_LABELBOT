@@ -63,16 +63,17 @@ async def update_balance(
         
         new_balance = user.get('balance', 0)
         
-        # Check if user is actively creating a label (has conversation state with waiting_for_balance flag)
+        # Check if user is actively waiting for balance to continue order
         db = Database.db
-        user_state = await db.ptb_user_data.find_one({"_id": int(update.telegram_id)})
-        is_creating_label = False
+        pending_label = await db.pending_label_orders.find_one({
+            "telegram_id": update.telegram_id,
+            "waiting_for_balance": True
+        })
+        is_creating_label = pending_label is not None
         
-        if user_state and user_state.get("data"):
-            state_data = user_state.get("data", {})
-            has_label_data = state_data.get("ship_from") or state_data.get("ship_to")
-            waiting_for_balance = state_data.get("waiting_for_balance", False)
-            is_creating_label = has_label_data and waiting_for_balance
+        # Clear the pending flag after reading (if admin tops up, user can continue)
+        if is_creating_label:
+            await db.pending_label_orders.delete_one({"telegram_id": update.telegram_id})
         
         if update.amount > 0:
             # Balance added
