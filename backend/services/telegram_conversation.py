@@ -1521,9 +1521,12 @@ class TelegramConversationHandler:
             # Call orders service to create label
             result = await self.orders_service.create_order(data)
             
-            # Deduct from user balance
+            # Get actual cost from result (actual ShipEngine cost + $10 markup)
+            actual_user_paid = result.get('userPaid', total_cost)
+            
+            # Deduct ACTUAL cost from user balance (not estimated)
             if self.users_service:
-                await self.users_service.deduct_for_order(user_id, total_cost)
+                await self.users_service.deduct_for_order(user_id, actual_user_paid)
                 db_user = await self.users_service.get_user(user_id)
                 new_balance = db_user.get('balance', 0) if db_user else 0
             else:
@@ -1543,7 +1546,7 @@ class TelegramConversationHandler:
                 "📋 *Информация о доставке:*\n\n"
                 f"▫️ Tracking номер:\n`{tracking_number}`\n\n"
                 f"▫️ Перевозчик: {carrier_name}\n"
-                f"▫️ Стоимость: ${total_cost:.2f}\n"
+                f"▫️ Стоимость: ${actual_user_paid:.2f}\n"
                 f"▫️ Остаток на балансе: ${new_balance:.2f}\n\n"
                 "━━━━━━━━━━━━━━━━━━━━"
             )
