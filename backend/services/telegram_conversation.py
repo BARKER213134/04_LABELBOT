@@ -103,6 +103,17 @@ class TelegramConversationHandler:
             context.user_data.clear()
         elif user_id in self.user_data:
             del self.user_data[user_id]
+        
+        # Also clear pending label order flag from MongoDB
+        try:
+            import asyncio
+            from database import Database
+            if Database.db is not None:
+                asyncio.create_task(
+                    Database.db.pending_label_orders.delete_one({"telegram_id": user_id})
+                )
+        except Exception:
+            pass  # Silently ignore errors during cleanup
     
     def get_progress_bar(self, step: int) -> str:
         """Generate progress bar for steps"""
