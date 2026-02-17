@@ -795,11 +795,10 @@ async def setup_bot_application(environment='sandbox'):
     application.add_handler(CommandHandler("menu", start_command))  # Alias for main menu
     application.add_handler(CommandHandler("help", help_command))
     
-    # Set bot commands menu
+    # Set bot commands menu - only /menu to avoid duplicates
     from telegram import BotCommand
     await application.bot.set_my_commands([
-        BotCommand("menu", "🏠 Главное меню"),
-        BotCommand("start", "🔄 Перезапустить бота")
+        BotCommand("menu", "🏠 Главное меню")
     ])
     
     # Add callback handlers for menu buttons (these work when user is NOT in conversation)
