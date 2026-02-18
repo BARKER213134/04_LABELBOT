@@ -478,11 +478,11 @@ async def continue_order_callback(update, context):
         user = await users_service.get_user(user_id)
         current_balance = user.get('balance', 0) if user else 0
         
-        # Get order details
-        ship_from = order_data.get("ship_from", {})
-        ship_to = order_data.get("ship_to", {})
-        package = order_data.get("package", {})
-        selected_rate = order_data.get("selected_rate", {})
+        # Get order details with safe defaults
+        ship_from = order_data.get("ship_from") or {}
+        ship_to = order_data.get("ship_to") or {}
+        package = order_data.get("package") or {}
+        selected_rate = order_data.get("selected_rate") or {}
         
         # Build summary message
         carrier_name = selected_rate.get('carrier_friendly_name', 'Неизвестно')
