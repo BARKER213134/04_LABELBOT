@@ -501,7 +501,25 @@ async def continue_order_callback(update, context):
             f"▫️ {ship_to.get('address_line1', 'N/A')}\n"
             f"▫️ {ship_to.get('city_locality', '')}, {ship_to.get('state_province', '')} {ship_to.get('postal_code', '')}\n\n"
             "*📦 Посылка:*\n"
-            f"▫️ Вес: {package.get('weight', {}).get('value', 0)} {package.get('weight', {}).get('unit', 'oz')}\n\n"
+        )
+        
+        # Get weight - check both nested and flat formats
+        weight_val = 0
+        weight_unit = "oz"
+        if package.get('weight'):
+            weight_val = package.get('weight', {}).get('value', 0) or 0
+            weight_unit = package.get('weight', {}).get('unit', 'oz')
+        elif order_data.get('packageWeight'):
+            weight_val = order_data.get('packageWeight', 0) or 0
+        
+        # Convert to lbs for display if in ounces
+        if weight_unit == "ounce" or weight_unit == "oz":
+            weight_lbs = weight_val / 16 if weight_val else 0
+            text += f"▫️ Вес: {weight_lbs:.2f} lbs\n\n"
+        else:
+            text += f"▫️ Вес: {weight_val} {weight_unit}\n\n"
+        
+        text += (
             "*🚚 Перевозчик:*\n"
             f"▫️ {carrier_name} - {service_name}\n\n"
             "━━━━━━━━━━━━━━━━━━━━\n"
