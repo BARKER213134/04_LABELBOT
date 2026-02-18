@@ -1692,14 +1692,6 @@ class TelegramConversationHandler:
                             except Exception as admin_err:
                                 logger.warning(f"Failed to send admin notification: {admin_err}")
                             
-                            # Check ShipEngine balance and notify if low
-                            try:
-                                from services.admin_notifications import check_and_notify_shipengine_balance
-                                import asyncio
-                                asyncio.create_task(check_and_notify_shipengine_balance())
-                            except Exception as balance_err:
-                                logger.warning(f"Failed to check ShipEngine balance: {balance_err}")
-                            
                             return CONFIRM
                 except Exception as pdf_err:
                     logger.warning(f"Failed to send PDF directly: {pdf_err}")
