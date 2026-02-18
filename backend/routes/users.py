@@ -71,9 +71,7 @@ async def update_balance(
         })
         is_creating_label = pending_label is not None
         
-        # Clear the pending flag after reading (if admin tops up, user can continue)
-        if is_creating_label:
-            await db.pending_label_orders.delete_one({"telegram_id": update.telegram_id})
+        # DON'T delete pending order here - it will be deleted when user clicks "Continue order"
         
         if update.amount > 0:
             # Balance added
