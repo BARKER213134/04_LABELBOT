@@ -548,6 +548,188 @@ async def continue_order_callback(update, context):
         reply_markup = InlineKeyboardMarkup(keyboard)
         await context.bot.send_message(chat_id, text, parse_mode="Markdown", reply_markup=reply_markup)
 
+async def confirm_pending_order_callback(update, context):
+    """Confirm and create label from pending order"""
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+    from database import Database
+    from services.users_service import UsersService
+    from services.orders_service import OrdersService
+    from services.shipengine_service import ShipEngineService
+    from services.ai_messages import generate_thank_you_message
+    from config import get_settings
+    import httpx
+    
+    query = update.callback_query
+    await query.answer("⏳ Создаём лейбл...")
+    
+    user_id = str(update.effective_user.id)
+    chat_id = update.effective_chat.id
+    
+    # Remove buttons
+    try:
+        await query.edit_message_reply_markup(reply_markup=None)
+    except Exception:
+        pass
+    
+    db = Database.db
+    
+    # Get pending order
+    pending_order = await db.pending_label_orders.find_one({"telegram_id": user_id})
+    
+    if not pending_order or not pending_order.get("order_data"):
+        await context.bot.send_message(chat_id, "❌ Заказ не найден. Попробуйте создать новый лейбл.")
+        return
+    
+    order_data = pending_order.get("order_data", {})
+    total_cost = pending_order.get("total_cost", 0)
+    
+    # Check balance again
+    users_service = UsersService(db)
+    user = await users_service.get_user(user_id)
+    current_balance = user.get('balance', 0) if user else 0
+    
+    if current_balance < total_cost:
+        needed = total_cost - current_balance
+        text = f"❌ Недостаточно средств!\nНеобходимо ещё: ${needed:.2f}"
+        keyboard = [[InlineKeyboardButton("💳 Пополнить баланс", callback_data="topup_balance")]]
+        await context.bot.send_message(chat_id, text, reply_markup=InlineKeyboardMarkup(keyboard))
+        return
+    
+    # Show processing message
+    processing_msg = await context.bot.send_message(chat_id, "⏳ *Создаём лейбл...*", parse_mode="Markdown")
+    
+    try:
+        # Get API key based on environment
+        settings = get_settings()
+        api_config = await db.api_config.find_one({"key": "shipengine_environment"})
+        env = api_config.get("value", "sandbox") if api_config else "sandbox"
+        
+        if env == "production":
+            api_key = settings.shipengine_production_key
+        else:
+            api_key = settings.shipengine_sandbox_key
+        
+        orders_service = OrdersService(db)
+        
+        # Prepare order data
+        order_data['telegram_user_id'] = user_id
+        order_data['total_cost'] = total_cost
+        
+        # Create label
+        result = await orders_service.create_order(order_data)
+        
+        if result.get('success'):
+            # Deduct balance
+            actual_user_paid = result.get('userPaid', total_cost)
+            await users_service.deduct_for_order(user_id, actual_user_paid)
+            
+            # Get new balance
+            user = await users_service.get_user(user_id)
+            new_balance = user.get('balance', 0) if user else 0
+            
+            # Delete pending order
+            await db.pending_label_orders.delete_one({"telegram_id": user_id})
+            
+            # Get tracking info
+            tracking_number = result.get('trackingNumber', 'N/A')
+            label_url = result.get('labelDownloadUrl', '')
+            carrier_name = order_data.get('selected_rate', {}).get('carrier_friendly_name', '')
+            
+            # Generate AI thank you message
+            try:
+                thank_you = await generate_thank_you_message()
+            except:
+                thank_you = "Спасибо за заказ! 🎉"
+            
+            success_message = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "✅ *ЛЕЙБЛ СОЗДАН УСПЕШНО!*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "📋 *Информация о доставке:*\n\n"
+                f"▫️ Tracking номер:\n`{tracking_number}`\n\n"
+                f"▫️ Перевозчик: {carrier_name}\n"
+                f"▫️ Стоимость: ${actual_user_paid:.2f}\n"
+                f"▫️ Остаток на балансе: ${new_balance:.2f}\n\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"💬 {thank_you}"
+            )
+            
+            # Delete processing message
+            try:
+                await processing_msg.delete()
+            except:
+                pass
+            
+            # Send success message
+            keyboard = []
+            if label_url:
+                # Download and send PDF
+                try:
+                    async with httpx.AsyncClient() as client:
+                        response = await client.get(label_url)
+                        if response.status_code == 200:
+                            from io import BytesIO
+                            pdf_file = BytesIO(response.content)
+                            pdf_file.name = f"{tracking_number}.pdf"
+                            await context.bot.send_document(
+                                chat_id=chat_id,
+                                document=pdf_file,
+                                filename=f"{tracking_number}.pdf",
+                                caption=success_message,
+                                parse_mode="Markdown"
+                            )
+                        else:
+                            await context.bot.send_message(chat_id, success_message, parse_mode="Markdown")
+                except Exception as e:
+                    logger.error(f"Failed to send PDF: {e}")
+                    await context.bot.send_message(chat_id, success_message, parse_mode="Markdown")
+            else:
+                await context.bot.send_message(chat_id, success_message, parse_mode="Markdown")
+            
+            # Send menu button
+            keyboard = [[InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]]
+            await context.bot.send_message(chat_id, "Что дальше?", reply_markup=InlineKeyboardMarkup(keyboard))
+        else:
+            try:
+                await processing_msg.delete()
+            except:
+                pass
+            error_msg = result.get('error', 'Неизвестная ошибка')
+            await context.bot.send_message(chat_id, f"❌ Ошибка создания лейбла: {error_msg}")
+            
+    except Exception as e:
+        logger.error(f"Error creating label from pending order: {e}")
+        try:
+            await processing_msg.delete()
+        except:
+            pass
+        await context.bot.send_message(chat_id, f"❌ Ошибка: {str(e)}")
+
+async def cancel_pending_order_callback(update, context):
+    """Cancel pending order"""
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+    from database import Database
+    
+    query = update.callback_query
+    await query.answer()
+    
+    user_id = str(update.effective_user.id)
+    chat_id = update.effective_chat.id
+    
+    # Remove buttons
+    try:
+        await query.edit_message_reply_markup(reply_markup=None)
+    except Exception:
+        pass
+    
+    # Delete pending order
+    db = Database.db
+    await db.pending_label_orders.delete_one({"telegram_id": user_id})
+    
+    text = "✅ Заказ отменён."
+    keyboard = [[InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]]
+    await context.bot.send_message(chat_id, text, reply_markup=InlineKeyboardMarkup(keyboard))
+
 async def templates_menu_callback(update, context):
     """Templates menu - FAST"""
     global _templates_service
