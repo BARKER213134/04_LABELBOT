@@ -443,9 +443,10 @@ async def back_to_menu_callback(update, context):
         context.user_data['last_menu_message_id'] = sent.message_id
 
 async def continue_order_callback(update, context):
-    """Continue creating label after balance top-up"""
+    """Continue creating label after balance top-up - show saved order summary"""
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
     from database import Database
+    from services.users_service import UsersService
     
     query = update.callback_query
     await query.answer()
@@ -469,26 +470,65 @@ async def continue_order_callback(update, context):
     pending_order = await db.pending_label_orders.find_one({"telegram_id": user_id})
     
     if pending_order and pending_order.get("order_data"):
-        # Restore order data to user context
         order_data = pending_order.get("order_data", {})
-        context.user_data.update(order_data)
+        total_cost = pending_order.get("total_cost", 0)
         
-        # Delete the pending order record
-        await db.pending_label_orders.delete_one({"telegram_id": user_id})
+        # Get user's current balance
+        users_service = UsersService(db)
+        user = await users_service.get_user(user_id)
+        current_balance = user.get('balance', 0) if user else 0
         
-        # Show message that we're continuing
+        # Get order details
+        ship_from = order_data.get("ship_from", {})
+        ship_to = order_data.get("ship_to", {})
+        package = order_data.get("package", {})
+        selected_rate = order_data.get("selected_rate", {})
+        
+        # Build summary message
+        carrier_name = selected_rate.get('carrier_friendly_name', 'Неизвестно')
+        service_name = selected_rate.get('service_type', '')
+        
         text = (
             "━━━━━━━━━━━━━━━━━━━━\n"
             "📦 *ПРОДОЛЖЕНИЕ ЗАКАЗА*\n"
             "━━━━━━━━━━━━━━━━━━━━\n\n"
-            "Ваши данные сохранены!\n"
-            "Нажмите кнопку ниже чтобы продолжить создание лейбла.\n\n"
+            "*📤 Отправитель:*\n"
+            f"▫️ {ship_from.get('name', 'N/A')}\n"
+            f"▫️ {ship_from.get('address_line1', 'N/A')}\n"
+            f"▫️ {ship_from.get('city_locality', '')}, {ship_from.get('state_province', '')} {ship_from.get('postal_code', '')}\n\n"
+            "*📥 Получатель:*\n"
+            f"▫️ {ship_to.get('name', 'N/A')}\n"
+            f"▫️ {ship_to.get('address_line1', 'N/A')}\n"
+            f"▫️ {ship_to.get('city_locality', '')}, {ship_to.get('state_province', '')} {ship_to.get('postal_code', '')}\n\n"
+            "*📦 Посылка:*\n"
+            f"▫️ Вес: {package.get('weight', {}).get('value', 0)} {package.get('weight', {}).get('unit', 'oz')}\n\n"
+            "*🚚 Перевозчик:*\n"
+            f"▫️ {carrier_name} - {service_name}\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            f"💵 *Стоимость: ${total_cost:.2f}*\n"
+            f"💰 *Ваш баланс: ${current_balance:.2f}*\n"
             "━━━━━━━━━━━━━━━━━━━━"
         )
-        keyboard = [
-            [InlineKeyboardButton("📦 Создать лейбл", callback_data="start_create")],
-            [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
-        ]
+        
+        # Check if user has enough balance now
+        if current_balance >= total_cost:
+            # Restore data to context for ConversationHandler
+            context.user_data.update(order_data)
+            context.user_data['total_cost'] = total_cost
+            context.user_data['pending_order_id'] = str(pending_order.get('_id'))
+            
+            keyboard = [
+                [InlineKeyboardButton("✅ Оплатить и создать лейбл", callback_data="confirm_pending_order")],
+                [InlineKeyboardButton("❌ Отменить", callback_data="cancel_pending_order")]
+            ]
+        else:
+            needed = total_cost - current_balance
+            text += f"\n\n⚠️ *Недостаточно средств!*\nНеобходимо ещё: ${needed:.2f}"
+            keyboard = [
+                [InlineKeyboardButton("💳 Пополнить баланс", callback_data="topup_balance")],
+                [InlineKeyboardButton("❌ Отменить", callback_data="cancel_pending_order")]
+            ]
+        
         reply_markup = InlineKeyboardMarkup(keyboard)
         await context.bot.send_message(chat_id, text, parse_mode="Markdown", reply_markup=reply_markup)
     else:
