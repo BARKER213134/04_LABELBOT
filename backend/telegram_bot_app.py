@@ -754,6 +754,20 @@ async def confirm_pending_order_callback(update, context):
             
     except Exception as e:
         logger.error(f"Error creating label from pending order: {e}")
+        
+        # Notify admin about error
+        try:
+            from services.admin_notifications import notify_user_error
+            await notify_user_error(
+                telegram_id=user_id,
+                username=update.effective_user.username if update.effective_user else None,
+                error_type="Ошибка создания лейбла (pending)",
+                error_message=str(e),
+                context="После пополнения баланса"
+            )
+        except Exception as admin_err:
+            logger.warning(f"Failed to send admin error notification: {admin_err}")
+        
         try:
             await processing_msg.delete()
         except:
