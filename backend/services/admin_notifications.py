@@ -97,3 +97,37 @@ async def notify_balance_topup(
     )
     
     await notify_admin(message)
+
+
+async def notify_user_error(
+    telegram_id: str,
+    username: str = None,
+    error_type: str = "Ошибка",
+    error_message: str = "",
+    context: str = ""
+):
+    """Notify admin about user error"""
+    user_info = f"@{username}" if username else telegram_id
+    
+    # Truncate long error messages
+    if len(error_message) > 200:
+        error_message = error_message[:200] + "..."
+    
+    message = (
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        f"❌ *{error_type.upper()}*\n"
+        "━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"▫️ Пользователь: {user_info}\n"
+        f"▫️ ID: `{telegram_id}`\n"
+    )
+    
+    if context:
+        message += f"▫️ Контекст: {context}\n"
+    
+    message += (
+        f"▫️ Ошибка: `{error_message}`\n"
+        f"▫️ Время: {datetime.now().strftime('%d.%m.%Y %H:%M')}\n\n"
+        "━━━━━━━━━━━━━━━━━━━━"
+    )
+    
+    await notify_admin(message)
