@@ -862,7 +862,17 @@ async def template_view_callback(update, context):
         f"▫️ {template.get('ship_to_address', '-')}\n"
         f"▫️ {template.get('ship_to_city', '-')}, {template.get('ship_to_state', '-')} {template.get('ship_to_zip', '-')}\n\n"
         "*Посылка:*\n"
-        f"▫️ Вес: {template.get('package_weight', 0)} oz\n"
+    )
+    
+    # Display weight in lbs
+    weight_lbs = template.get('package_weight_lbs', 0)
+    if not weight_lbs:
+        # Fallback: convert oz to lbs
+        weight_oz = template.get('package_weight', 0) or 0
+        weight_lbs = weight_oz / 16 if weight_oz else 0
+    
+    text += (
+        f"▫️ Вес: {weight_lbs:.2f} lbs\n"
         f"▫️ Размеры: {template.get('package_length', 0)}×{template.get('package_width', 0)}×{template.get('package_height', 0)}\n\n"
         f"_Использован: {template.get('use_count', 0)} раз_"
     )
