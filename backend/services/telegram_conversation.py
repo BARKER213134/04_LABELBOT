@@ -1699,6 +1699,21 @@ class TelegramConversationHandler:
             logger.error(f"Error creating label: {e}", exc_info=True)
             error_str = str(e)
             
+            # Notify admin about user error
+            try:
+                from services.admin_notifications import notify_user_error
+                tg_user = update.effective_user
+                carrier_name = data.get('selected_rate', {}).get('carrier_friendly_name', 'Unknown')
+                await notify_user_error(
+                    telegram_id=user_id,
+                    username=tg_user.username if tg_user else None,
+                    error_type="Ошибка создания лейбла",
+                    error_message=error_str,
+                    context=f"Перевозчик: {carrier_name}"
+                )
+            except Exception as admin_err:
+                logger.warning(f"Failed to send admin error notification: {admin_err}")
+            
             # Parse carrier-specific errors
             if "carrier error" in error_str.lower() or "FedEx" in error_str or "USPS" in error_str or "UPS" in error_str:
                 carrier_name = data.get('selected_rate', {}).get('carrier_friendly_name', 'перевозчик')
