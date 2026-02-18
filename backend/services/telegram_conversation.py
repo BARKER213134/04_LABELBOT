@@ -1647,21 +1647,16 @@ class TelegramConversationHandler:
                             except Exception:
                                 pass
                             
-                            # Send PDF with caption
+                            # Send PDF with caption and menu button
+                            keyboard = [[InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")]]
+                            reply_markup = InlineKeyboardMarkup(keyboard)
+                            
                             await context.bot.send_document(
                                 chat_id=update.effective_chat.id,
                                 document=pdf_file,
                                 filename=f"{tracking_number}.pdf",
                                 caption=success_message,
-                                parse_mode=ParseMode.MARKDOWN
-                            )
-                            
-                            # Send menu button separately
-                            keyboard = [[InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")]]
-                            reply_markup = InlineKeyboardMarkup(keyboard)
-                            await context.bot.send_message(
-                                chat_id=update.effective_chat.id,
-                                text="Что дальше?",
+                                parse_mode=ParseMode.MARKDOWN,
                                 reply_markup=reply_markup
                             )
                             
