@@ -970,6 +970,21 @@ class TelegramConversationHandler:
                 
             except Exception as e:
                 logger.error(f"Error fetching rates: {e}")
+                
+                # Notify admin about error
+                try:
+                    from services.admin_notifications import notify_user_error
+                    tg_user = update.effective_user
+                    await notify_user_error(
+                        telegram_id=user_id,
+                        username=tg_user.username if tg_user else None,
+                        error_type="Ошибка получения тарифов",
+                        error_message=str(e),
+                        context="ShipEngine API"
+                    )
+                except Exception as admin_err:
+                    logger.warning(f"Failed to send admin error notification: {admin_err}")
+                
                 text = (
                     "❌ *Ошибка получения тарифов*\n\n"
                     f"Причина: {str(e)}\n\n"
