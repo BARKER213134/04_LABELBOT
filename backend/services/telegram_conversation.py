@@ -1609,6 +1609,13 @@ class TelegramConversationHandler:
             # Store data for potential template save
             self.get_user_data(user_id, context)['last_order_data'] = data.copy()
             
+            # Generate AI thank you message
+            try:
+                thank_you_msg = await generate_thank_you_message(carrier_name, tracking_number)
+            except Exception as ai_err:
+                logger.warning(f"Failed to generate AI thank you message: {ai_err}")
+                thank_you_msg = "Спасибо за заказ! 🎉"
+            
             success_message = (
                 "━━━━━━━━━━━━━━━━━━━━\n"
                 "✅ *ЛЕЙБЛ СОЗДАН УСПЕШНО!*\n"
@@ -1618,13 +1625,54 @@ class TelegramConversationHandler:
                 f"▫️ Перевозчик: {carrier_name}\n"
                 f"▫️ Стоимость: ${actual_user_paid:.2f}\n"
                 f"▫️ Остаток на балансе: ${new_balance:.2f}\n\n"
-                "━━━━━━━━━━━━━━━━━━━━"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"💬 {thank_you_msg}"
             )
             
-            keyboard = []
-            # Add download button if URL available - use callback to send via Telegram
+            # Send PDF file directly if available
             if label_url:
-                # Store label URL for download
+                try:
+                    import httpx
+                    from io import BytesIO
+                    
+                    async with httpx.AsyncClient() as client:
+                        response = await client.get(label_url)
+                        if response.status_code == 200:
+                            pdf_file = BytesIO(response.content)
+                            pdf_file.name = f"{tracking_number}.pdf"
+                            
+                            # Delete "Creating label..." message
+                            try:
+                                await query.message.delete()
+                            except Exception:
+                                pass
+                            
+                            # Send PDF with caption
+                            await context.bot.send_document(
+                                chat_id=update.effective_chat.id,
+                                document=pdf_file,
+                                filename=f"{tracking_number}.pdf",
+                                caption=success_message,
+                                parse_mode=ParseMode.MARKDOWN
+                            )
+                            
+                            # Send menu button separately
+                            keyboard = [[InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")]]
+                            reply_markup = InlineKeyboardMarkup(keyboard)
+                            await context.bot.send_message(
+                                chat_id=update.effective_chat.id,
+                                text="Что дальше?",
+                                reply_markup=reply_markup
+                            )
+                            
+                            return CONFIRM
+                except Exception as pdf_err:
+                    logger.warning(f"Failed to send PDF directly: {pdf_err}")
+                    # Fall through to button-based approach
+            
+            # Fallback: show download button if PDF send failed
+            keyboard = []
+            if label_url:
                 data['label_url'] = label_url
                 data['tracking_number'] = tracking_number
                 keyboard.append([InlineKeyboardButton(f"📥 Скачать {tracking_number}.pdf", callback_data="download_label")])
@@ -1633,18 +1681,6 @@ class TelegramConversationHandler:
             
             await query.edit_message_text(success_message, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
             
-            # Send AI-generated thank you message as a separate message
-            try:
-                thank_you_msg = await generate_thank_you_message(carrier_name, tracking_number)
-                await query.message.reply_text(
-                    thank_you_msg,
-                    parse_mode=None  # Plain text, no formatting
-                )
-            except Exception as ai_err:
-                logger.warning(f"Failed to send AI thank you message: {ai_err}")
-            
-            # Don't clear data yet - user might want to download label
-            # Data will be cleared after download or going to menu
             return CONFIRM
             
         except Exception as e:
