@@ -1469,6 +1469,28 @@ class TelegramConversationHandler:
                 # Set flag that user is waiting for balance to continue order - store in MongoDB directly
                 try:
                     from database import Database
+                    # Build ship_from and ship_to objects from data
+                    ship_from_obj = {
+                        "name": data.get('shipFromName'),
+                        "address_line1": data.get('shipFromAddressLine1'),
+                        "city_locality": data.get('shipFromCity'),
+                        "state_province": data.get('shipFromState'),
+                        "postal_code": data.get('shipFromPostalCode'),
+                        "country_code": "US",
+                        "phone": data.get('shipFromPhone', ''),
+                    }
+                    ship_to_obj = {
+                        "name": data.get('shipToName'),
+                        "address_line1": data.get('shipToAddressLine1'),
+                        "city_locality": data.get('shipToCity'),
+                        "state_province": data.get('shipToState'),
+                        "postal_code": data.get('shipToPostalCode'),
+                        "country_code": "US",
+                        "phone": data.get('shipToPhone', ''),
+                    }
+                    package_obj = data.get('package', {})
+                    selected_rate_obj = data.get('selected_rate', {})
+                    
                     await Database.db.pending_label_orders.update_one(
                         {"telegram_id": user_id},
                         {"$set": {
@@ -1476,10 +1498,26 @@ class TelegramConversationHandler:
                             "waiting_for_balance": True,
                             "total_cost": total_cost,
                             "order_data": {
-                                "ship_from": data.get("ship_from"),
-                                "ship_to": data.get("ship_to"),
-                                "package": data.get("package"),
-                                "selected_rate": data.get("selected_rate")
+                                "ship_from": ship_from_obj,
+                                "ship_to": ship_to_obj,
+                                "package": package_obj,
+                                "selected_rate": selected_rate_obj,
+                                # Also save raw data for label creation
+                                "shipFromName": data.get('shipFromName'),
+                                "shipFromAddressLine1": data.get('shipFromAddressLine1'),
+                                "shipFromCity": data.get('shipFromCity'),
+                                "shipFromState": data.get('shipFromState'),
+                                "shipFromPostalCode": data.get('shipFromPostalCode'),
+                                "shipFromPhone": data.get('shipFromPhone', ''),
+                                "shipToName": data.get('shipToName'),
+                                "shipToAddressLine1": data.get('shipToAddressLine1'),
+                                "shipToCity": data.get('shipToCity'),
+                                "shipToState": data.get('shipToState'),
+                                "shipToPostalCode": data.get('shipToPostalCode'),
+                                "shipToPhone": data.get('shipToPhone', ''),
+                                "carrier": data.get('carrier'),
+                                "serviceCode": data.get('serviceCode'),
+                                "rate_id": data.get('rate_id'),
                             },
                             "updated_at": datetime.now(timezone.utc)
                         }},
