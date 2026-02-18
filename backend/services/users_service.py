@@ -67,6 +67,15 @@ class UsersService:
         await self.collection.insert_one(user_dict)
         
         logger.info(f"Created new user: {telegram_id} ({username})")
+        
+        # Notify admin about new user
+        try:
+            from services.admin_notifications import notify_new_user
+            import asyncio
+            asyncio.create_task(notify_new_user(telegram_id, username, first_name))
+        except Exception as e:
+            logger.warning(f"Failed to send new user notification: {e}")
+        
         return user_dict
     
     async def get_user(self, telegram_id: str) -> Optional[Dict[str, Any]]:
