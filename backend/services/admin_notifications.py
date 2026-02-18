@@ -131,3 +131,66 @@ async def notify_user_error(
     )
     
     await notify_admin(message)
+
+
+# Cache to avoid spamming low balance notifications
+_last_low_balance_notification = None
+
+async def notify_low_shipengine_balance(balance: float, threshold: float = 50.0):
+    """Notify admin about low ShipEngine balance"""
+    global _last_low_balance_notification
+    
+    # Don't spam - only notify once per hour
+    if _last_low_balance_notification:
+        time_diff = (datetime.now() - _last_low_balance_notification).total_seconds()
+        if time_diff < 3600:  # 1 hour
+            return
+    
+    _last_low_balance_notification = datetime.now()
+    
+    message = (
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "⚠️ *НИЗКИЙ БАЛАНС SHIPENGINE*\n"
+        "━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"💰 Текущий баланс: *${balance:.2f}*\n"
+        f"📊 Порог: ${threshold:.2f}\n\n"
+        "⚡ *Пополните баланс ShipEngine!*\n\n"
+        f"▫️ Время: {datetime.now().strftime('%d.%m.%Y %H:%M')}\n\n"
+        "━━━━━━━━━━━━━━━━━━━━"
+    )
+    
+    await notify_admin(message)
+
+
+async def check_and_notify_shipengine_balance():
+    """Check ShipEngine balance and notify if low"""
+    try:
+        from services.shipengine_service import ShipEngineService, LOW_BALANCE_THRESHOLD
+        from config import get_settings
+        from database import Database
+        
+        settings = get_settings()
+        db = Database.db
+        
+        # Get current environment
+        api_config = await db.api_config.find_one({"key": "shipengine_environment"})
+        env = api_config.get("value", "sandbox") if api_config else "sandbox"
+        
+        if env == "production":
+            api_key = settings.shipengine_production_key
+        else:
+            api_key = settings.shipengine_sandbox_key
+        
+        if not api_key:
+            return
+        
+        service = ShipEngineService(api_key=api_key)
+        balance_info = await service.get_account_balance()
+        
+        if balance_info.get("low_balance"):
+            await notify_low_shipengine_balance(
+                balance=balance_info.get("balance", 0),
+                threshold=LOW_BALANCE_THRESHOLD
+            )
+    except Exception as e:
+        logger.error(f"Failed to check ShipEngine balance: {e}")
