@@ -1660,6 +1660,23 @@ class TelegramConversationHandler:
                                 reply_markup=reply_markup
                             )
                             
+                            # Notify admin about label creation
+                            try:
+                                from services.admin_notifications import notify_label_created
+                                tg_user = update.effective_user
+                                label_cost = result.get('cost', 0) or 0
+                                profit = actual_user_paid - label_cost if label_cost else 10
+                                await notify_label_created(
+                                    telegram_id=user_id,
+                                    username=tg_user.username,
+                                    tracking_number=tracking_number,
+                                    carrier=carrier_name,
+                                    cost=actual_user_paid,
+                                    profit=profit
+                                )
+                            except Exception as admin_err:
+                                logger.warning(f"Failed to send admin notification: {admin_err}")
+                            
                             return CONFIRM
                 except Exception as pdf_err:
                     logger.warning(f"Failed to send PDF directly: {pdf_err}")
