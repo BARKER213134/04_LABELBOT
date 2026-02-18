@@ -693,8 +693,10 @@ async def confirm_pending_order_callback(update, context):
             except:
                 pass
             
-            # Send success message
-            keyboard = []
+            # Send success message with PDF and menu button attached
+            keyboard = [[InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            
             if label_url:
                 # Download and send PDF
                 try:
@@ -709,19 +711,16 @@ async def confirm_pending_order_callback(update, context):
                                 document=pdf_file,
                                 filename=f"{tracking_number}.pdf",
                                 caption=success_message,
-                                parse_mode="Markdown"
+                                parse_mode="Markdown",
+                                reply_markup=reply_markup
                             )
                         else:
-                            await context.bot.send_message(chat_id, success_message, parse_mode="Markdown")
+                            await context.bot.send_message(chat_id, success_message, parse_mode="Markdown", reply_markup=reply_markup)
                 except Exception as e:
                     logger.error(f"Failed to send PDF: {e}")
-                    await context.bot.send_message(chat_id, success_message, parse_mode="Markdown")
+                    await context.bot.send_message(chat_id, success_message, parse_mode="Markdown", reply_markup=reply_markup)
             else:
-                await context.bot.send_message(chat_id, success_message, parse_mode="Markdown")
-            
-            # Send menu button
-            keyboard = [[InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]]
-            await context.bot.send_message(chat_id, "Что дальше?", reply_markup=InlineKeyboardMarkup(keyboard))
+                await context.bot.send_message(chat_id, success_message, parse_mode="Markdown", reply_markup=reply_markup)
         else:
             try:
                 await processing_msg.delete()
