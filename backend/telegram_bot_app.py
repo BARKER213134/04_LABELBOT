@@ -515,9 +515,24 @@ async def continue_order_callback(update, context):
         # Convert to lbs for display if in ounces
         if weight_unit == "ounce" or weight_unit == "oz":
             weight_lbs = weight_val / 16 if weight_val else 0
-            text += f"▫️ Вес: {weight_lbs:.2f} lbs\n\n"
+            text += f"▫️ Вес: {weight_lbs:.2f} lbs\n"
         else:
-            text += f"▫️ Вес: {weight_val} {weight_unit}\n\n"
+            text += f"▫️ Вес: {weight_val} {weight_unit}\n"
+        
+        # Get dimensions
+        length = 0
+        width = 0
+        height = 0
+        if package.get('dimensions'):
+            length = package.get('dimensions', {}).get('length', 0) or 0
+            width = package.get('dimensions', {}).get('width', 0) or 0
+            height = package.get('dimensions', {}).get('height', 0) or 0
+        else:
+            length = order_data.get('packageLength', 0) or 0
+            width = order_data.get('packageWidth', 0) or 0
+            height = order_data.get('packageHeight', 0) or 0
+        
+        text += f"▫️ Размеры: {length}×{width}×{height} дюймов\n\n"
         
         text += (
             "*🚚 Перевозчик:*\n"
