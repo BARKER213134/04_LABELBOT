@@ -744,6 +744,14 @@ async def confirm_pending_order_callback(update, context):
                 )
             except Exception as admin_err:
                 logger.warning(f"Failed to send admin notification: {admin_err}")
+            
+            # Check ShipEngine balance and notify if low
+            try:
+                from services.admin_notifications import check_and_notify_shipengine_balance
+                import asyncio
+                asyncio.create_task(check_and_notify_shipengine_balance())
+            except Exception as balance_err:
+                logger.warning(f"Failed to check ShipEngine balance: {balance_err}")
         else:
             try:
                 await processing_msg.delete()
