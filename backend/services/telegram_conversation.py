@@ -1273,6 +1273,7 @@ class TelegramConversationHandler:
         await query.answer()
         
         user_id = str(update.effective_user.id)
+        logger.warning(f"[SELECT_RATE] User {user_id} selected rate: {query.data}")
         
         # Check if user is banned
         if await self._check_user_banned(user_id):
@@ -1294,6 +1295,7 @@ class TelegramConversationHandler:
         
         # Get selected rate
         rate_map = data.get('rate_map', {})
+        logger.warning(f"[SELECT_RATE] Rate map keys: {list(rate_map.keys())}")
         selected_rate = rate_map.get(callback_data)
         
         if not selected_rate:
