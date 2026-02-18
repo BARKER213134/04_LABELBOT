@@ -1488,7 +1488,19 @@ class TelegramConversationHandler:
                         "country_code": "US",
                         "phone": data.get('shipToPhone', ''),
                     }
-                    package_obj = data.get('package', {})
+                    # Build package object
+                    package_obj = {
+                        "weight": {
+                            "value": data.get('packageWeight', 0),
+                            "unit": "ounce"
+                        },
+                        "dimensions": {
+                            "length": data.get('packageLength', 0),
+                            "width": data.get('packageWidth', 0),
+                            "height": data.get('packageHeight', 0),
+                            "unit": "inch"
+                        }
+                    }
                     selected_rate_obj = data.get('selected_rate', {})
                     
                     await Database.db.pending_label_orders.update_one(
@@ -1515,6 +1527,11 @@ class TelegramConversationHandler:
                                 "shipToState": data.get('shipToState'),
                                 "shipToPostalCode": data.get('shipToPostalCode'),
                                 "shipToPhone": data.get('shipToPhone', ''),
+                                "packageWeight": data.get('packageWeight', 0),
+                                "packageWeightLbs": data.get('packageWeightLbs', 0),
+                                "packageLength": data.get('packageLength', 0),
+                                "packageWidth": data.get('packageWidth', 0),
+                                "packageHeight": data.get('packageHeight', 0),
                                 "carrier": data.get('carrier'),
                                 "serviceCode": data.get('serviceCode'),
                                 "rate_id": data.get('rate_id'),
