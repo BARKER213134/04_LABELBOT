@@ -53,6 +53,10 @@ class TemplatesService:
         
         template_id = str(uuid.uuid4())[:8]
         
+        # Convert weight from oz to lbs for storage
+        weight_oz = data.get("packageWeight", 0) or 0
+        weight_lbs = weight_oz / 16 if weight_oz else data.get("packageWeightLbs", 0)
+        
         template = {
             "template_id": template_id,
             "user_telegram_id": telegram_id,
@@ -69,7 +73,8 @@ class TemplatesService:
             "ship_to_state": data.get("shipToState"),
             "ship_to_zip": data.get("shipToPostalCode"),
             "ship_to_phone": data.get("shipToPhone"),
-            "package_weight": data.get("packageWeight"),
+            "package_weight_lbs": weight_lbs,  # Store in lbs
+            "package_weight": weight_oz,  # Keep oz for backwards compatibility
             "package_length": data.get("packageLength"),
             "package_width": data.get("packageWidth"),
             "package_height": data.get("packageHeight"),
