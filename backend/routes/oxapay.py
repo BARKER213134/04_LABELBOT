@@ -126,6 +126,20 @@ async def notify_user_balance_credited(telegram_id: str, amount: float):
         
         logger.info(f"Notification sent to user {telegram_id}")
         
+        # Notify admin about balance top-up
+        try:
+            from services.admin_notifications import notify_balance_topup
+            username = user.get('username') if user else None
+            await notify_balance_topup(
+                telegram_id=telegram_id,
+                username=username,
+                amount=amount,
+                new_balance=current_balance,
+                payment_method="OxaPay Crypto"
+            )
+        except Exception as admin_err:
+            logger.warning(f"Failed to send admin notification: {admin_err}")
+        
     except Exception as e:
         logger.error(f"Failed to send notification to {telegram_id}: {e}")
 
