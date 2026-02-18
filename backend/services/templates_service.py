@@ -148,6 +148,17 @@ class TemplatesService:
     
     def template_to_user_data(self, template: Dict[str, Any]) -> Dict[str, Any]:
         """Convert template to user_data format for conversation"""
+        # Get weight - prefer lbs, fallback to oz
+        weight_lbs = template.get("package_weight_lbs", 0)
+        weight_oz = template.get("package_weight", 0)
+        
+        # If weight_lbs not stored, convert from oz
+        if not weight_lbs and weight_oz:
+            weight_lbs = weight_oz / 16
+        
+        # Convert lbs back to oz for packageWeight (used in API)
+        weight_oz_for_api = weight_lbs * 16 if weight_lbs else weight_oz
+        
         return {
             "shipFromName": template.get("ship_from_name"),
             "shipFromAddressLine1": template.get("ship_from_address"),
@@ -161,7 +172,8 @@ class TemplatesService:
             "shipToState": template.get("ship_to_state"),
             "shipToPostalCode": template.get("ship_to_zip"),
             "shipToPhone": template.get("ship_to_phone"),
-            "packageWeight": template.get("package_weight"),
+            "packageWeight": weight_oz_for_api,  # API expects oz
+            "packageWeightLbs": weight_lbs,  # For display
             "packageLength": template.get("package_length"),
             "packageWidth": template.get("package_width"),
             "packageHeight": template.get("package_height"),
