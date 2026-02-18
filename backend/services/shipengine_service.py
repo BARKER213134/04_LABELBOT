@@ -8,6 +8,9 @@ logger = logging.getLogger(__name__)
 # Markup to add to each rate (our profit)
 RATE_MARKUP = 10.0
 
+# Low balance threshold for notifications
+LOW_BALANCE_THRESHOLD = 50.0
+
 class ShipEngineService:
     """Service for handling ShipEngine API interactions"""
     
@@ -23,6 +26,24 @@ class ShipEngineService:
             timeout=30.0
         )
         self._carrier_ids = None
+    
+    async def get_account_balance(self) -> Dict[str, Any]:
+        """Get ShipEngine account balance"""
+        try:
+            response = await self.client.get("/v1/account/settings")
+            response.raise_for_status()
+            data = response.json()
+            
+            # Extract balance info
+            balance = data.get("account_balance", {})
+            return {
+                "balance": balance.get("balance", 0),
+                "currency": balance.get("currency", "USD"),
+                "low_balance": balance.get("balance", 0) < LOW_BALANCE_THRESHOLD
+            }
+        except Exception as e:
+            logger.error(f"Error fetching account balance: {e}")
+            return {"balance": 0, "currency": "USD", "low_balance": False, "error": str(e)}
     
     async def _get_carrier_ids(self) -> List[str]:
         """Get list of connected carrier IDs"""
