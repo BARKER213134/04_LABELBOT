@@ -21,139 +21,156 @@ PRODUCT REQUIREMENTS:
 - An admin panel with authentication. It should display order statistics, including the cost from ShipEngine, the price paid by the user, and the profit. Orders with less than 0 profit must be highlighted in red.
 - A maintenance mode in the admin panel to broadcast messages and temporarily disable bot functionality.
 - The Continue Order button after a balance top-up should only appear if the user has a pending order.
+- An admin notification system for new users, balance top-ups, label creations, and user errors.
 
 **User's preferred language**:
 Russian. The next agent MUST respond in Russian.
 
 **what currently exists?**
-The application is now stable, performant, and secure. The core bug causing the bot to be unresponsive has been completely resolved by a major refactoring of the state management and webhook processing logic. The bot now correctly uses  and a centralized, atomic deduplication mechanism to handle state in a multi-pod environment.
+The application consists of a FastAPI backend, a React frontend for the admin panel, and a MongoDB database. The core unresponsiveness bug from previous sessions is resolved. The admin panel is functional with user management, order statistics, and maintenance mode.
 
-Additionally, several new features have been implemented:
--   A dynamic API key switcher in the admin panel to toggle between ShipEngine's sandbox and production environments without restarts.
--   Significant performance optimizations, resulting in a 4.5x reduction in average response time under load.
--   Critical security measures, including Basic Authentication for the admin panel and rate limiting on all key API endpoints.
--   A new Order Statistics tab in the admin panel showing detailed profit analysis per order.
--   A Maintenance Mode feature in the admin panel for broadcasting messages and pausing bot operations.
--   The main Orders list now also shows detailed profit information.
--   The UI logic for showing the Continue Order button has been corrected.
+A significant amount of work was done to handle complex user flows, such as continuing an order after a balance top-up. A new admin notification system was also implemented. However, a critical regression was introduced that breaks the primary label creation flow for users with sufficient balance. The agent was in the middle of a new feature implementation (i18n) when the session ended.
 
 **Last working item**:
--   Last item agent was working: Adding a summary card to the Users Management tab in the admin panel to display the total balance of all users combined.
--   Status: FINISHED
--   Agent Testing Done: Y
--   Which testing method agent to use? NA
--   User Testing Done: N
+- Last item agent was working: Implementing multi-language support (i18n) by adding an English version alongside Russian. The agent created the localization service and started integrating it into a few bot commands.
+- Status: IN PROGRESS
+- Agent Testing Done: N
+- Which testing method agent to use? both
+- User Testing Done: N
 
 **All Pending/In progress Issue list**:
--   Issue 1: SITKAGEAR text may still appear on UPS labels. (Priority: P1)
--   Issue 2: General bot slowness, separate from the unresponsiveness bug. (Priority: RESOLVED)
+- Issue 1: Rate selection button does not work when user has sufficient funds (P0)
+- Issue 2: SITKAGEAR text may still appear on UPS labels (P1)
+- Issue 3: Incorrect weight/dimensions when loading from a template (P2)
 
 **Issues Detail:**
--   **Issue 1:**
-    -   **Description:** SITKAGEAR appears as the company name on UPS labels. This is likely due to a setting in the user's ShipEngine account.
-    -   **Next debug checklist:** Ask the user to test label creation in production. If the issue persists, advise them that the fix must be made in their ShipEngine account dashboard, as it's not controllable via the API.
-    -   **Status:** USER VERIFICATION PENDING
-    -   **Is recurring issue?** Y
-    -   **Should Test frontend/backend/both after fix?** Backend.
-    -   **Blocked on other issue:** None.
+- **Issue 1:**
+    - **Description:** A critical regression was introduced. When a user has enough balance to create a label and reaches the rate selection step, clicking any of the rate buttons does nothing. This completely blocks the main functionality of the bot.
+    - **Attempted fixes:** The agent added logging but did not see any relevant output, suspecting a webhook or state machine issue. The problem remains unresolved.
+    - **Next debug checklist:**
+        1.  Verify the  state machine in . Ensure the bot is correctly in the  state.
+        2.  Check the callback data pattern for the  handler in .
+        3.  Add extensive logging at the beginning of the  handler to see if the callback is triggered at all.
+        4.  Trace the webhook request in the server logs () when the button is pressed to confirm the callback query reaches the server.
+    - **Why fix this issue and what will be achieved with the fix?** This is a complete blocker for the bot's primary function. Fixing it will restore the ability for users to create labels.
+    - **Status:** IN PROGRESS
+    - **Is recurring issue?** N
+    - **Should Test frontend/backend/both after fix?** backend
+    - **Blocked on other issue:** None. This is the primary blocker.
+
+- **Issue 2:**
+    - **Description:** SITKAGEAR text appears as the company name on UPS labels, likely due to a setting in the user's ShipEngine account dashboard.
+    - **Next debug checklist:** Advise the user to create a label in the production environment. If the issue persists, inform them the fix must be made within their ShipEngine account settings, as it is not controllable via the API.
+    - **Status:** USER VERIFICATION PENDING
+    - **Is recurring issue?** Y
+    - **Should Test frontend/backend/both after fix?** backend
+    - **Blocked on other issue:** None.
+
+- **Issue 3:**
+    - **Description:** When loading a shipping template, the weight and dimensions are displayed incorrectly in the review summary (e.g., 16 oz shows as 1.00 lbs, but dimensions might be lost or incorrect).
+    - **Attempted fixes:** The agent changed the template saving logic to use lbs instead of oz and updated existing templates in the database.
+    - **Next debug checklist:**
+        1.  Review  ->  to see how template data is loaded into the conversation context.
+        2.  Review  ->  to verify how package data from  is formatted for display.
+        3.  Ensure that , , and  are correctly mapped from the template to the user data.
+    - **Status:** IN PROGRESS
+    - **Is recurring issue?** N
+    - **Should Test frontend/backend/both after fix?** backend
+    - **Blocked on other issue:** None.
 
 **In progress Task List**:
-None.
+- **Task 1:**
+    - **Description:** Complete English Localization (i18n).
+    - **Where to resume:**
+        1.  The foundation is laid in .
+        2.  Continue systematically replacing all hardcoded Russian strings in  and  with calls to the localization service (e.g., ).
+        3.  Populate the  dictionary in  with all English and Russian strings.
+    - **What will be achieved with this?** The bot will be fully bilingual, allowing users to switch between English and Russian.
+    - **Status:** IN PROGRESS
+    - **Should Test frontend/backend/both after fix?** backend
+    - **Blocked on something:** Blocked by **Issue 1**, as testing the full conversation flow is impossible.
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks:**
-    -   **FedEx Sandbox Handling (P2):** Implement a feature to hide FedEx as a carrier option when the bot is in sandbox mode, as it's not a fully supported carrier in that environment.
+    -   **FedEx Sandbox Handling (P2):** Implement a feature to hide FedEx as a carrier option when the bot is in sandbox mode.
 -   **Future Tasks:**
-    -   **Refactoring (P2):** The file  is still extremely large (~2000 lines) and complex. It should be broken down into smaller, more manageable modules to improve maintainability.
+    -   **Refactor  (P2):** This file is over 2000 lines long and is a significant maintenance liability. It needs to be broken down into smaller, single-responsibility modules.
 
 **Completed work in this session**
--   **Core Bug Fix:** Resolved the critical and recurring unresponsiveness bug by completely refactoring the state management system. This involved removing a faulty manual implementation and correctly migrating to 's  with .
--   **Webhook Deduplication:** Implemented a robust, atomic, and centralized update deduplication mechanism using MongoDB's  to prevent duplicate processing across multiple pods.
--   **Performance Optimization:** Drastically improved webhook response times and overall throughput (4.5x faster) by implementing local-first caching, background task processing, and database indexing.
--   **Security Hardening:** Implemented critical security features:
-    -   HTTP Basic Authentication for the admin panel.
-    -   Rate limiting on all public-facing API endpoints.
-    -   Secure webhook validation.
--   **Dynamic API Switching:** Built the functionality for admins to switch between ShipEngine's sandbox and production environments from the UI without a server restart.
--   **Admin Statistics Feature:** Added a new Order Statistics page to the admin panel with profit calculation and highlighting for low-profit orders.
--   **Maintenance Mode Feature:** Added a Maintenance Mode to the admin panel to broadcast messages to all users and temporarily disable the bot.
--   **UI/UX Fixes:**
-    -   Corrected the logic for the Continue Order button.
-    -   Added profit/cost details to the main Orders list.
-    -   Added Telegram username to the orders list.
-    -   Added a total user balance summary to the admin panel.
+-   **Admin Panel Total Balance Card:** Implemented a summary card on the Users Management page showing total user balance and other stats.
+-   **Continue Order Button Logic:** Fixed the complex flow where a user runs out of balance mid-order. The Continue Order button now correctly appears after a top-up and allows the user to resume.
+-   **Guaranteed 0 Profit Logic:** Reworked the order creation process to charge the user the *actual* final label cost + 0, ensuring a consistent profit margin even if ShipEngine's price estimate changes.
+-   **Admin Notifications:** Created a new service to send alerts to the admin for new users, balance top-ups, successful label creations, and user-facing errors.
+-   **Template Weight Unit Fix:** Standardized the weight unit in templates to , converting all existing templates in the database from .
+-   **Bot Command Cleanup:** Removed the redundant  command from the bot menu, leaving only .
+-   **Message Formatting:** Standardized the label creation success message to always send the PDF as a file with an attached Main Menu button.
+-   **Webhook Management:** Resolved bot unresponsiveness by correctly setting the Telegram webhook URL and explaining the production vs. preview URL difference to the user.
 
 **Earlier issues found/mentioned but not fixed**
 None.
 
 **Known issue recurrence from previous fork**
--   **Issue recurrence in previous fork:** Bot slowness and unresponsiveness.
+-   **Issue recurrence in previous fork:** Bot unresponsiveness due to incorrect webhook URL.
 -   **Recurrence count:** 2+
--   **Status:** RESOLVED. The root causes (state management in a distributed system and webhook race conditions) have been identified and fixed with robust architectural changes.
+-   **Status:** RESOLVED (operationally). The agent correctly identified and fixed the issue multiple times and explained the procedure to the user. This is an operational step, not an architectural flaw.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **State Management:** The system now fully relies on 's  layer, with all conversation data stored via .
--   **Distributed System Synchronization:** The critical unresponsiveness bug was solved by implementing a centralized, atomic update deduplication system in MongoDB using  with .
--   **Asynchronous Performance:** The webhook now responds to Telegram instantly by offloading the actual update processing to a background task using .
--   **Performance Caching:** A multi-layer caching strategy (local in-memory caches with fallbacks to MongoDB) is used to drastically reduce latency for deduplication and environment configuration checks.
--   **Security:**
-    -   **Authentication:** HTTP Basic Auth protects all admin endpoints.
-    -   **Rate Limiting:** A custom, in-memory rate limiter () protects API endpoints from abuse.
--   **Database Optimization:** Added indexes to all frequently queried collections and tuned the MongoDB connection pool for higher concurrency.
+-   **Interrupted Flow State Management:** A new pattern was introduced using a dedicated  collection in MongoDB to manage the state of users who need to top up their balance mid-order.
+-   **Internationalization (i18n):** A new  service was created to provide multi-language support based on a user's preference stored in the database.
+-   **Dynamic Profit Calculation:** The logic was updated to charge users based on the final label cost from ShipEngine, not the initial estimate, to guarantee a fixed profit margin.
 
 **key DB schema**
--   ****, ****: Used by  for bot state.
--   ****: New collection with a TTL index to store processed s for deduplication.
--   ****: Schema now includes  and  fields.
--   ****: Used to store system-wide settings like maintenance mode and ShipEngine environment.
+-   ** (NEW):** Stores temporary order data for users who need to top up their balance. Contains , , and .
+-   **:** A  field ('ru' or 'en') has been added.
+-   **:** Now stores  (float) instead of  (oz).
 
 **changes in tech stack**
 None.
 
 **All files of reference**
--   : **CRITICAL.** Completely refactored to handle deduplication, background processing, and dynamic bot selection. This is the core of the application's stability.
--   : Refactored to use  instead of a local dictionary, which was a key part of the bug fix. Still a candidate for future refactoring due to its size.
--   : Heavily modified to add Basic Auth protection and endpoints for maintenance mode.
--   : New file containing the implementation for Basic Auth and the in-memory rate limiter.
--   : Overhauled to support login, a tabbed interface, and controls for the new statistics and maintenance mode features.
--   : New component for the profit analysis feature.
+-   : Core logic for the bot conversation. Heavily modified and still needs refactoring.
+-   : Main application file where handlers are registered. Heavily modified with new callbacks.
+-   : **New file** for the admin notification feature.
+-   : **New file** for the i18n feature.
+-   : Handles order creation and profit logic.
+-   : Manages user templates, updated for weight units.
+-   : Handles payment webhooks, updated for the continue order flow.
+-   : Updated to show the total balance card.
 
 **Areas that need refactoring**:
--   : This file is over 2000 lines long. While its internal logic is now correct, its size makes it very difficult to maintain. It should be broken down into smaller services or classes, each responsible for a specific part of the conversation.
+-   : This monolithic file (2000+ lines) is extremely difficult to maintain and is the source of many bugs. It is the highest priority for refactoring. It should be broken down into smaller modules based on conversation steps or features.
 
 **key api endpoints**
--   : The main, highly optimized, and rate-limited bot webhook.
--   : Retrieves current admin settings (requires auth).
--   : Updates admin settings (requires auth).
--   : Toggles maintenance mode and broadcasts messages (requires auth).
--   : Provides aggregated profit statistics (requires auth).
+-   : The main bot webhook.
+-   : Webhook for OxaPay payment confirmations.
+-   Admin endpoints under  and .
 
 **Critical Info for New Agent**
--   The bot's core stability and performance issues are **resolved**. The architecture is now robust for a multi-pod environment. Do not revisit the state management or webhook logic unless a new, specific bug is found.
--   The admin panel is now protected by Basic Authentication. Use the credentials provided below.
--   The application has been significantly optimized and load-tested. It is confirmed to handle 50+ concurrent users.
--   Focus on the remaining user-requested features and known minor issues.
+-   **Fix the critical regression first:** The highest priority is to fix **Issue 1**, where the rate selection button is broken. The bot's main functionality is currently blocked.
+-   **Continue Order Flow:** Be aware of the complex logic for resuming an order after a balance top-up. It uses a separate  collection and custom callbacks in .
+-   **Incomplete i18n Task:** The localization feature is half-finished. You will need to replace all user-facing strings throughout the application with calls to the new localization service.
+-   **Webhook URL:** The production webhook URL is . You may need to switch the webhook to the preview URL for testing and then switch it back before finishing.
 
 **documents and test reports created in this job**
-Load testing and optimization results are available in the message history but were not saved to a formal report.
+None.
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  сюда надо добавить телеграм пользователя - **Resolved.** Added username to the orders list.
-2.  здесь сверху сделай сколько денег всего у всех пользолвателей на балнсе - **Resolved.** Added total balance to the user management page.
-3.  кнопка продолжить заказ на пополнении баланса, должна появляться тоько тогда когда пользователь делает лейбл... - **Resolved.** Corrected the button's visibility logic.
-4.  не появилось обновление по ценам в админке - **Resolved.** Updated the main orders list to show profit/cost.
-5.  Admin какой пароль? логин? - **Answered.** Provided credentials.
-6.  надо сделать кнопку в админке, и возможность всем отправлять сообщение что бот сейчас на техническом обслуживании... - **Resolved.** Implemented the maintenance mode feature.
-7.  надо добавить в статистику по ордерам в админке , сколько шипстейшн списал денег за лейбл... - **Resolved.** Implemented the order statistics feature.
-8.  хорошо добавь (in response to adding security) - **Resolved.** Implemented security features.
-9.  на сколько Rate limiting будте замедлять работу бота? - **Answered.** Explained and proved the overhead is negligible.
-10. что у нас с безопасностью? - **Answered and Resolved.** Performed a security audit and fixed critical issues.
+1.  **is it long to add an English version, dont do it yet just answer" / "ok do it"**: The user approved starting the i18n task. This is the **last active task**.
+2.  **"after deployment when you go to sleep the bot stops working..."**: Resolved. The agent explained the webhook issue and switched it to the production URL.
+3.  **"the shipengine balance check is not needed, turn it off"**: Resolved. The agent removed the feature.
+4.  **"I also need a notification if a user has some kind of error"**: Resolved. Admin error notifications were added.
+5.  **"lets create a notification for me, the admin Id: 7066790254...**: Resolved. Admin notifications for new users, top-ups, and label creation were added.
+6.  **this is not necessary, the main menu button must be attached...**: Resolved. The UI for the label success message was fixed.
+7.  **why did the changes apply now without deployment? / it applied in production now**: Answered. The agent explained how the preview environment with hot-reloading works with the production database and bot token.
+8.  **in the templates we have oz need lbs**: Resolved. The template weight unit was fixed.
+9.  **when creating an order when there is enough money, I click on the label button and nothing happens**: This is the **critical unresolved bug (Issue 1)**. The agent was unable to fix it.
+10. **created a label - not enough money - paid - the continue order button brought up the order but the weight is 0 and then gave an error...**: This was part of a chain of bug reports related to the Continue Order flow. The agent has since fixed these specific issues.
 
 **Project Health Check:**
--   **Healthy:** The application is stable, performant, and secure. Core functionality is working as expected.
+-   **Broken:** The main label creation flow is non-functional due to a critical regression (Issue 1).
 
 **3rd Party Integrations**
 -   **ShipEngine API**: For rates and labels.
@@ -163,16 +180,18 @@ Load testing and optimization results are available in the message history but w
 -   **MongoDB Atlas**: Production database and bot state persistence.
 
 **Testing status**
--   **Testing agent used after significant changes:** NO. Agent performed extensive manual testing,  scripting, and custom load testing scripts.
+-   **Testing agent used after significant changes:** NO
 -   **Troubleshoot agent used after agent stuck in loop:** NO
--   **Test files created:** None permanent.
--   **Known regressions:** An import error was briefly introduced and then fixed during refactoring.
+-   **Test files created:** None.
+-   **Known regressions:**
+    -   [CRITICAL] Label creation flow is broken when the user has sufficient funds (rate selection button is unresponsive).
 
 **Credentials to test flow:**
 -   **Admin Panel Login:**
     -   Username: 
     -   Password: 
+-   **Admin Telegram ID**: 
 
 **What agent forgot to execute**
--   The issue of SITKAGEAR appearing on labels was mentioned in the initial handoff but was never addressed or investigated during this session.
--   The future task of hiding FedEx in sandbox mode was also not addressed.</analysis>
+- The agent did not fix the critical regression where the rate selection button stopped working.
+- The future task of hiding FedEx in sandbox mode was not addressed.</analysis>

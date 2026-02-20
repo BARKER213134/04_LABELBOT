@@ -119,7 +119,7 @@
 ### Веб-дашборд:
 
 Для полного функционала используйте:
-https://labelgen-5.preview.emergentagent.com
+https://cargo-flow-22.preview.emergentagent.com
 
 **В дашборде можно:**
 - Просмотреть все заказы
