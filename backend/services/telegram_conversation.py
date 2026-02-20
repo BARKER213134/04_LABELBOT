@@ -999,9 +999,6 @@ class TelegramConversationHandler:
                 "Введите вес в фунтах (lbs):\n"
                 "_Например: 1 или 2.5_"
             )
-            "Введите вес в фунтах (lbs):\n"
-            "_Например: 1 или 2.5_"
-        )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
         return PACKAGE_WEIGHT
@@ -1013,6 +1010,7 @@ class TelegramConversationHandler:
         
         user_id = str(update.effective_user.id)
         data = self.get_user_data(user_id, context)
+        lang = await self._get_lang(user_id, context)
         
         # Generate random phone
         random_phone = self.generate_random_phone()
@@ -1022,8 +1020,10 @@ class TelegramConversationHandler:
         if data.get('editing_field') == 'to_phone':
             data['editing_field'] = None
             # Edit the message to remove button and show confirmation
+            auto_gen_msg = "(auto-generated)" if lang == "en" else "(сгенерирован автоматически)"
+            phone_saved_msg = "Phone saved" if lang == "en" else "Телефон сохранен"
             await query.edit_message_text(
-                f"✅ *Телефон сохранен:* {random_phone}\n_(сгенерирован автоматически)_",
+                f"✅ *{phone_saved_msg}:* {random_phone}\n_{auto_gen_msg}_",
                 parse_mode=ParseMode.MARKDOWN
             )
             await self.show_review_summary(query.message, user_id, context)
