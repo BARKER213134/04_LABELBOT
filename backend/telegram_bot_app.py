@@ -634,6 +634,7 @@ async def continue_order_callback(update, context):
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
     from database import Database
     from services.users_service import UsersService
+    from services.localization import get_user_language
     
     query = update.callback_query
     await query.answer()
@@ -652,8 +653,14 @@ async def continue_order_callback(update, context):
     except Exception:
         pass
     
-    # Check if there's saved order data
+    # Get user language
     db = Database.db
+    lang = context.user_data.get('language')
+    if not lang:
+        lang = await get_user_language(db, user_id)
+        context.user_data['language'] = lang
+    
+    # Check if there's saved order data
     pending_order = await db.pending_label_orders.find_one({"telegram_id": user_id})
     
     if pending_order and pending_order.get("order_data"):
@@ -672,23 +679,39 @@ async def continue_order_callback(update, context):
         selected_rate = order_data.get("selected_rate") or {}
         
         # Build summary message
-        carrier_name = selected_rate.get('carrier_friendly_name', 'Неизвестно')
+        carrier_name = selected_rate.get('carrier_friendly_name', 'Unknown' if lang == "en" else 'Неизвестно')
         service_name = selected_rate.get('service_type', '')
         
-        text = (
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "📦 *ПРОДОЛЖЕНИЕ ЗАКАЗА*\n"
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
-            "*📤 Отправитель:*\n"
-            f"▫️ {ship_from.get('name', 'N/A')}\n"
-            f"▫️ {ship_from.get('address_line1', 'N/A')}\n"
-            f"▫️ {ship_from.get('city_locality', '')}, {ship_from.get('state_province', '')} {ship_from.get('postal_code', '')}\n\n"
-            "*📥 Получатель:*\n"
-            f"▫️ {ship_to.get('name', 'N/A')}\n"
-            f"▫️ {ship_to.get('address_line1', 'N/A')}\n"
-            f"▫️ {ship_to.get('city_locality', '')}, {ship_to.get('state_province', '')} {ship_to.get('postal_code', '')}\n\n"
-            "*📦 Посылка:*\n"
-        )
+        if lang == "en":
+            text = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "📦 *CONTINUE ORDER*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "*📤 Sender:*\n"
+                f"▫️ {ship_from.get('name', 'N/A')}\n"
+                f"▫️ {ship_from.get('address_line1', 'N/A')}\n"
+                f"▫️ {ship_from.get('city_locality', '')}, {ship_from.get('state_province', '')} {ship_from.get('postal_code', '')}\n\n"
+                "*📥 Recipient:*\n"
+                f"▫️ {ship_to.get('name', 'N/A')}\n"
+                f"▫️ {ship_to.get('address_line1', 'N/A')}\n"
+                f"▫️ {ship_to.get('city_locality', '')}, {ship_to.get('state_province', '')} {ship_to.get('postal_code', '')}\n\n"
+                "*📦 Package:*\n"
+            )
+        else:
+            text = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "📦 *ПРОДОЛЖЕНИЕ ЗАКАЗА*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "*📤 Отправитель:*\n"
+                f"▫️ {ship_from.get('name', 'N/A')}\n"
+                f"▫️ {ship_from.get('address_line1', 'N/A')}\n"
+                f"▫️ {ship_from.get('city_locality', '')}, {ship_from.get('state_province', '')} {ship_from.get('postal_code', '')}\n\n"
+                "*📥 Получатель:*\n"
+                f"▫️ {ship_to.get('name', 'N/A')}\n"
+                f"▫️ {ship_to.get('address_line1', 'N/A')}\n"
+                f"▫️ {ship_to.get('city_locality', '')}, {ship_to.get('state_province', '')} {ship_to.get('postal_code', '')}\n\n"
+                "*📦 Посылка:*\n"
+            )
         
         # Get weight - check both nested and flat formats
         weight_val = 0
@@ -700,11 +723,12 @@ async def continue_order_callback(update, context):
             weight_val = order_data.get('packageWeight', 0) or 0
         
         # Convert to lbs for display if in ounces
+        weight_lbl = "Weight" if lang == "en" else "Вес"
         if weight_unit == "ounce" or weight_unit == "oz":
             weight_lbs = weight_val / 16 if weight_val else 0
-            text += f"▫️ Вес: {weight_lbs:.2f} lbs\n"
+            text += f"▫️ {weight_lbl}: {weight_lbs:.2f} lbs\n"
         else:
-            text += f"▫️ Вес: {weight_val} {weight_unit}\n"
+            text += f"▫️ {weight_lbl}: {weight_val} {weight_unit}\n"
         
         # Get dimensions
         length = 0
@@ -719,14 +743,20 @@ async def continue_order_callback(update, context):
             width = order_data.get('packageWidth', 0) or 0
             height = order_data.get('packageHeight', 0) or 0
         
-        text += f"▫️ Размеры: {length}×{width}×{height} дюймов\n\n"
+        dims_lbl = "Dimensions" if lang == "en" else "Размеры"
+        inches_lbl = "inches" if lang == "en" else "дюймов"
+        text += f"▫️ {dims_lbl}: {length}×{width}×{height} {inches_lbl}\n\n"
+        
+        carrier_lbl = "Carrier" if lang == "en" else "Перевозчик"
+        cost_lbl = "Cost" if lang == "en" else "Стоимость"
+        balance_lbl = "Your balance" if lang == "en" else "Ваш баланс"
         
         text += (
-            "*🚚 Перевозчик:*\n"
+            f"*🚚 {carrier_lbl}:*\n"
             f"▫️ {carrier_name} - {service_name}\n\n"
             "━━━━━━━━━━━━━━━━━━━━\n"
-            f"💵 *Стоимость: ${total_cost:.2f}*\n"
-            f"💰 *Ваш баланс: ${current_balance:.2f}*\n"
+            f"💵 *{cost_lbl}: ${total_cost:.2f}*\n"
+            f"💰 *{balance_lbl}: ${current_balance:.2f}*\n"
             "━━━━━━━━━━━━━━━━━━━━"
         )
         
@@ -737,34 +767,61 @@ async def continue_order_callback(update, context):
             context.user_data['total_cost'] = total_cost
             context.user_data['pending_order_id'] = str(pending_order.get('_id'))
             
-            keyboard = [
-                [InlineKeyboardButton("✅ Оплатить и создать лейбл", callback_data="confirm_pending_order")],
-                [InlineKeyboardButton("❌ Отменить", callback_data="cancel_pending_order")]
-            ]
+            if lang == "en":
+                keyboard = [
+                    [InlineKeyboardButton("✅ Pay and create label", callback_data="confirm_pending_order")],
+                    [InlineKeyboardButton("❌ Cancel", callback_data="cancel_pending_order")]
+                ]
+            else:
+                keyboard = [
+                    [InlineKeyboardButton("✅ Оплатить и создать лейбл", callback_data="confirm_pending_order")],
+                    [InlineKeyboardButton("❌ Отменить", callback_data="cancel_pending_order")]
+                ]
         else:
             needed = total_cost - current_balance
-            text += f"\n\n⚠️ *Недостаточно средств!*\nНеобходимо ещё: ${needed:.2f}"
-            keyboard = [
-                [InlineKeyboardButton("💳 Пополнить баланс", callback_data="topup_balance")],
-                [InlineKeyboardButton("❌ Отменить", callback_data="cancel_pending_order")]
-            ]
+            if lang == "en":
+                text += f"\n\n⚠️ *Insufficient funds!*\nNeed: ${needed:.2f} more"
+                keyboard = [
+                    [InlineKeyboardButton("💳 Top up balance", callback_data="topup_balance")],
+                    [InlineKeyboardButton("❌ Cancel", callback_data="cancel_pending_order")]
+                ]
+            else:
+                text += f"\n\n⚠️ *Недостаточно средств!*\nНеобходимо ещё: ${needed:.2f}"
+                keyboard = [
+                    [InlineKeyboardButton("💳 Пополнить баланс", callback_data="topup_balance")],
+                    [InlineKeyboardButton("❌ Отменить", callback_data="cancel_pending_order")]
+                ]
         
         reply_markup = InlineKeyboardMarkup(keyboard)
         await context.bot.send_message(chat_id, text, parse_mode="Markdown", reply_markup=reply_markup)
     else:
         # No pending order - go back to menu
-        text = (
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "ℹ️ *ИНФОРМАЦИЯ*\n"
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
-            "Нет сохранённого заказа.\n"
-            "Начните создание нового лейбла.\n\n"
-            "━━━━━━━━━━━━━━━━━━━━"
-        )
-        keyboard = [
-            [InlineKeyboardButton("📦 Создать лейбл", callback_data="start_create")],
-            [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
-        ]
+        if lang == "en":
+            text = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "ℹ️ *INFORMATION*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "No saved order found.\n"
+                "Start creating a new label.\n\n"
+                "━━━━━━━━━━━━━━━━━━━━"
+            )
+            keyboard = [
+                [InlineKeyboardButton("📦 Create Label", callback_data="start_create")],
+                [InlineKeyboardButton("🏠 Main Menu", callback_data="back_to_menu")]
+            ]
+        else:
+            text = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "ℹ️ *ИНФОРМАЦИЯ*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "Нет сохранённого заказа.\n"
+                "Начните создание нового лейбла.\n\n"
+                "━━━━━━━━━━━━━━━━━━━━"
+            )
+            keyboard = [
+                [InlineKeyboardButton("📦 Создать лейбл", callback_data="start_create")],
+                [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+            ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await context.bot.send_message(chat_id, text, parse_mode="Markdown", reply_markup=reply_markup)
 
