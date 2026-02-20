@@ -1027,8 +1027,9 @@ async def confirm_pending_order_callback(update, context):
                 await processing_msg.delete()
             except:
                 pass
-            error_msg = result.get('error', 'Неизвестная ошибка')
-            await context.bot.send_message(chat_id, f"❌ Ошибка создания лейбла: {error_msg}")
+            error_msg = result.get('error', 'Unknown error' if lang == "en" else 'Неизвестная ошибка')
+            error_text = f"❌ Label creation error: {error_msg}" if lang == "en" else f"❌ Ошибка создания лейбла: {error_msg}"
+            await context.bot.send_message(chat_id, error_text)
             
     except Exception as e:
         logger.error(f"Error creating label from pending order: {e}")
@@ -1050,18 +1051,28 @@ async def confirm_pending_order_callback(update, context):
             await processing_msg.delete()
         except:
             pass
-        await context.bot.send_message(chat_id, f"❌ Ошибка: {str(e)}")
+        error_text = f"❌ Error: {str(e)}" if lang == "en" else f"❌ Ошибка: {str(e)}"
+        await context.bot.send_message(chat_id, error_text)
 
 async def cancel_pending_order_callback(update, context):
     """Cancel pending order"""
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
     from database import Database
+    from services.localization import get_user_language
     
     query = update.callback_query
     await query.answer()
     
     user_id = str(update.effective_user.id)
     chat_id = update.effective_chat.id
+    
+    db = Database.db
+    
+    # Get user language
+    lang = context.user_data.get('language')
+    if not lang:
+        lang = await get_user_language(db, user_id)
+        context.user_data['language'] = lang
     
     # Remove buttons
     try:
