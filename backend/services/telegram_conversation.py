@@ -149,49 +149,84 @@ class TelegramConversationHandler:
         empty = "⬜" * (total_steps - step)
         return f"{filled}{empty}"
     
-    def validate_english_text(self, text: str, field_name: str = "текст") -> tuple[bool, str]:
+    def validate_english_text(self, text: str, field_name: str = "текст", lang: str = "ru") -> tuple[bool, str]:
         """Validate that text contains only English characters, numbers, and basic punctuation"""
         import re
         # Allow English letters, numbers, spaces, and common punctuation
         pattern = r'^[a-zA-Z0-9\s\.,\-\'\"#@&()/\\]+$'
         if not re.match(pattern, text):
+            if lang == "en":
+                return False, f"Please enter {field_name} in English (Latin characters)"
             return False, f"Пожалуйста, введите {field_name} на английском языке (латиницей)"
         if len(text.strip()) < 1:
+            if lang == "en":
+                return False, f"The {field_name} field cannot be empty"
             return False, f"Поле {field_name} не может быть пустым"
         return True, ""
     
-    def validate_name(self, name: str) -> tuple[bool, str]:
+    def validate_name(self, name: str, lang: str = "ru") -> tuple[bool, str]:
         """Validate name - English only, 2-50 characters"""
-        is_english, msg = self.validate_english_text(name, "имя")
+        field_name = "name" if lang == "en" else "имя"
+        is_english, msg = self.validate_english_text(name, field_name, lang)
         if not is_english:
             return False, msg
         if len(name.strip()) < 2:
+            if lang == "en":
+                return False, "Name must be at least 2 characters"
             return False, "Имя должно содержать минимум 2 символа"
         if len(name.strip()) > 50:
+            if lang == "en":
+                return False, "Name must be at most 50 characters"
             return False, "Имя должно содержать максимум 50 символов"
         return True, ""
     
-    def validate_address(self, address: str) -> tuple[bool, str]:
+    def validate_address(self, address: str, lang: str = "ru") -> tuple[bool, str]:
         """Validate address - English only, 5-100 characters"""
-        is_english, msg = self.validate_english_text(address, "адрес")
+        field_name = "address" if lang == "en" else "адрес"
+        is_english, msg = self.validate_english_text(address, field_name, lang)
         if not is_english:
             return False, msg
         if len(address.strip()) < 5:
+            if lang == "en":
+                return False, "Address must be at least 5 characters"
             return False, "Адрес должен содержать минимум 5 символов"
         if len(address.strip()) > 100:
+            if lang == "en":
+                return False, "Address must be at most 100 characters"
             return False, "Адрес должен содержать максимум 100 символов"
         return True, ""
     
-    def validate_city(self, city: str) -> tuple[bool, str]:
+    def validate_city(self, city: str, lang: str = "ru") -> tuple[bool, str]:
         """Validate city - English only, 2-50 characters"""
-        is_english, msg = self.validate_english_text(city, "город")
+        field_name = "city" if lang == "en" else "город"
+        is_english, msg = self.validate_english_text(city, field_name, lang)
         if not is_english:
             return False, msg
         if len(city.strip()) < 2:
+            if lang == "en":
+                return False, "City name must be at least 2 characters"
             return False, "Название города должно содержать минимум 2 символа"
         if len(city.strip()) > 50:
+            if lang == "en":
+                return False, "City name must be at most 50 characters"
             return False, "Название города должно содержать максимум 50 символов"
         return True, ""
+    
+    def validate_phone(self, phone: str, lang: str = "ru") -> tuple[bool, str]:
+        """Validate phone number - must have 10-15 digits"""
+        # Remove all non-digit characters
+        digits_only = ''.join(filter(str.isdigit, phone))
+        
+        if len(digits_only) < 10:
+            if lang == "en":
+                return False, "Phone must have at least 10 digits"
+            return False, "Телефон должен содержать минимум 10 цифр"
+        if len(digits_only) > 15:
+            if lang == "en":
+                return False, "Phone must have at most 15 digits"
+            return False, "Телефон должен содержать максимум 15 цифр"
+        
+        return True, digits_only
     
     def generate_random_phone(self) -> str:
         """Generate random US phone number"""
