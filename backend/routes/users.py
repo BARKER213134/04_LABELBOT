@@ -63,6 +63,9 @@ async def update_balance(
         
         new_balance = user.get('balance', 0)
         
+        # Get user language
+        lang = user.get('language', 'ru')
+        
         # Check if user is actively waiting for balance to continue order
         db = Database.db
         pending_label = await db.pending_label_orders.find_one({
@@ -75,41 +78,77 @@ async def update_balance(
         
         if update.amount > 0:
             # Balance added
-            message = (
-                "━━━━━━━━━━━━━━━━━━━━\n"
-                "💰 *БАЛАНС ПОПОЛНЕН*\n"
-                "━━━━━━━━━━━━━━━━━━━━\n\n"
-                f"▫️ Сумма: *+${update.amount:.2f}*\n"
-                f"▫️ Причина: {update.reason or 'Пополнение баланса'}\n\n"
-                f"▫️ Было: ${old_balance:.2f}\n"
-                f"▫️ Стало: *${new_balance:.2f}*\n\n"
-                "━━━━━━━━━━━━━━━━━━━━"
-            )
+            if lang == "en":
+                reason_text = update.reason or 'Balance top-up'
+                message = (
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    "💰 *BALANCE TOPPED UP*\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n\n"
+                    f"▫️ Amount: *+${update.amount:.2f}*\n"
+                    f"▫️ Reason: {reason_text}\n\n"
+                    f"▫️ Was: ${old_balance:.2f}\n"
+                    f"▫️ Now: *${new_balance:.2f}*\n\n"
+                    "━━━━━━━━━━━━━━━━━━━━"
+                )
+                continue_btn = "📦 Continue Order"
+                menu_btn = "🏠 Main Menu"
+            else:
+                reason_text = update.reason or 'Пополнение баланса'
+                message = (
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    "💰 *БАЛАНС ПОПОЛНЕН*\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n\n"
+                    f"▫️ Сумма: *+${update.amount:.2f}*\n"
+                    f"▫️ Причина: {reason_text}\n\n"
+                    f"▫️ Было: ${old_balance:.2f}\n"
+                    f"▫️ Стало: *${new_balance:.2f}*\n\n"
+                    "━━━━━━━━━━━━━━━━━━━━"
+                )
+                continue_btn = "📦 Продолжить заказ"
+                menu_btn = "🏠 Главное меню"
+            
             # Show "Continue order" button ONLY if user is actively creating a label
             if is_creating_label:
                 keyboard = [
-                    [InlineKeyboardButton("📦 Продолжить заказ", callback_data="create_label")],
-                    [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+                    [InlineKeyboardButton(continue_btn, callback_data="create_label")],
+                    [InlineKeyboardButton(menu_btn, callback_data="back_to_menu")]
                 ]
             else:
                 keyboard = [
-                    [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+                    [InlineKeyboardButton(menu_btn, callback_data="back_to_menu")]
                 ]
             reply_markup = InlineKeyboardMarkup(keyboard)
         else:
             # Balance deducted
-            message = (
-                "━━━━━━━━━━━━━━━━━━━━\n"
-                "💸 *СПИСАНИЕ СРЕДСТВ*\n"
-                "━━━━━━━━━━━━━━━━━━━━\n\n"
-                f"▫️ Сумма: *-${abs(update.amount):.2f}*\n"
-                f"▫️ Причина: {update.reason or 'Списание средств'}\n\n"
-                f"▫️ Было: ${old_balance:.2f}\n"
-                f"▫️ Стало: *${new_balance:.2f}*\n\n"
-                "━━━━━━━━━━━━━━━━━━━━"
-            )
+            if lang == "en":
+                reason_text = update.reason or 'Balance deduction'
+                message = (
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    "💸 *BALANCE DEDUCTED*\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n\n"
+                    f"▫️ Amount: *-${abs(update.amount):.2f}*\n"
+                    f"▫️ Reason: {reason_text}\n\n"
+                    f"▫️ Was: ${old_balance:.2f}\n"
+                    f"▫️ Now: *${new_balance:.2f}*\n\n"
+                    "━━━━━━━━━━━━━━━━━━━━"
+                )
+                menu_btn = "🏠 Main Menu"
+            else:
+                reason_text = update.reason or 'Списание средств'
+                message = (
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    "💸 *СПИСАНИЕ СРЕДСТВ*\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n\n"
+                    f"▫️ Сумма: *-${abs(update.amount):.2f}*\n"
+                    f"▫️ Причина: {reason_text}\n\n"
+                    f"▫️ Было: ${old_balance:.2f}\n"
+                    f"▫️ Стало: *${new_balance:.2f}*\n\n"
+                    "━━━━━━━━━━━━━━━━━━━━"
+                )
+                menu_btn = "🏠 Главное меню"
+            
             keyboard = [
-                [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+                [InlineKeyboardButton(menu_btn, callback_data="back_to_menu")]
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
         
