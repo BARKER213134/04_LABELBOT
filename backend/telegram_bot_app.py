@@ -1098,6 +1098,8 @@ async def template_view_callback(update, context):
 async def template_delete_callback(update, context):
     """Delete a template - sends new message"""
     global _templates_service
+    from database import Database
+    from services.localization import get_user_language
     
     query = update.callback_query
     
@@ -1110,6 +1112,12 @@ async def template_delete_callback(update, context):
         return
     
     await query.answer()
+    
+    # Get user language
+    lang = context.user_data.get('language')
+    if not lang:
+        lang = await get_user_language(Database.db, user_id)
+        context.user_data['language'] = lang
     
     template_id = query.data.replace("tpl_del_", "")
     
@@ -1124,8 +1132,13 @@ async def template_delete_callback(update, context):
     
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
     
-    text = "✅ Шаблон удалён"
-    keyboard = [[InlineKeyboardButton("◀️ К шаблонам", callback_data="templates_menu")]]
+    if lang == "en":
+        text = "✅ Template deleted"
+        back_btn = "◀️ To templates"
+    else:
+        text = "✅ Шаблон удалён"
+        back_btn = "◀️ К шаблонам"
+    keyboard = [[InlineKeyboardButton(back_btn, callback_data="templates_menu")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     # Send as NEW message instead of editing
@@ -1133,6 +1146,9 @@ async def template_delete_callback(update, context):
 
 async def refund_info_callback(update, context):
     """Show refund information - sends new message"""
+    from database import Database
+    from services.localization import get_user_language
+    
     query = update.callback_query
     
     user_id = str(update.effective_user.id)
@@ -1147,6 +1163,12 @@ async def refund_info_callback(update, context):
     
     await query.answer()
     
+    # Get user language
+    lang = context.user_data.get('language')
+    if not lang:
+        lang = await get_user_language(Database.db, user_id)
+        context.user_data['language'] = lang
+    
     # Remove buttons from old message (keep text)
     try:
         await query.edit_message_reply_markup(reply_markup=None)
@@ -1155,21 +1177,36 @@ async def refund_info_callback(update, context):
     
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
     
-    text = (
-        "━━━━━━━━━━━━━━━━━━━━\n"
-        "↩️ *REFUND LABEL*\n"
-        "━━━━━━━━━━━━━━━━━━━━\n\n"
-        "⚠️ *Важная информация:*\n\n"
-        "Для оформления возврата средств за неиспользованный label должно пройти "
-        "*минимум 4 дня* с момента его создания.\n\n"
-        "Для оформления refund обратитесь к нашему агенту:\n\n"
-        "━━━━━━━━━━━━━━━━━━━━"
-    )
-    
-    keyboard = [
-        [InlineKeyboardButton("👤 Связаться с агентом", url="https://t.me/White_Label_Shipping_Bot_Agent")],
-        [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
-    ]
+    if lang == "en":
+        text = (
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "↩️ *REFUND LABEL*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "⚠️ *Important information:*\n\n"
+            "To request a refund for an unused label, "
+            "*at least 4 days* must pass from the moment of its creation.\n\n"
+            "To request a refund, contact our agent:\n\n"
+            "━━━━━━━━━━━━━━━━━━━━"
+        )
+        keyboard = [
+            [InlineKeyboardButton("👤 Contact agent", url="https://t.me/White_Label_Shipping_Bot_Agent")],
+            [InlineKeyboardButton("🏠 Main menu", callback_data="back_to_menu")]
+        ]
+    else:
+        text = (
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "↩️ *REFUND LABEL*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "⚠️ *Важная информация:*\n\n"
+            "Для оформления возврата средств за неиспользованный label должно пройти "
+            "*минимум 4 дня* с момента его создания.\n\n"
+            "Для оформления refund обратитесь к нашему агенту:\n\n"
+            "━━━━━━━━━━━━━━━━━━━━"
+        )
+        keyboard = [
+            [InlineKeyboardButton("👤 Связаться с агентом", url="https://t.me/White_Label_Shipping_Bot_Agent")],
+            [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+        ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     # Send as NEW message
@@ -1177,6 +1214,9 @@ async def refund_info_callback(update, context):
 
 async def faq_info_callback(update, context):
     """Show FAQ and service description - sends new message"""
+    from database import Database
+    from services.localization import get_user_language
+    
     query = update.callback_query
     
     user_id = str(update.effective_user.id)
