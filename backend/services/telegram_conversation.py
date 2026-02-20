@@ -362,13 +362,15 @@ class TelegramConversationHandler:
         logger.warning(f"[HANDLER] ship_from_name called for user {user_id}")
         
         data = self.get_user_data(user_id, context)
+        lang = await self._get_lang(user_id, context)
         name = update.message.text.strip()
         
         # Validate name
-        is_valid, error_msg = self.validate_name(name)
+        is_valid, error_msg = self.validate_name(name, lang)
         if not is_valid:
+            retry_msg = "Please enter the name again:" if lang == "en" else "Пожалуйста, введите имя заново:"
             await update.message.reply_text(
-                f"❌ *{error_msg}*\n\nПожалуйста, введите имя заново:",
+                f"❌ *{error_msg}*\n\n{retry_msg}",
                 parse_mode=ParseMode.MARKDOWN
             )
             return SHIP_FROM_NAME
@@ -381,12 +383,20 @@ class TelegramConversationHandler:
             await self.show_review_summary(update.message, user_id, context)
             return REVIEW_SUMMARY
         
-        text = (
-            "✅ *Имя отправителя сохранено*\n\n"
-            "▫️ *Подшаг 1.2:* Адрес\n\n"
-            "Введите адрес отправителя:\n"
-            "_(Улица, номер дома, квартира)_"
-        )
+        if lang == "en":
+            text = (
+                "✅ *Sender name saved*\n\n"
+                "▫️ *Substep 1.2:* Address\n\n"
+                "Enter the sender's address:\n"
+                "_(Street, building, apartment)_"
+            )
+        else:
+            text = (
+                "✅ *Имя отправителя сохранено*\n\n"
+                "▫️ *Подшаг 1.2:* Адрес\n\n"
+                "Введите адрес отправителя:\n"
+                "_(Улица, номер дома, квартира)_"
+            )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
         return SHIP_FROM_ADDRESS
