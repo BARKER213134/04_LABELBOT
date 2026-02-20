@@ -833,14 +833,25 @@ async def confirm_pending_order_callback(update, context):
     from services.orders_service import OrdersService
     from services.shipengine_service import ShipEngineService
     from services.ai_messages import generate_thank_you_message
+    from services.localization import get_user_language
     from config import get_settings
     import httpx
     
     query = update.callback_query
-    await query.answer("⏳ Создаём лейбл...")
     
     user_id = str(update.effective_user.id)
     chat_id = update.effective_chat.id
+    
+    db = Database.db
+    
+    # Get user language
+    lang = context.user_data.get('language')
+    if not lang:
+        lang = await get_user_language(db, user_id)
+        context.user_data['language'] = lang
+    
+    creating_msg = "Creating label..." if lang == "en" else "Создаём лейбл..."
+    await query.answer(f"⏳ {creating_msg}")
     
     # Remove buttons
     try:
@@ -848,13 +859,14 @@ async def confirm_pending_order_callback(update, context):
     except Exception:
         pass
     
-    db = Database.db
-    
     # Get pending order
     pending_order = await db.pending_label_orders.find_one({"telegram_id": user_id})
     
     if not pending_order or not pending_order.get("order_data"):
-        await context.bot.send_message(chat_id, "❌ Заказ не найден. Попробуйте создать новый лейбл.")
+        if lang == "en":
+            await context.bot.send_message(chat_id, "❌ Order not found. Try creating a new label.")
+        else:
+            await context.bot.send_message(chat_id, "❌ Заказ не найден. Попробуйте создать новый лейбл.")
         return
     
     order_data = pending_order.get("order_data", {})
@@ -867,13 +879,19 @@ async def confirm_pending_order_callback(update, context):
     
     if current_balance < total_cost:
         needed = total_cost - current_balance
-        text = f"❌ Недостаточно средств!\nНеобходимо ещё: ${needed:.2f}"
-        keyboard = [[InlineKeyboardButton("💳 Пополнить баланс", callback_data="topup_balance")]]
+        if lang == "en":
+            text = f"❌ Insufficient funds!\nNeed: ${needed:.2f} more"
+            topup_btn = "💳 Top up balance"
+        else:
+            text = f"❌ Недостаточно средств!\nНеобходимо ещё: ${needed:.2f}"
+            topup_btn = "💳 Пополнить баланс"
+        keyboard = [[InlineKeyboardButton(topup_btn, callback_data="topup_balance")]]
         await context.bot.send_message(chat_id, text, reply_markup=InlineKeyboardMarkup(keyboard))
         return
     
     # Show processing message
-    processing_msg = await context.bot.send_message(chat_id, "⏳ *Создаём лейбл...*", parse_mode="Markdown")
+    processing_text = "⏳ *Creating label...*" if lang == "en" else "⏳ *Создаём лейбл...*"
+    processing_msg = await context.bot.send_message(chat_id, processing_text, parse_mode="Markdown")
     
     try:
         # Get API key based on environment
