@@ -226,22 +226,37 @@ class TelegramConversationHandler:
         # Clear previous data
         self.clear_user_data(user_id, context)
         
-        # Ensure user exists
+        # Ensure user exists and get language
         db_user = await self._ensure_user(update)
         balance = db_user.get('balance', 0.0) if db_user else 0.0
+        lang = await self._get_lang(user_id, context)
         
-        text = (
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "📦 *СОЗДАНИЕ SHIPPING LABEL*\n"
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"💰 Ваш баланс: *${balance:.2f}*\n\n"
-            f"Прогресс: {self.get_progress_bar(1)} (Шаг 1/4)\n\n"
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "📍 *ШАГ 1: АДРЕС ОТПРАВИТЕЛЯ*\n"
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
-            "▫️ *Подшаг 1.1:* Полное имя\n\n"
-            "Пожалуйста, введите полное имя отправителя:"
-        )
+        if lang == "en":
+            text = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "📦 *CREATE SHIPPING LABEL*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"💰 Your balance: *${balance:.2f}*\n\n"
+                f"Progress: {self.get_progress_bar(1)} (Step 1/4)\n\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "📍 *STEP 1: SENDER ADDRESS*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "▫️ *Substep 1.1:* Full name\n\n"
+                "Please enter the sender's full name:"
+            )
+        else:
+            text = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "📦 *СОЗДАНИЕ SHIPPING LABEL*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"💰 Ваш баланс: *${balance:.2f}*\n\n"
+                f"Прогресс: {self.get_progress_bar(1)} (Шаг 1/4)\n\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "📍 *ШАГ 1: АДРЕС ОТПРАВИТЕЛЯ*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "▫️ *Подшаг 1.1:* Полное имя\n\n"
+                "Пожалуйста, введите полное имя отправителя:"
+            )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
         
@@ -263,22 +278,37 @@ class TelegramConversationHandler:
         # Clear previous data
         self.clear_user_data(user_id, context)
         
-        # Ensure user exists
+        # Ensure user exists and get language
         db_user = await self._ensure_user(update)
         balance = db_user.get('balance', 0.0) if db_user else 0.0
+        lang = await self._get_lang(user_id, context)
         
-        text = (
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "📦 *СОЗДАНИЕ SHIPPING LABEL*\n"
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"💰 Ваш баланс: *${balance:.2f}*\n\n"
-            f"Прогресс: {self.get_progress_bar(1)} (Шаг 1/4)\n\n"
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "📍 *ШАГ 1: АДРЕС ОТПРАВИТЕЛЯ*\n"
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
-            "▫️ *Подшаг 1.1:* Полное имя\n\n"
-            "Пожалуйста, введите полное имя отправителя:"
-        )
+        if lang == "en":
+            text = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "📦 *CREATE SHIPPING LABEL*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"💰 Your balance: *${balance:.2f}*\n\n"
+                f"Progress: {self.get_progress_bar(1)} (Step 1/4)\n\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "📍 *STEP 1: SENDER ADDRESS*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "▫️ *Substep 1.1:* Full name\n\n"
+                "Please enter the sender's full name:"
+            )
+        else:
+            text = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "📦 *СОЗДАНИЕ SHIPPING LABEL*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"💰 Ваш баланс: *${balance:.2f}*\n\n"
+                f"Прогресс: {self.get_progress_bar(1)} (Шаг 1/4)\n\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "📍 *ШАГ 1: АДРЕС ОТПРАВИТЕЛЯ*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "▫️ *Подшаг 1.1:* Полное имя\n\n"
+                "Пожалуйста, введите полное имя отправителя:"
+            )
         
         # Edit message to remove old buttons
         try:
