@@ -179,19 +179,6 @@ async def disable_maintenance(
         
         from telegram import InlineKeyboardButton, InlineKeyboardMarkup
         
-        message_text = (
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "✅ *БОТ СНОВА РАБОТАЕТ*\n"
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
-            "Технические работы завершены!\n"
-            "Бот полностью функционирует.\n\n"
-            "Спасибо за терпение! 🙏\n\n"
-            "━━━━━━━━━━━━━━━━━━━━"
-        )
-        
-        keyboard = [[InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        
         sent_count = 0
         failed_count = 0
         
@@ -199,6 +186,34 @@ async def disable_maintenance(
             try:
                 telegram_id = user.get("telegram_id")
                 if telegram_id:
+                    # Get user language
+                    lang = user.get("language", "ru")
+                    
+                    if lang == "en":
+                        message_text = (
+                            "━━━━━━━━━━━━━━━━━━━━\n"
+                            "✅ *BOT IS BACK ONLINE*\n"
+                            "━━━━━━━━━━━━━━━━━━━━\n\n"
+                            "Maintenance is complete!\n"
+                            "Bot is fully operational.\n\n"
+                            "Thank you for your patience! 🙏\n\n"
+                            "━━━━━━━━━━━━━━━━━━━━"
+                        )
+                        keyboard = [[InlineKeyboardButton("🏠 Main Menu", callback_data="back_to_menu")]]
+                    else:
+                        message_text = (
+                            "━━━━━━━━━━━━━━━━━━━━\n"
+                            "✅ *БОТ СНОВА РАБОТАЕТ*\n"
+                            "━━━━━━━━━━━━━━━━━━━━\n\n"
+                            "Технические работы завершены!\n"
+                            "Бот полностью функционирует.\n\n"
+                            "Спасибо за терпение! 🙏\n\n"
+                            "━━━━━━━━━━━━━━━━━━━━"
+                        )
+                        keyboard = [[InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]]
+                    
+                    reply_markup = InlineKeyboardMarkup(keyboard)
+                    
                     await bot.send_message(
                         chat_id=int(telegram_id),
                         text=message_text,
