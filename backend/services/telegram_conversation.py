@@ -874,16 +874,21 @@ class TelegramConversationHandler:
                     "▫️ ZIP код\n\n"
                     "Введите почтовый индекс (5 цифр):"
                 )
-                "Введите почтовый индекс (5 цифр):"
-            )
             await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
             return SHIP_TO_ZIP
         
-        text = (
-            "✅ *Штат сохранен*\n\n"
-            "▫️ *Подшаг 2.5:* ZIP код\n\n"
-            "Введите почтовый индекс (5 цифр):"
-        )
+        if lang == "en":
+            text = (
+                "✅ *State saved*\n\n"
+                "▫️ *Substep 2.5:* ZIP code\n\n"
+                "Enter ZIP code (5 digits):"
+            )
+        else:
+            text = (
+                "✅ *Штат сохранен*\n\n"
+                "▫️ *Подшаг 2.5:* ZIP код\n\n"
+                "Введите почтовый индекс (5 цифр):"
+            )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
         logger.warning(f"[DEBUG] ship_to_state completed for user {user_id}, returning SHIP_TO_ZIP")
@@ -891,14 +896,22 @@ class TelegramConversationHandler:
     
     async def ship_to_zip(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
+        lang = await self._get_lang(user_id, context)
         zip_code = update.message.text.strip()
         
         if not zip_code.isdigit() or len(zip_code) != 5:
-            text = (
-                "❌ *Некорректный формат*\n\n"
-                "ZIP код должен содержать ровно 5 цифр.\n\n"
-                "Пожалуйста, попробуйте еще раз:"
-            )
+            if lang == "en":
+                text = (
+                    "❌ *Invalid format*\n\n"
+                    "ZIP code must be exactly 5 digits.\n\n"
+                    "Please try again:"
+                )
+            else:
+                text = (
+                    "❌ *Некорректный формат*\n\n"
+                    "ZIP код должен содержать ровно 5 цифр.\n\n"
+                    "Пожалуйста, попробуйте еще раз:"
+                )
             await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
             return SHIP_TO_ZIP
         data = self.get_user_data(user_id, context)
@@ -910,14 +923,23 @@ class TelegramConversationHandler:
             await self.show_review_summary(update.message, user_id, context)
             return REVIEW_SUMMARY
         
-        text = (
-            "✅ *ZIP код сохранен*\n\n"
-            "▫️ *Подшаг 2.6:* Телефон (опционально)\n\n"
-            "Введите контактный телефон получателя или нажмите кнопку:"
-        )
+        if lang == "en":
+            text = (
+                "✅ *ZIP code saved*\n\n"
+                "▫️ *Substep 2.6:* Phone (optional)\n\n"
+                "Enter recipient's phone number or press the button:"
+            )
+            skip_btn = "⏭️ Skip (generate random)"
+        else:
+            text = (
+                "✅ *ZIP код сохранен*\n\n"
+                "▫️ *Подшаг 2.6:* Телефон (опционально)\n\n"
+                "Введите контактный телефон получателя или нажмите кнопку:"
+            )
+            skip_btn = "⏭️ Пропустить (сгенерировать случайный)"
         
         keyboard = [
-            [InlineKeyboardButton("⏭️ Пропустить (сгенерировать случайный)", callback_data="skip_to_phone")]
+            [InlineKeyboardButton(skip_btn, callback_data="skip_to_phone")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
@@ -927,14 +949,16 @@ class TelegramConversationHandler:
     async def ship_to_phone(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
         data = self.get_user_data(user_id, context)
+        lang = await self._get_lang(user_id, context)
         
         phone = update.message.text.strip()
         if phone.lower() not in ['пропустить', 'skip']:
             # Validate phone
-            is_valid, result = self.validate_phone(phone)
+            is_valid, result = self.validate_phone(phone, lang)
             if not is_valid:
+                retry_msg = "Please enter a valid phone number:" if lang == "en" else "Пожалуйста, введите корректный номер телефона:"
                 await update.message.reply_text(
-                    f"❌ *{result}*\n\nПожалуйста, введите корректный номер телефона:",
+                    f"❌ *{result}*\n\n{retry_msg}",
                     parse_mode=ParseMode.MARKDOWN
                 )
                 return SHIP_TO_PHONE
@@ -949,15 +973,32 @@ class TelegramConversationHandler:
             await self.show_review_summary(update.message, user_id, context)
             return REVIEW_SUMMARY
         
-        text = (
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "✅ *ШАГ 2 ЗАВЕРШЕН*\n"
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"Прогресс: {self.get_progress_bar(3)} (Шаг 3/4)\n\n"
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "📦 *ШАГ 3: ПАРАМЕТРЫ ПОСЫЛКИ*\n"
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
-            "▫️ *Подшаг 3.1:* Вес посылки\n\n"
+        if lang == "en":
+            text = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "✅ *STEP 2 COMPLETED*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"Progress: {self.get_progress_bar(3)} (Step 3/4)\n\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "📦 *STEP 3: PACKAGE DETAILS*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "▫️ *Substep 3.1:* Package weight\n\n"
+                "Enter the weight in pounds (lbs):\n"
+                "_Example: 1 or 2.5_"
+            )
+        else:
+            text = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "✅ *ШАГ 2 ЗАВЕРШЕН*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"Прогресс: {self.get_progress_bar(3)} (Шаг 3/4)\n\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "📦 *ШАГ 3: ПАРАМЕТРЫ ПОСЫЛКИ*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "▫️ *Подшаг 3.1:* Вес посылки\n\n"
+                "Введите вес в фунтах (lbs):\n"
+                "_Например: 1 или 2.5_"
+            )
             "Введите вес в фунтах (lbs):\n"
             "_Например: 1 или 2.5_"
         )
