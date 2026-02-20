@@ -1639,7 +1639,7 @@ class TelegramConversationHandler:
                 
                 keyboard.append([InlineKeyboardButton(button_text, callback_data=rate_id)])
         
-        keyboard.append([InlineKeyboardButton("◀️ Назад к проверке", callback_data="back_to_review_from_rates")])
+        keyboard.append([InlineKeyboardButton(back_btn, callback_data="back_to_review_from_rates")])
         
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
@@ -1651,6 +1651,7 @@ class TelegramConversationHandler:
         
         user_id = str(update.effective_user.id)
         data = self.get_user_data(user_id, context)
+        lang = await self._get_lang(user_id, context)
         
         edit_type = query.data
         
@@ -1662,26 +1663,44 @@ class TelegramConversationHandler:
         # Handle different edit types - set editing_field flag
         if edit_type == "edit_from_address":
             data['editing_field'] = 'from_address'
-            await query.edit_message_text(
-                "✏️ *Редактирование адреса отправителя*\n\n"
-                "Введите новый адрес:\n"
-                "_(Улица, номер дома, квартира)_",
-                parse_mode=ParseMode.MARKDOWN
-            )
+            if lang == "en":
+                text = (
+                    "✏️ *Edit sender address*\n\n"
+                    "Enter new address:\n"
+                    "_(Street, building, apartment)_"
+                )
+            else:
+                text = (
+                    "✏️ *Редактирование адреса отправителя*\n\n"
+                    "Введите новый адрес:\n"
+                    "_(Улица, номер дома, квартира)_"
+                )
+            await query.edit_message_text(text, parse_mode=ParseMode.MARKDOWN)
             return SHIP_FROM_ADDRESS
         elif edit_type == "edit_from_location":
             data['editing_field'] = 'from_location'
-            await query.edit_message_text(
-                "✏️ *Редактирование города отправителя*\n\n"
-                "Введите новый город:",
-                parse_mode=ParseMode.MARKDOWN
-            )
+            if lang == "en":
+                text = (
+                    "✏️ *Edit sender city*\n\n"
+                    "Enter new city:"
+                )
+            else:
+                text = (
+                    "✏️ *Редактирование города отправителя*\n\n"
+                    "Введите новый город:"
+                )
+            await query.edit_message_text(text, parse_mode=ParseMode.MARKDOWN)
             return SHIP_FROM_CITY
         elif edit_type == "edit_from_phone":
             data['editing_field'] = 'from_phone'
-            text = "✏️ *Редактирование телефона отправителя*\n\nВведите новый телефон или нажмите кнопку:"
+            if lang == "en":
+                text = "✏️ *Edit sender phone*\n\nEnter new phone or press the button:"
+                skip_btn = "⏭️ Skip (generate random)"
+            else:
+                text = "✏️ *Редактирование телефона отправителя*\n\nВведите новый телефон или нажмите кнопку:"
+                skip_btn = "⏭️ Пропустить (сгенерировать случайный)"
             keyboard = [
-                [InlineKeyboardButton("⏭️ Пропустить (сгенерировать случайный)", callback_data="skip_from_phone")]
+                [InlineKeyboardButton(skip_btn, callback_data="skip_from_phone")]
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
             await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
@@ -1689,24 +1708,42 @@ class TelegramConversationHandler:
         
         elif edit_type == "edit_to_address":
             data['editing_field'] = 'to_address'
-            await query.edit_message_text(
-                "✏️ *Редактирование адреса получателя*\n\n"
-                "Введите новый адрес:\n"
-                "_(Улица, номер дома, квартира)_",
-                parse_mode=ParseMode.MARKDOWN
-            )
+            if lang == "en":
+                text = (
+                    "✏️ *Edit recipient address*\n\n"
+                    "Enter new address:\n"
+                    "_(Street, building, apartment)_"
+                )
+            else:
+                text = (
+                    "✏️ *Редактирование адреса получателя*\n\n"
+                    "Введите новый адрес:\n"
+                    "_(Улица, номер дома, квартира)_"
+                )
+            await query.edit_message_text(text, parse_mode=ParseMode.MARKDOWN)
             return SHIP_TO_ADDRESS
         elif edit_type == "edit_to_location":
             data['editing_field'] = 'to_location'
-            await query.edit_message_text(
-                "✏️ *Редактирование города получателя*\n\n"
-                "Введите новый город:",
-                parse_mode=ParseMode.MARKDOWN
-            )
+            if lang == "en":
+                text = (
+                    "✏️ *Edit recipient city*\n\n"
+                    "Enter new city:"
+                )
+            else:
+                text = (
+                    "✏️ *Редактирование города получателя*\n\n"
+                    "Введите новый город:"
+                )
+            await query.edit_message_text(text, parse_mode=ParseMode.MARKDOWN)
             return SHIP_TO_CITY
         elif edit_type == "edit_to_phone":
             data['editing_field'] = 'to_phone'
-            text = "✏️ *Редактирование телефона получателя*\n\nВведите новый телефон или нажмите кнопку:"
+            if lang == "en":
+                text = "✏️ *Edit recipient phone*\n\nEnter new phone or press the button:"
+                skip_btn = "⏭️ Skip (generate random)"
+            else:
+                text = "✏️ *Редактирование телефона получателя*\n\nВведите новый телефон или нажмите кнопку:"
+                skip_btn = "⏭️ Пропустить (сгенерировать случайный)"
             keyboard = [
                 [InlineKeyboardButton("⏭️ Пропустить (сгенерировать случайный)", callback_data="skip_to_phone")]
             ]
