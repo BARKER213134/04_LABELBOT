@@ -1081,16 +1081,22 @@ async def cancel_pending_order_callback(update, context):
         pass
     
     # Delete pending order
-    db = Database.db
     await db.pending_label_orders.delete_one({"telegram_id": user_id})
     
-    text = "✅ Заказ отменён."
-    keyboard = [[InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]]
+    if lang == "en":
+        text = "✅ Order cancelled."
+        menu_btn = "🏠 Main Menu"
+    else:
+        text = "✅ Заказ отменён."
+        menu_btn = "🏠 Главное меню"
+    keyboard = [[InlineKeyboardButton(menu_btn, callback_data="back_to_menu")]]
     await context.bot.send_message(chat_id, text, reply_markup=InlineKeyboardMarkup(keyboard))
 
 async def templates_menu_callback(update, context):
     """Templates menu - FAST"""
     global _templates_service
+    from services.localization import get_user_language
+    from database import Database
     
     query = update.callback_query
     await query.answer()
@@ -1105,6 +1111,14 @@ async def templates_menu_callback(update, context):
     
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
     
+    db = Database.db
+    
+    # Get user language
+    lang = context.user_data.get('language')
+    if not lang:
+        lang = await get_user_language(db, user_id)
+        context.user_data['language'] = lang
+    
     # Remove buttons from old message
     try:
         await query.edit_message_reply_markup(reply_markup=None)
@@ -1115,9 +1129,10 @@ async def templates_menu_callback(update, context):
     if _templates_service:
         templates = await _templates_service.get_user_templates(user_id)
     
-    text = (
-        "━━━━━━━━━━━━━━━━━━━━\n"
-        "📋 *ШАБЛОНЫ*\n"
+    if lang == "en":
+        text = (
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "📋 *TEMPLATES*\n"
         "━━━━━━━━━━━━━━━━━━━━\n\n"
     )
     
