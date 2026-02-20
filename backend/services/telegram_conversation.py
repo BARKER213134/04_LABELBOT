@@ -1198,55 +1198,99 @@ class TelegramConversationHandler:
                     "📋 *ДАННЫЕ ИЗ ШАБЛОНА*\n"
                     "━━━━━━━━━━━━━━━━━━━━\n\n"
                     "Проверьте данные и отредактируйте при необходимости.\n\n"
-            )
+                )
         else:
-            header = (
-                "━━━━━━━━━━━━━━━━━━━━\n"
-                "📋 *ПРОВЕРКА ДАННЫХ*\n"
-                "━━━━━━━━━━━━━━━━━━━━\n\n"
-                "Пожалуйста, проверьте введенные данные перед выбором перевозчика.\n\n"
-            )
+            if lang == "en":
+                header = (
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    "📋 *REVIEW DATA*\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n\n"
+                    "Please check the data before selecting a carrier.\n\n"
+                )
+            else:
+                header = (
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    "📋 *ПРОВЕРКА ДАННЫХ*\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n\n"
+                    "Пожалуйста, проверьте введенные данные перед выбором перевозчика.\n\n"
+                )
+        
+        # Localized labels
+        if lang == "en":
+            sender_lbl = "SENDER"
+            recipient_lbl = "RECIPIENT"
+            package_lbl = "PACKAGE"
+            name_lbl = "Name"
+            address_lbl = "Address"
+            city_lbl = "City"
+            phone_lbl = "Phone"
+            weight_lbl = "Weight"
+            dims_lbl = "Dimensions"
+            inches_lbl = "inches"
+            action_lbl = "Choose action:"
+        else:
+            sender_lbl = "ОТПРАВИТЕЛЬ"
+            recipient_lbl = "ПОЛУЧАТЕЛЬ"
+            package_lbl = "ПОСЫЛКА"
+            name_lbl = "Имя"
+            address_lbl = "Адрес"
+            city_lbl = "Город"
+            phone_lbl = "Телефон"
+            weight_lbl = "Вес"
+            dims_lbl = "Размеры"
+            inches_lbl = "дюймов"
+            action_lbl = "Выберите действие:"
         
         text = header + (
             "━━━━━━━━━━━━━━━━━━━━\n"
-            "📍 *ОТПРАВИТЕЛЬ*\n"
-            f"▫️ Имя: {data.get('shipFromName')}\n"
-            f"▫️ Адрес: {data.get('shipFromAddressLine1')}\n"
-            f"▫️ Город: {data.get('shipFromCity')}, {data.get('shipFromState')} {data.get('shipFromPostalCode')}\n"
+            f"📍 *{sender_lbl}*\n"
+            f"▫️ {name_lbl}: {data.get('shipFromName')}\n"
+            f"▫️ {address_lbl}: {data.get('shipFromAddressLine1')}\n"
+            f"▫️ {city_lbl}: {data.get('shipFromCity')}, {data.get('shipFromState')} {data.get('shipFromPostalCode')}\n"
         )
         
         if data.get('shipFromPhone'):
-            text += f"▫️ Телефон: {data.get('shipFromPhone')}\n"
+            text += f"▫️ {phone_lbl}: {data.get('shipFromPhone')}\n"
         
         text += (
             f"\n━━━━━━━━━━━━━━━━━━━━\n"
-            "📍 *ПОЛУЧАТЕЛЬ*\n"
-            f"▫️ Имя: {data.get('shipToName')}\n"
-            f"▫️ Адрес: {data.get('shipToAddressLine1')}\n"
-            f"▫️ Город: {data.get('shipToCity')}, {data.get('shipToState')} {data.get('shipToPostalCode')}\n"
+            f"📍 *{recipient_lbl}*\n"
+            f"▫️ {name_lbl}: {data.get('shipToName')}\n"
+            f"▫️ {address_lbl}: {data.get('shipToAddressLine1')}\n"
+            f"▫️ {city_lbl}: {data.get('shipToCity')}, {data.get('shipToState')} {data.get('shipToPostalCode')}\n"
         )
         
         if data.get('shipToPhone'):
-            text += f"▫️ Телефон: {data.get('shipToPhone')}\n"
+            text += f"▫️ {phone_lbl}: {data.get('shipToPhone')}\n"
         
         weight_lbs = data.get('packageWeightLbs', 0) or (data.get('packageWeight', 0) / 16)
         text += (
             f"\n━━━━━━━━━━━━━━━━━━━━\n"
-            "📦 *ПОСЫЛКА*\n"
-            f"▫️ Вес: {weight_lbs:.2f} lbs\n"
-            f"▫️ Размеры: {data.get('packageLength')}×{data.get('packageWidth')}×{data.get('packageHeight')} дюймов\n\n"
+            f"📦 *{package_lbl}*\n"
+            f"▫️ {weight_lbl}: {weight_lbs:.2f} lbs\n"
+            f"▫️ {dims_lbl}: {data.get('packageLength')}×{data.get('packageWidth')}×{data.get('packageHeight')} {inches_lbl}\n\n"
             "━━━━━━━━━━━━━━━━━━━━\n\n"
-            "Выберите действие:"
+            f"{action_lbl}"
         )
         
-        keyboard = [
-            [InlineKeyboardButton("✏️ Редактировать отправителя", callback_data="edit_from")],
-            [InlineKeyboardButton("✏️ Редактировать получателя", callback_data="edit_to")],
-            [InlineKeyboardButton("✏️ Редактировать посылку", callback_data="edit_package")],
-            [InlineKeyboardButton("💾 Сохранить как шаблон", callback_data="save_template")],
-            [InlineKeyboardButton("✅ Всё верно, продолжить", callback_data="continue_to_carrier")],
-            [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
-        ]
+        if lang == "en":
+            keyboard = [
+                [InlineKeyboardButton("✏️ Edit sender", callback_data="edit_from")],
+                [InlineKeyboardButton("✏️ Edit recipient", callback_data="edit_to")],
+                [InlineKeyboardButton("✏️ Edit package", callback_data="edit_package")],
+                [InlineKeyboardButton("💾 Save as template", callback_data="save_template")],
+                [InlineKeyboardButton("✅ All correct, continue", callback_data="continue_to_carrier")],
+                [InlineKeyboardButton("🏠 Main menu", callback_data="back_to_menu")]
+            ]
+        else:
+            keyboard = [
+                [InlineKeyboardButton("✏️ Редактировать отправителя", callback_data="edit_from")],
+                [InlineKeyboardButton("✏️ Редактировать получателя", callback_data="edit_to")],
+                [InlineKeyboardButton("✏️ Редактировать посылку", callback_data="edit_package")],
+                [InlineKeyboardButton("💾 Сохранить как шаблон", callback_data="save_template")],
+                [InlineKeyboardButton("✅ Всё верно, продолжить", callback_data="continue_to_carrier")],
+                [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+            ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         if edit_message:
@@ -1261,15 +1305,18 @@ class TelegramConversationHandler:
         query = update.callback_query
         await query.answer()
         
+        user_id = str(update.effective_user.id)
+        lang = await self._get_lang(user_id, context)
         edit_choice = query.data
         
         if edit_choice == "continue_to_carrier":
-            user_id = str(update.effective_user.id)
             data = self.get_user_data(user_id, context)
             
             # Show loading message
+            loading_msg = "Loading rates..." if lang == "en" else "Получаю тарифы..."
+            wait_msg = "Please wait." if lang == "en" else "Пожалуйста, подождите."
             await query.edit_message_text(
-                "⏳ *Получаю тарифы...*\n\nПожалуйста, подождите.",
+                f"⏳ *{loading_msg}*\n\n{wait_msg}",
                 parse_mode=ParseMode.MARKDOWN
             )
             
