@@ -1325,12 +1325,21 @@ class TelegramConversationHandler:
                 rates = await self._fetch_rates(data)
                 
                 if not rates:
-                    text = (
-                        "❌ *Тарифы не найдены*\n\n"
-                        "К сожалению, не удалось получить тарифы для данного маршрута.\n"
-                        "Пожалуйста, проверьте адреса и попробуйте снова."
-                    )
-                    keyboard = [[InlineKeyboardButton("◀️ Назад к проверке", callback_data="back_to_review_from_rates")]]
+                    if lang == "en":
+                        text = (
+                            "❌ *No rates found*\n\n"
+                            "Sorry, we couldn't get rates for this route.\n"
+                            "Please check the addresses and try again."
+                        )
+                        back_btn = "◀️ Back to review"
+                    else:
+                        text = (
+                            "❌ *Тарифы не найдены*\n\n"
+                            "К сожалению, не удалось получить тарифы для данного маршрута.\n"
+                            "Пожалуйста, проверьте адреса и попробуйте снова."
+                        )
+                        back_btn = "◀️ Назад к проверке"
+                    keyboard = [[InlineKeyboardButton(back_btn, callback_data="back_to_review_from_rates")]]
                     reply_markup = InlineKeyboardMarkup(keyboard)
                     await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
                     return SELECT_RATE
@@ -1359,43 +1368,80 @@ class TelegramConversationHandler:
                 except Exception as admin_err:
                     logger.warning(f"Failed to send admin error notification: {admin_err}")
                 
-                text = (
-                    "❌ *Ошибка получения тарифов*\n\n"
-                    f"Причина: {str(e)}\n\n"
-                    "Попробуйте позже или проверьте данные."
-                )
-                keyboard = [[InlineKeyboardButton("◀️ Назад к проверке", callback_data="back_to_review_from_rates")]]
+                if lang == "en":
+                    text = (
+                        "❌ *Error loading rates*\n\n"
+                        f"Reason: {str(e)}\n\n"
+                        "Try again later or check your data."
+                    )
+                    back_btn = "◀️ Back to review"
+                else:
+                    text = (
+                        "❌ *Ошибка получения тарифов*\n\n"
+                        f"Причина: {str(e)}\n\n"
+                        "Попробуйте позже или проверьте данные."
+                    )
+                    back_btn = "◀️ Назад к проверке"
+                keyboard = [[InlineKeyboardButton(back_btn, callback_data="back_to_review_from_rates")]]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
                 return SELECT_RATE
         
         # Show edit options for the selected section
         if edit_choice == "edit_from":
-            text = (
-                "━━━━━━━━━━━━━━━━━━━━\n"
-                "✏️ *РЕДАКТИРОВАНИЕ ОТПРАВИТЕЛЯ*\n"
-                "━━━━━━━━━━━━━━━━━━━━\n\n"
-                "Что хотите изменить?"
-            )
-            keyboard = [
-                [InlineKeyboardButton("📝 Адрес", callback_data="edit_from_address")],
-                [InlineKeyboardButton("📍 Город и штат", callback_data="edit_from_location")],
-                [InlineKeyboardButton("📞 Телефон", callback_data="edit_from_phone")],
-                [InlineKeyboardButton("◀️ Назад к проверке", callback_data="back_to_review")]
-            ]
+            if lang == "en":
+                text = (
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    "✏️ *EDIT SENDER*\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n\n"
+                    "What do you want to change?"
+                )
+                keyboard = [
+                    [InlineKeyboardButton("📝 Address", callback_data="edit_from_address")],
+                    [InlineKeyboardButton("📍 City and state", callback_data="edit_from_location")],
+                    [InlineKeyboardButton("📞 Phone", callback_data="edit_from_phone")],
+                    [InlineKeyboardButton("◀️ Back to review", callback_data="back_to_review")]
+                ]
+            else:
+                text = (
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    "✏️ *РЕДАКТИРОВАНИЕ ОТПРАВИТЕЛЯ*\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n\n"
+                    "Что хотите изменить?"
+                )
+                keyboard = [
+                    [InlineKeyboardButton("📝 Адрес", callback_data="edit_from_address")],
+                    [InlineKeyboardButton("📍 Город и штат", callback_data="edit_from_location")],
+                    [InlineKeyboardButton("📞 Телефон", callback_data="edit_from_phone")],
+                    [InlineKeyboardButton("◀️ Назад к проверке", callback_data="back_to_review")]
+                ]
         elif edit_choice == "edit_to":
-            text = (
-                "━━━━━━━━━━━━━━━━━━━━\n"
-                "✏️ *РЕДАКТИРОВАНИЕ ПОЛУЧАТЕЛЯ*\n"
-                "━━━━━━━━━━━━━━━━━━━━\n\n"
-                "Что хотите изменить?"
-            )
-            keyboard = [
-                [InlineKeyboardButton("📝 Адрес", callback_data="edit_to_address")],
-                [InlineKeyboardButton("📍 Город и штат", callback_data="edit_to_location")],
-                [InlineKeyboardButton("📞 Телефон", callback_data="edit_to_phone")],
-                [InlineKeyboardButton("◀️ Назад к проверке", callback_data="back_to_review")]
-            ]
+            if lang == "en":
+                text = (
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    "✏️ *EDIT RECIPIENT*\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n\n"
+                    "What do you want to change?"
+                )
+                keyboard = [
+                    [InlineKeyboardButton("📝 Address", callback_data="edit_to_address")],
+                    [InlineKeyboardButton("📍 City and state", callback_data="edit_to_location")],
+                    [InlineKeyboardButton("📞 Phone", callback_data="edit_to_phone")],
+                    [InlineKeyboardButton("◀️ Back to review", callback_data="back_to_review")]
+                ]
+            else:
+                text = (
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    "✏️ *РЕДАКТИРОВАНИЕ ПОЛУЧАТЕЛЯ*\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n\n"
+                    "Что хотите изменить?"
+                )
+                keyboard = [
+                    [InlineKeyboardButton("📝 Адрес", callback_data="edit_to_address")],
+                    [InlineKeyboardButton("📍 Город и штат", callback_data="edit_to_location")],
+                    [InlineKeyboardButton("📞 Телефон", callback_data="edit_to_phone")],
+                    [InlineKeyboardButton("◀️ Назад к проверке", callback_data="back_to_review")]
+                ]
         elif edit_choice == "edit_package":
             text = (
                 "━━━━━━━━━━━━━━━━━━━━\n"
