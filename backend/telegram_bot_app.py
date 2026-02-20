@@ -299,13 +299,18 @@ async def process_topup_amount(update, context):
         
         # Clear topup flag and create invoice
         context.user_data['awaiting_topup_amount'] = False
-        await create_crypto_invoice(update, context, user_id, amount)
+        await create_crypto_invoice(update, context, user_id, amount, lang)
         
     except ValueError:
         from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-        keyboard = [[InlineKeyboardButton("❌ Отмена", callback_data="cancel_topup")]]
+        cancel_btn = "❌ Cancel" if lang == "en" else "❌ Отмена"
+        keyboard = [[InlineKeyboardButton(cancel_btn, callback_data="cancel_topup")]]
+        if lang == "en":
+            text = "❌ *Invalid amount*\n\nEnter a number, for example: 25 or 50.00"
+        else:
+            text = "❌ *Некорректная сумма*\n\nВведите число, например: 25 или 50.00"
         sent_msg = await update.message.reply_text(
-            "❌ *Некорректная сумма*\n\nВведите число, например: 25 или 50.00",
+            text,
             reply_markup=InlineKeyboardMarkup(keyboard),
             parse_mode="Markdown"
         )
@@ -332,15 +337,16 @@ async def cancel_topup_callback(update, context):
     await check_balance_callback(update, context)
 
 
-async def create_crypto_invoice(update, context, user_id: str, amount: float):
+async def create_crypto_invoice(update, context, user_id: str, amount: float, lang: str = "ru"):
     """Create OxaPay crypto invoice - sends new message"""
     from database import Database
     from services.oxapay_service import OxaPayService
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
     
     # Send loading message
+    loading_msg_text = "⏳ *Creating payment...*" if lang == "en" else "⏳ *Создаю платёж...*"
     loading_msg = await update.message.reply_text(
-        "⏳ *Создаю платёж...*",
+        loading_msg_text,
         parse_mode="Markdown"
     )
     
@@ -358,24 +364,44 @@ async def create_crypto_invoice(update, context, user_id: str, amount: float):
         if result.get("success"):
             payment_url = result.get("payment_url")
             
-            text = (
-                "━━━━━━━━━━━━━━━━━━━━\n"
-                "💳 *ОПЛАТА СОЗДАНА*\n"
-                "━━━━━━━━━━━━━━━━━━━━\n\n"
-                f"💰 Сумма: *${amount:.2f}*\n\n"
-                "▫️ Нажмите кнопку ниже для оплаты\n"
-                "▫️ Принимаем: BTC, ETH, USDT, LTC\n"
-                "▫️ После оплаты баланс обновится автоматически\n\n"
-                "⏰ *Срок оплаты: 60 минут*\n\n"
-                "━━━━━━━━━━━━━━━━━━━━"
-            )
+            if lang == "en":
+                text = (
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    "💳 *PAYMENT CREATED*\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n\n"
+                    f"💰 Amount: *${amount:.2f}*\n\n"
+                    "▫️ Click the button below to pay\n"
+                    "▫️ Accepted: BTC, ETH, USDT, LTC\n"
+                    "▫️ Balance will update automatically after payment\n\n"
+                    "⏰ *Payment expires in: 60 minutes*\n\n"
+                    "━━━━━━━━━━━━━━━━━━━━"
+                )
+            else:
+                text = (
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    "💳 *ОПЛАТА СОЗДАНА*\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n\n"
+                    f"💰 Сумма: *${amount:.2f}*\n\n"
+                    "▫️ Нажмите кнопку ниже для оплаты\n"
+                    "▫️ Принимаем: BTC, ETH, USDT, LTC\n"
+                    "▫️ После оплаты баланс обновится автоматически\n\n"
+                    "⏰ *Срок оплаты: 60 минут*\n\n"
+                    "━━━━━━━━━━━━━━━━━━━━"
+                )
             
             track_id = result.get("track_id")
-            keyboard = [
-                [InlineKeyboardButton("💳 Оплатить криптой", url=payment_url)],
-                [InlineKeyboardButton("🔄 Проверить статус", callback_data=f"check_payment_{track_id}")],
-                [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
-            ]
+            if lang == "en":
+                keyboard = [
+                    [InlineKeyboardButton("💳 Pay with crypto", url=payment_url)],
+                    [InlineKeyboardButton("🔄 Check status", callback_data=f"check_payment_{track_id}")],
+                    [InlineKeyboardButton("🏠 Main menu", callback_data="back_to_menu")]
+                ]
+            else:
+                keyboard = [
+                    [InlineKeyboardButton("💳 Оплатить криптой", url=payment_url)],
+                    [InlineKeyboardButton("🔄 Проверить статус", callback_data=f"check_payment_{track_id}")],
+                    [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+                ]
             reply_markup = InlineKeyboardMarkup(keyboard)
             
             # Edit loading message with result
