@@ -489,12 +489,20 @@ class TelegramConversationHandler:
         state = update.message.text.strip().upper()
         
         if len(state) != 2 or not state.isalpha():
-            text = (
-                "❌ *Некорректный формат*\n\n"
-                "Код штата должен состоять из 2 букв.\n"
-                "_Например: CA, NY, TX_\n\n"
-                "Пожалуйста, попробуйте еще раз:"
-            )
+            if lang == "en":
+                text = (
+                    "❌ *Invalid format*\n\n"
+                    "State code must be 2 letters.\n"
+                    "_Example: CA, NY, TX_\n\n"
+                    "Please try again:"
+                )
+            else:
+                text = (
+                    "❌ *Некорректный формат*\n\n"
+                    "Код штата должен состоять из 2 букв.\n"
+                    "_Например: CA, NY, TX_\n\n"
+                    "Пожалуйста, попробуйте еще раз:"
+                )
             await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
             return SHIP_FROM_STATE
         data = self.get_user_data(user_id, context)
@@ -502,35 +510,59 @@ class TelegramConversationHandler:
         
         # Check if we're in edit mode - editing location chain (city -> state -> zip)
         if data.get('editing_field') == 'from_location':
-            text = (
-                "✅ *Штат сохранен*\n\n"
-                "▫️ ZIP код\n\n"
-                "Введите почтовый индекс (5 цифр):"
-            )
+            if lang == "en":
+                text = (
+                    "✅ *State saved*\n\n"
+                    "▫️ ZIP code\n\n"
+                    "Enter ZIP code (5 digits):"
+                )
+            else:
+                text = (
+                    "✅ *Штат сохранен*\n\n"
+                    "▫️ ZIP код\n\n"
+                    "Введите почтовый индекс (5 цифр):"
+                )
             await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
             return SHIP_FROM_ZIP
         
-        text = (
-            "✅ *Штат сохранен*\n\n"
-            "▫️ *Подшаг 1.5:* ZIP код\n\n"
-            "Введите почтовый индекс (5 цифр):\n"
-            "_Например: 94102, 10001, 78701_"
-        )
+        if lang == "en":
+            text = (
+                "✅ *State saved*\n\n"
+                "▫️ *Substep 1.5:* ZIP code\n\n"
+                "Enter ZIP code (5 digits):\n"
+                "_Example: 94102, 10001, 78701_"
+            )
+        else:
+            text = (
+                "✅ *Штат сохранен*\n\n"
+                "▫️ *Подшаг 1.5:* ZIP код\n\n"
+                "Введите почтовый индекс (5 цифр):\n"
+                "_Например: 94102, 10001, 78701_"
+            )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
         return SHIP_FROM_ZIP
     
     async def ship_from_zip(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
+        lang = await self._get_lang(user_id, context)
         zip_code = update.message.text.strip()
         
         if not zip_code.isdigit() or len(zip_code) != 5:
-            text = (
-                "❌ *Некорректный формат*\n\n"
-                "ZIP код должен состоять из 5 цифр.\n"
-                "_Например: 94102, 10001_\n\n"
-                "Пожалуйста, попробуйте еще раз:"
-            )
+            if lang == "en":
+                text = (
+                    "❌ *Invalid format*\n\n"
+                    "ZIP code must be 5 digits.\n"
+                    "_Example: 94102, 10001_\n\n"
+                    "Please try again:"
+                )
+            else:
+                text = (
+                    "❌ *Некорректный формат*\n\n"
+                    "ZIP код должен состоять из 5 цифр.\n"
+                    "_Например: 94102, 10001_\n\n"
+                    "Пожалуйста, попробуйте еще раз:"
+                )
             await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
             return SHIP_FROM_ZIP
         data = self.get_user_data(user_id, context)
@@ -542,14 +574,23 @@ class TelegramConversationHandler:
             await self.show_review_summary(update.message, user_id, context)
             return REVIEW_SUMMARY
         
-        text = (
-            "✅ *ZIP код сохранен*\n\n"
-            "▫️ *Подшаг 1.6:* Телефон (опционально)\n\n"
-            "Введите контактный телефон отправителя или нажмите кнопку:"
-        )
+        if lang == "en":
+            text = (
+                "✅ *ZIP code saved*\n\n"
+                "▫️ *Substep 1.6:* Phone (optional)\n\n"
+                "Enter sender's phone number or press the button:"
+            )
+            skip_btn = "⏭️ Skip (generate random)"
+        else:
+            text = (
+                "✅ *ZIP код сохранен*\n\n"
+                "▫️ *Подшаг 1.6:* Телефон (опционально)\n\n"
+                "Введите контактный телефон отправителя или нажмите кнопку:"
+            )
+            skip_btn = "⏭️ Пропустить (сгенерировать случайный)"
         
         keyboard = [
-            [InlineKeyboardButton("⏭️ Пропустить (сгенерировать случайный)", callback_data="skip_from_phone")]
+            [InlineKeyboardButton(skip_btn, callback_data="skip_from_phone")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
