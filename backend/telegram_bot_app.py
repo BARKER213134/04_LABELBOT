@@ -1133,8 +1133,14 @@ async def templates_menu_callback(update, context):
         text = (
             "━━━━━━━━━━━━━━━━━━━━\n"
             "📋 *TEMPLATES*\n"
-        "━━━━━━━━━━━━━━━━━━━━\n\n"
-    )
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+        )
+    else:
+        text = (
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "📋 *ШАБЛОНЫ*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+        )
     
     if templates:
         text += f"You have {len(templates)} out of 10 templates:\n\n" if lang == "en" else f"У вас {len(templates)} из 10 шаблонов:\n\n"
