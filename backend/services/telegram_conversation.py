@@ -2112,28 +2112,48 @@ class TelegramConversationHandler:
                 except Exception as e:
                     logger.error(f"Failed to save pending order status: {e}")
                 
-                text = (
-                    "━━━━━━━━━━━━━━━━━━━━\n"
-                    "❌ *НЕДОСТАТОЧНО СРЕДСТВ*\n"
-                    "━━━━━━━━━━━━━━━━━━━━\n\n"
-                    f"💵 Стоимость лейбла: *${total_cost:.2f}*\n"
-                    f"💰 Ваш баланс: *${current_balance:.2f}*\n\n"
-                    f"📊 Необходимо пополнить: *${needed:.2f}*\n\n"
-                    "━━━━━━━━━━━━━━━━━━━━\n"
-                    "💳 *Пополните баланс криптой:*\n"
-                    "▫️ BTC, ETH, USDT, LTC\n"
-                    "▫️ Минимум: $10"
-                )
-                keyboard = [
-                    [InlineKeyboardButton("💳 Пополнить баланс", callback_data="topup_balance")],
-                    [InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")]
-                ]
+                if lang == "en":
+                    text = (
+                        "━━━━━━━━━━━━━━━━━━━━\n"
+                        "❌ *INSUFFICIENT FUNDS*\n"
+                        "━━━━━━━━━━━━━━━━━━━━\n\n"
+                        f"💵 Label cost: *${total_cost:.2f}*\n"
+                        f"💰 Your balance: *${current_balance:.2f}*\n\n"
+                        f"📊 Amount to top up: *${needed:.2f}*\n\n"
+                        "━━━━━━━━━━━━━━━━━━━━\n"
+                        "💳 *Top up with crypto:*\n"
+                        "▫️ BTC, ETH, USDT, LTC\n"
+                        "▫️ Minimum: $10"
+                    )
+                    keyboard = [
+                        [InlineKeyboardButton("💳 Top up balance", callback_data="topup_balance")],
+                        [InlineKeyboardButton("🏠 Main menu", callback_data="back_to_menu")]
+                    ]
+                else:
+                    text = (
+                        "━━━━━━━━━━━━━━━━━━━━\n"
+                        "❌ *НЕДОСТАТОЧНО СРЕДСТВ*\n"
+                        "━━━━━━━━━━━━━━━━━━━━\n\n"
+                        f"💵 Стоимость лейбла: *${total_cost:.2f}*\n"
+                        f"💰 Ваш баланс: *${current_balance:.2f}*\n\n"
+                        f"📊 Необходимо пополнить: *${needed:.2f}*\n\n"
+                        "━━━━━━━━━━━━━━━━━━━━\n"
+                        "💳 *Пополните баланс криптой:*\n"
+                        "▫️ BTC, ETH, USDT, LTC\n"
+                        "▫️ Минимум: $10"
+                    )
+                    keyboard = [
+                        [InlineKeyboardButton("💳 Пополнить баланс", callback_data="topup_balance")],
+                        [InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")]
+                    ]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
                 return ConversationHandler.END
         
+        creating_msg = "Creating label..." if lang == "en" else "Создаю лейбл..."
+        wait_msg = "Please wait." if lang == "en" else "Пожалуйста, подождите."
         await query.edit_message_text(
-            "⏳ *Создаю лейбл...*\n\nПожалуйста, подождите.",
+            f"⏳ *{creating_msg}*\n\n{wait_msg}",
             parse_mode=ParseMode.MARKDOWN
         )
         
