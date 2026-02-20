@@ -200,18 +200,34 @@ async def ban_user(
     
     # Send notification to user
     try:
+        from services.localization import get_user_language
+        
         settings = get_settings()
         bot = Bot(token=settings.telegram_bot_token)
         
-        message = (
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "🚫 *АККАУНТ ЗАБЛОКИРОВАН*\n"
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
-            "Ваш аккаунт был заблокирован администратором.\n\n"
-            "Если вы считаете, что это ошибка, "
-            "свяжитесь с поддержкой.\n\n"
-            "━━━━━━━━━━━━━━━━━━━━"
-        )
+        # Get user language
+        lang = await get_user_language(db, telegram_id)
+        
+        if lang == "en":
+            message = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "🚫 *ACCOUNT BLOCKED*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "Your account has been blocked by administrator.\n\n"
+                "If you think this is a mistake, "
+                "please contact support.\n\n"
+                "━━━━━━━━━━━━━━━━━━━━"
+            )
+        else:
+            message = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "🚫 *АККАУНТ ЗАБЛОКИРОВАН*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "Ваш аккаунт был заблокирован администратором.\n\n"
+                "Если вы считаете, что это ошибка, "
+                "свяжитесь с поддержкой.\n\n"
+                "━━━━━━━━━━━━━━━━━━━━"
+            )
         
         await bot.send_message(
             chat_id=int(telegram_id),
