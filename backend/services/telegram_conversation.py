@@ -85,6 +85,19 @@ class TelegramConversationHandler:
             await update.message.reply_text(message, parse_mode=ParseMode.MARKDOWN)
         return ConversationHandler.END
     
+    async def _get_lang(self, user_id: str, context=None) -> str:
+        """Get user's language from context or database"""
+        if context and context.user_data.get('language'):
+            return context.user_data.get('language')
+        # Fallback to database
+        try:
+            lang = await get_user_language(self.db, user_id)
+            if context:
+                context.user_data['language'] = lang
+            return lang
+        except Exception:
+            return DEFAULT_LANGUAGE
+    
     def get_user_data(self, user_id: str, context=None) -> Dict[str, Any]:
         """Get user's conversation data. 
         Uses context.user_data if available (persisted via MongoPersistence),
