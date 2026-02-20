@@ -526,26 +526,15 @@ class TelegramConversationHandler:
         await update.message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
         return SHIP_FROM_PHONE
     
-    def validate_phone(self, phone: str) -> tuple[bool, str]:
-        """Validate phone number - must have 10-15 digits"""
-        # Remove all non-digit characters
-        digits_only = ''.join(filter(str.isdigit, phone))
-        
-        if len(digits_only) < 10:
-            return False, "Телефон должен содержать минимум 10 цифр"
-        if len(digits_only) > 15:
-            return False, "Телефон должен содержать максимум 15 цифр"
-        
-        return True, digits_only
-    
     async def ship_from_phone(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
         data = self.get_user_data(user_id, context)
+        lang = await self._get_lang(user_id, context)
         
         phone = update.message.text.strip()
         if phone.lower() not in ['пропустить', 'skip']:
             # Validate phone
-            is_valid, result = self.validate_phone(phone)
+            is_valid, result = self.validate_phone(phone, lang)
             if not is_valid:
                 await update.message.reply_text(
                     f"❌ *{result}*\n\nПожалуйста, введите корректный номер телефона:",
