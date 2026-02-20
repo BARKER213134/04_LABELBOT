@@ -2200,17 +2200,37 @@ class TelegramConversationHandler:
                 thank_you_msg = await generate_thank_you_message(carrier_name, tracking_number)
             except Exception as ai_err:
                 logger.warning(f"Failed to generate AI thank you message: {ai_err}")
-                thank_you_msg = "Спасибо за заказ! 🎉"
+                thank_you_msg = "Thank you for your order! 🎉" if lang == "en" else "Спасибо за заказ! 🎉"
+            
+            # Localized labels
+            if lang == "en":
+                success_header = "LABEL CREATED SUCCESSFULLY!"
+                delivery_info = "Delivery information"
+                tracking_lbl = "Tracking number"
+                carrier_lbl = "Carrier"
+                cost_lbl = "Cost"
+                balance_lbl = "Remaining balance"
+                menu_btn = "🏠 Main menu"
+                download_btn_text = f"📥 Download {tracking_number}.pdf"
+            else:
+                success_header = "ЛЕЙБЛ СОЗДАН УСПЕШНО!"
+                delivery_info = "Информация о доставке"
+                tracking_lbl = "Tracking номер"
+                carrier_lbl = "Перевозчик"
+                cost_lbl = "Стоимость"
+                balance_lbl = "Остаток на балансе"
+                menu_btn = "🏠 В главное меню"
+                download_btn_text = f"📥 Скачать {tracking_number}.pdf"
             
             success_message = (
                 "━━━━━━━━━━━━━━━━━━━━\n"
-                "✅ *ЛЕЙБЛ СОЗДАН УСПЕШНО!*\n"
+                f"✅ *{success_header}*\n"
                 "━━━━━━━━━━━━━━━━━━━━\n\n"
-                "📋 *Информация о доставке:*\n\n"
-                f"▫️ Tracking номер:\n`{tracking_number}`\n\n"
-                f"▫️ Перевозчик: {carrier_name}\n"
-                f"▫️ Стоимость: ${actual_user_paid:.2f}\n"
-                f"▫️ Остаток на балансе: ${new_balance:.2f}\n\n"
+                f"📋 *{delivery_info}:*\n\n"
+                f"▫️ {tracking_lbl}:\n`{tracking_number}`\n\n"
+                f"▫️ {carrier_lbl}: {carrier_name}\n"
+                f"▫️ {cost_lbl}: ${actual_user_paid:.2f}\n"
+                f"▫️ {balance_lbl}: ${new_balance:.2f}\n\n"
                 "━━━━━━━━━━━━━━━━━━━━\n\n"
                 f"💬 {thank_you_msg}"
             )
@@ -2234,7 +2254,7 @@ class TelegramConversationHandler:
                                 pass
                             
                             # Send PDF with caption and menu button
-                            keyboard = [[InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")]]
+                            keyboard = [[InlineKeyboardButton(menu_btn, callback_data="back_to_menu")]]
                             reply_markup = InlineKeyboardMarkup(keyboard)
                             
                             await context.bot.send_document(
@@ -2273,8 +2293,8 @@ class TelegramConversationHandler:
             if label_url:
                 data['label_url'] = label_url
                 data['tracking_number'] = tracking_number
-                keyboard.append([InlineKeyboardButton(f"📥 Скачать {tracking_number}.pdf", callback_data="download_label")])
-            keyboard.append([InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")])
+                keyboard.append([InlineKeyboardButton(download_btn_text, callback_data="download_label")])
+            keyboard.append([InlineKeyboardButton(menu_btn, callback_data="back_to_menu")])
             reply_markup = InlineKeyboardMarkup(keyboard)
             
             await query.edit_message_text(success_message, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
