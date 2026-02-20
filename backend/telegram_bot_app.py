@@ -452,60 +452,101 @@ async def check_payment_status_callback(update, context):
     
     track_id = query.data.replace("check_payment_", "")
     
-    from database import Database
     from services.oxapay_service import OxaPayService
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
     from telegram.error import BadRequest
     
     try:
-        db = Database.db
         oxapay_service = OxaPayService(db)
         
         invoice = await oxapay_service.get_invoice_status(track_id)
         
         if not invoice:
-            await query.answer("❌ Платёж не найден", show_alert=True)
+            error_msg = "❌ Payment not found" if lang == "en" else "❌ Платёж не найден"
+            await query.answer(error_msg, show_alert=True)
             return
         
         status = invoice.get("status", "pending")
         amount = invoice.get("amount", 0)
         
-        status_text = {
-            "pending": "⏳ Ожидает оплаты",
-            "confirming": "🔄 Подтверждается...",
-            "paid": "✅ Оплачено",
-            "expired": "❌ Истёк срок",
-            "failed": "❌ Ошибка оплаты"
-        }.get(status, f"📋 {status}")
-        
-        text = (
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "📋 *СТАТУС ПЛАТЕЖА*\n"
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"💰 Сумма: *${amount:.2f}*\n"
-            f"📊 Статус: *{status_text}*\n\n"
-        )
-        
-        if status == "paid":
-            text += "✅ Баланс пополнен!\n\n"
-            keyboard = [
-                [InlineKeyboardButton("💰 Проверить баланс", callback_data="check_balance")],
-                [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
-            ]
-        elif status in ["expired", "failed"]:
-            text += "Попробуйте создать новый платёж.\n\n"
-            keyboard = [
-                [InlineKeyboardButton("🔄 Новый платёж", callback_data="topup_balance")],
-                [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
-            ]
+        if lang == "en":
+            status_text = {
+                "pending": "⏳ Awaiting payment",
+                "confirming": "🔄 Confirming...",
+                "paid": "✅ Paid",
+                "expired": "❌ Expired",
+                "failed": "❌ Payment failed"
+            }.get(status, f"📋 {status}")
+            
+            text = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "📋 *PAYMENT STATUS*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"💰 Amount: *${amount:.2f}*\n"
+                f"📊 Status: *{status_text}*\n\n"
+            )
+            
+            if status == "paid":
+                text += "✅ Balance topped up!\n\n"
+                keyboard = [
+                    [InlineKeyboardButton("💰 Check balance", callback_data="check_balance")],
+                    [InlineKeyboardButton("🏠 Main menu", callback_data="back_to_menu")]
+                ]
+            elif status in ["expired", "failed"]:
+                text += "Try creating a new payment.\n\n"
+                keyboard = [
+                    [InlineKeyboardButton("🔄 New payment", callback_data="topup_balance")],
+                    [InlineKeyboardButton("🏠 Main menu", callback_data="back_to_menu")]
+                ]
+            else:
+                text += "Waiting for payment confirmation...\n\n"
+                payment_url = invoice.get("payment_url", "")
+                keyboard = []
+                if payment_url:
+                    keyboard.append([InlineKeyboardButton("💳 Pay", url=payment_url)])
+                keyboard.append([InlineKeyboardButton("🔄 Refresh status", callback_data=f"check_payment_{track_id}")])
+                keyboard.append([InlineKeyboardButton("🏠 Main menu", callback_data="back_to_menu")])
+            
+            status_unchanged_msg = "Status unchanged"
         else:
-            text += "Ожидаем подтверждение оплаты...\n\n"
-            payment_url = invoice.get("payment_url", "")
-            keyboard = []
-            if payment_url:
-                keyboard.append([InlineKeyboardButton("💳 Оплатить", url=payment_url)])
-            keyboard.append([InlineKeyboardButton("🔄 Обновить статус", callback_data=f"check_payment_{track_id}")])
-            keyboard.append([InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")])
+            status_text = {
+                "pending": "⏳ Ожидает оплаты",
+                "confirming": "🔄 Подтверждается...",
+                "paid": "✅ Оплачено",
+                "expired": "❌ Истёк срок",
+                "failed": "❌ Ошибка оплаты"
+            }.get(status, f"📋 {status}")
+            
+            text = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "📋 *СТАТУС ПЛАТЕЖА*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"💰 Сумма: *${amount:.2f}*\n"
+                f"📊 Статус: *{status_text}*\n\n"
+            )
+            
+            if status == "paid":
+                text += "✅ Баланс пополнен!\n\n"
+                keyboard = [
+                    [InlineKeyboardButton("💰 Проверить баланс", callback_data="check_balance")],
+                    [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+                ]
+            elif status in ["expired", "failed"]:
+                text += "Попробуйте создать новый платёж.\n\n"
+                keyboard = [
+                    [InlineKeyboardButton("🔄 Новый платёж", callback_data="topup_balance")],
+                    [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+                ]
+            else:
+                text += "Ожидаем подтверждение оплаты...\n\n"
+                payment_url = invoice.get("payment_url", "")
+                keyboard = []
+                if payment_url:
+                    keyboard.append([InlineKeyboardButton("💳 Оплатить", url=payment_url)])
+                keyboard.append([InlineKeyboardButton("🔄 Обновить статус", callback_data=f"check_payment_{track_id}")])
+                keyboard.append([InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")])
+            
+            status_unchanged_msg = "Статус не изменился"
         
         text += "━━━━━━━━━━━━━━━━━━━━"
         reply_markup = InlineKeyboardMarkup(keyboard)
@@ -516,13 +557,14 @@ async def check_payment_status_callback(update, context):
         except BadRequest as e:
             # Message not modified - same content, just answer the callback
             if "message is not modified" in str(e).lower():
-                await query.answer("Статус не изменился", show_alert=False)
+                await query.answer(status_unchanged_msg, show_alert=False)
             else:
                 raise
         
     except Exception as e:
         logger.error(f"Failed to check payment status: {e}")
-        await query.answer(f"❌ Ошибка: {str(e)}", show_alert=True)
+        error_text = f"❌ Error: {str(e)}" if lang == "en" else f"❌ Ошибка: {str(e)}"
+        await query.answer(error_text, show_alert=True)
 
 async def change_language_callback(update, context):
     """Show language selection menu"""
