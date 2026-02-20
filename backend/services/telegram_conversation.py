@@ -68,16 +68,29 @@ class TelegramConversationHandler:
                 return True
         return False
     
-    async def _send_banned_message(self, update: Update) -> int:
+    async def _send_banned_message(self, update: Update, context=None) -> int:
         """Send banned message and end conversation"""
-        message = (
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "🚫 *ДОСТУП ЗАПРЕЩЁН*\n"
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
-            "Ваш аккаунт заблокирован.\n\n"
-            "Свяжитесь с поддержкой для разблокировки.\n\n"
-            "━━━━━━━━━━━━━━━━━━━━"
-        )
+        user_id = str(update.effective_user.id)
+        lang = await self._get_lang(user_id, context) if context else "ru"
+        
+        if lang == "en":
+            message = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "🚫 *ACCESS DENIED*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "Your account is blocked.\n\n"
+                "Contact support for unblocking.\n\n"
+                "━━━━━━━━━━━━━━━━━━━━"
+            )
+        else:
+            message = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "🚫 *ДОСТУП ЗАПРЕЩЁН*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "Ваш аккаунт заблокирован.\n\n"
+                "Свяжитесь с поддержкой для разблокировки.\n\n"
+                "━━━━━━━━━━━━━━━━━━━━"
+            )
         if update.callback_query:
             await update.callback_query.answer()
             await update.callback_query.message.reply_text(message, parse_mode=ParseMode.MARKDOWN)
