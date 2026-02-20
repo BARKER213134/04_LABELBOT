@@ -146,6 +146,8 @@ async def check_balance_callback(update, context):
     
     balance = balance or 0.0
     
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+    
     if lang == "en":
         text = (
             "💰 *YOUR BALANCE*\n\n"
@@ -171,7 +173,6 @@ async def check_balance_callback(update, context):
             [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
         ]
     
-    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await query.message.reply_text(text, reply_markup=reply_markup, parse_mode="Markdown")
