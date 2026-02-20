@@ -1570,29 +1570,67 @@ async def faq_info_callback(update, context):
 
 async def help_command(update, context):
     """Handle /help command"""
-    help_text = (
-        "━━━━━━━━━━━━━━━━━━━━\n"
-        "📚 *СПРАВКА ПО ИСПОЛЬЗОВАНИЮ*\n"
-        "━━━━━━━━━━━━━━━━━━━━\n\n"
-        "*Доступные команды:*\n\n"
-        "/create - Создать новый shipping label\n"
-        "▫️ Пошаговый процесс (4 шага)\n"
-        "▫️ Время: ~2-3 минуты\n\n"
-        "/cancel - Отменить текущее создание\n"
-        "▫️ Используйте в процессе создания\n\n"
-        "/help - Показать эту справку\n\n"
-        "━━━━━━━━━━━━━━━━━━━━\n"
-        "📋 *ПРОЦЕСС СОЗДАНИЯ*\n"
-        "━━━━━━━━━━━━━━━━━━━━\n\n"
-        "*Шаг 1:* Адрес отправителя (6 полей)\n"
-        "*Шаг 2:* Адрес получателя (6 полей)\n"
-        "*Шаг 3:* Параметры посылки (2 поля)\n"
-        "*Шаг 4:* Выбор тарифа доставки\n\n"
-        "━━━━━━━━━━━━━━━━━━━━\n\n"
-        "▫️ Просмотр всех заказов\n"
-        "▫️ Скачивание PDF лейблов\n"
-        "▫️ Статистика доставок"
-    )
+    from database import Database
+    from services.localization import get_user_language
+    
+    user_id = str(update.effective_user.id)
+    
+    # Get user language
+    lang = context.user_data.get('language')
+    if not lang:
+        lang = await get_user_language(Database.db, user_id)
+        context.user_data['language'] = lang
+    
+    if lang == "en":
+        help_text = (
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "📚 *HELP*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "*Available commands:*\n\n"
+            "/menu - Open main menu\n"
+            "/create - Create new shipping label\n"
+            "▫️ Step-by-step process (4 steps)\n"
+            "▫️ Time: ~2-3 minutes\n\n"
+            "/cancel - Cancel current creation\n"
+            "▫️ Use during creation process\n\n"
+            "/help - Show this help\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "📋 *CREATION PROCESS*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "*Step 1:* Sender address (6 fields)\n"
+            "*Step 2:* Recipient address (6 fields)\n"
+            "*Step 3:* Package parameters (2 fields)\n"
+            "*Step 4:* Select shipping rate\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "▫️ View all orders\n"
+            "▫️ Download PDF labels\n"
+            "▫️ Delivery statistics"
+        )
+    else:
+        help_text = (
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "📚 *СПРАВКА ПО ИСПОЛЬЗОВАНИЮ*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "*Доступные команды:*\n\n"
+            "/menu - Открыть главное меню\n"
+            "/create - Создать новый shipping label\n"
+            "▫️ Пошаговый процесс (4 шага)\n"
+            "▫️ Время: ~2-3 минуты\n\n"
+            "/cancel - Отменить текущее создание\n"
+            "▫️ Используйте в процессе создания\n\n"
+            "/help - Показать эту справку\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "📋 *ПРОЦЕСС СОЗДАНИЯ*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "*Шаг 1:* Адрес отправителя (6 полей)\n"
+            "*Шаг 2:* Адрес получателя (6 полей)\n"
+            "*Шаг 3:* Параметры посылки (2 поля)\n"
+            "*Шаг 4:* Выбор тарифа доставки\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "▫️ Просмотр всех заказов\n"
+            "▫️ Скачивание PDF лейблов\n"
+            "▫️ Статистика доставок"
+        )
     await update.message.reply_text(help_text, parse_mode="Markdown")
 
 
