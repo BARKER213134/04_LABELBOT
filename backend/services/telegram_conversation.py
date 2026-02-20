@@ -1745,7 +1745,7 @@ class TelegramConversationHandler:
                 text = "✏️ *Редактирование телефона получателя*\n\nВведите новый телефон или нажмите кнопку:"
                 skip_btn = "⏭️ Пропустить (сгенерировать случайный)"
             keyboard = [
-                [InlineKeyboardButton("⏭️ Пропустить (сгенерировать случайный)", callback_data="skip_to_phone")]
+                [InlineKeyboardButton(skip_btn, callback_data="skip_to_phone")]
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
             await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
@@ -1753,22 +1753,37 @@ class TelegramConversationHandler:
         
         elif edit_type == "edit_weight":
             data['editing_field'] = 'weight'
-            await query.edit_message_text(
-                "✏️ *Редактирование веса*\n\n"
-                "Введите новый вес в фунтах (lbs):\n"
-                "_Например: 1 или 2.5_",
-                parse_mode=ParseMode.MARKDOWN
-            )
+            if lang == "en":
+                text = (
+                    "✏️ *Edit weight*\n\n"
+                    "Enter new weight in pounds (lbs):\n"
+                    "_Example: 1 or 2.5_"
+                )
+            else:
+                text = (
+                    "✏️ *Редактирование веса*\n\n"
+                    "Введите новый вес в фунтах (lbs):\n"
+                    "_Например: 1 или 2.5_"
+                )
+            await query.edit_message_text(text, parse_mode=ParseMode.MARKDOWN)
             return PACKAGE_WEIGHT
         elif edit_type == "edit_dimensions":
             data['editing_field'] = 'dimensions'
-            await query.edit_message_text(
-                "✏️ *Редактирование размеров*\n\n"
-                "Введите новые размеры через пробел:\n"
-                "*Длина Ширина Высота*\n"
-                "_Например: 12 8 6_",
-                parse_mode=ParseMode.MARKDOWN
-            )
+            if lang == "en":
+                text = (
+                    "✏️ *Edit dimensions*\n\n"
+                    "Enter new dimensions separated by space:\n"
+                    "*Length Width Height*\n"
+                    "_Example: 12 8 6_"
+                )
+            else:
+                text = (
+                    "✏️ *Редактирование размеров*\n\n"
+                    "Введите новые размеры через пробел:\n"
+                    "*Длина Ширина Высота*\n"
+                    "_Например: 12 8 6_"
+                )
+            await query.edit_message_text(text, parse_mode=ParseMode.MARKDOWN)
             return PACKAGE_DIMENSIONS
         
         return EDIT_SECTION
@@ -1782,6 +1797,7 @@ class TelegramConversationHandler:
         
         user_id = str(update.effective_user.id)
         logger.warning(f"[SELECT_RATE] User {user_id} selected rate: {query.data}")
+        lang = await self._get_lang(user_id, context)
         
         # Check if user is banned
         if await self._check_user_banned(user_id):
@@ -1807,7 +1823,10 @@ class TelegramConversationHandler:
         selected_rate = rate_map.get(callback_data)
         
         if not selected_rate:
-            text = "❌ Тариф не найден. Попробуйте снова."
+            if lang == "en":
+                text = "❌ Rate not found. Please try again."
+            else:
+                text = "❌ Тариф не найден. Попробуйте снова."
             keyboard = [[InlineKeyboardButton("◀️ Назад", callback_data="back_to_review_from_rates")]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
