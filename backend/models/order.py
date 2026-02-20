@@ -25,8 +25,11 @@ class PackageInfo(BaseModel):
 class CarrierEnum(str, Enum):
     USPS = "usps"
     FEDEX = "fedex"
+    FEDEX_WALLETED = "fedex_walleted"
     UPS = "ups"
+    UPS_WALLETED = "ups_walleted"
     STAMPS_COM = "stampscom"
+    STAMPS_COM_ALT = "stamps_com"
     DHL = "dhl"
 
 class OrderStatus(str, Enum):
