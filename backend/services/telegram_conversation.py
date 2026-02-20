@@ -1029,20 +1029,36 @@ class TelegramConversationHandler:
             await self.show_review_summary(query.message, user_id, context)
             return REVIEW_SUMMARY
         
-        text = (
-            f"✅ *Телефон сохранен:* {random_phone}\n"
-            "_(сгенерирован автоматически)_\n\n"
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "✅ *ШАГ 2 ЗАВЕРШЕН*\n"
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"Прогресс: {self.get_progress_bar(3)} (Шаг 3/4)\n\n"
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "📦 *ШАГ 3: ПАРАМЕТРЫ ПОСЫЛКИ*\n"
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
-            "▫️ *Подшаг 3.1:* Вес посылки\n\n"
-            "Введите вес в фунтах (lbs):\n"
-            "_Например: 1 или 2.5_"
-        )
+        if lang == "en":
+            text = (
+                f"✅ *Phone saved:* {random_phone}\n"
+                "_(auto-generated)_\n\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "✅ *STEP 2 COMPLETED*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"Progress: {self.get_progress_bar(3)} (Step 3/4)\n\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "📦 *STEP 3: PACKAGE DETAILS*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "▫️ *Substep 3.1:* Package weight\n\n"
+                "Enter the weight in pounds (lbs):\n"
+                "_Example: 1 or 2.5_"
+            )
+        else:
+            text = (
+                f"✅ *Телефон сохранен:* {random_phone}\n"
+                "_(сгенерирован автоматически)_\n\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "✅ *ШАГ 2 ЗАВЕРШЕН*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"Прогресс: {self.get_progress_bar(3)} (Шаг 3/4)\n\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "📦 *ШАГ 3: ПАРАМЕТРЫ ПОСЫЛКИ*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "▫️ *Подшаг 3.1:* Вес посылки\n\n"
+                "Введите вес в фунтах (lbs):\n"
+                "_Например: 1 или 2.5_"
+            )
         
         # Edit the message to remove the skip button
         await query.edit_message_text(text, parse_mode=ParseMode.MARKDOWN)
@@ -1053,6 +1069,7 @@ class TelegramConversationHandler:
     async def package_weight(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
         data = self.get_user_data(user_id, context)
+        lang = await self._get_lang(user_id, context)
         
         try:
             weight_lbs = float(update.message.text.strip())
@@ -1063,32 +1080,50 @@ class TelegramConversationHandler:
             data['packageWeight'] = weight_oz
             data['packageWeightLbs'] = weight_lbs
         except ValueError:
-            text = (
-                "❌ *Некорректное значение*\n\n"
-                "Вес должен быть положительным числом.\n"
-                "_Например: 1 или 2.5_\n\n"
-                "Пожалуйста, попробуйте еще раз:"
-            )
+            if lang == "en":
+                text = (
+                    "❌ *Invalid value*\n\n"
+                    "Weight must be a positive number.\n"
+                    "_Example: 1 or 2.5_\n\n"
+                    "Please try again:"
+                )
+            else:
+                text = (
+                    "❌ *Некорректное значение*\n\n"
+                    "Вес должен быть положительным числом.\n"
+                    "_Например: 1 или 2.5_\n\n"
+                    "Пожалуйста, попробуйте еще раз:"
+                )
             await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
             return PACKAGE_WEIGHT
         
         # Check if we're in edit mode
         if data.get('editing_field') == 'weight':
             data['editing_field'] = None
+            weight_saved_msg = "Weight saved" if lang == "en" else "Вес сохранен"
             await update.message.reply_text(
-                f"✅ *Вес сохранен* ({weight_lbs} lbs)",
+                f"✅ *{weight_saved_msg}* ({weight_lbs} lbs)",
                 parse_mode=ParseMode.MARKDOWN
             )
             await self.show_review_summary(update.message, user_id, context)
             return REVIEW_SUMMARY
         
-        text = (
-            f"✅ *Вес сохранен* ({weight_lbs} lbs)\n\n"
-            "▫️ *Подшаг 3.2:* Размеры посылки\n\n"
-            "Введите размеры через пробел в дюймах:\n"
-            "*Длина Ширина Высота*\n\n"
-            "_Например: 12 8 6_"
-        )
+        if lang == "en":
+            text = (
+                f"✅ *Weight saved* ({weight_lbs} lbs)\n\n"
+                "▫️ *Substep 3.2:* Package dimensions\n\n"
+                "Enter dimensions separated by space in inches:\n"
+                "*Length Width Height*\n\n"
+                "_Example: 12 8 6_"
+            )
+        else:
+            text = (
+                f"✅ *Вес сохранен* ({weight_lbs} lbs)\n\n"
+                "▫️ *Подшаг 3.2:* Размеры посылки\n\n"
+                "Введите размеры через пробел в дюймах:\n"
+                "*Длина Ширина Высота*\n\n"
+                "_Например: 12 8 6_"
+            )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
         return PACKAGE_DIMENSIONS
@@ -1096,6 +1131,7 @@ class TelegramConversationHandler:
     async def package_dimensions(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
         data = self.get_user_data(user_id, context)
+        lang = await self._get_lang(user_id, context)
         
         try:
             dimensions = update.message.text.strip().split()
