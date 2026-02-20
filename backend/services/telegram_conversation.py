@@ -1443,26 +1443,48 @@ class TelegramConversationHandler:
                     [InlineKeyboardButton("◀️ Назад к проверке", callback_data="back_to_review")]
                 ]
         elif edit_choice == "edit_package":
-            text = (
-                "━━━━━━━━━━━━━━━━━━━━\n"
-                "✏️ *РЕДАКТИРОВАНИЕ ПОСЫЛКИ*\n"
-                "━━━━━━━━━━━━━━━━━━━━\n\n"
-                "Что хотите изменить?"
-            )
-            keyboard = [
-                [InlineKeyboardButton("⚖️ Вес", callback_data="edit_weight")],
-                [InlineKeyboardButton("📏 Размеры", callback_data="edit_dimensions")],
-                [InlineKeyboardButton("◀️ Назад к проверке", callback_data="back_to_review")]
-            ]
+            if lang == "en":
+                text = (
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    "✏️ *EDIT PACKAGE*\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n\n"
+                    "What do you want to change?"
+                )
+                keyboard = [
+                    [InlineKeyboardButton("⚖️ Weight", callback_data="edit_weight")],
+                    [InlineKeyboardButton("📏 Dimensions", callback_data="edit_dimensions")],
+                    [InlineKeyboardButton("◀️ Back to review", callback_data="back_to_review")]
+                ]
+            else:
+                text = (
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    "✏️ *РЕДАКТИРОВАНИЕ ПОСЫЛКИ*\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n\n"
+                    "Что хотите изменить?"
+                )
+                keyboard = [
+                    [InlineKeyboardButton("⚖️ Вес", callback_data="edit_weight")],
+                    [InlineKeyboardButton("📏 Размеры", callback_data="edit_dimensions")],
+                    [InlineKeyboardButton("◀️ Назад к проверке", callback_data="back_to_review")]
+                ]
         else:
             # Fallback for unknown edit choice
-            text = (
-                "❌ Сессия устарела.\n\n"
-                "Пожалуйста, начните создание лейбла заново:"
-            )
-            keyboard = [
-                [InlineKeyboardButton("📦 Создать лейбл", callback_data="start_create")]
-            ]
+            if lang == "en":
+                text = (
+                    "❌ Session expired.\n\n"
+                    "Please start creating a label again:"
+                )
+                keyboard = [
+                    [InlineKeyboardButton("📦 Create label", callback_data="start_create")]
+                ]
+            else:
+                text = (
+                    "❌ Сессия устарела.\n\n"
+                    "Пожалуйста, начните создание лейбла заново:"
+                )
+                keyboard = [
+                    [InlineKeyboardButton("📦 Создать лейбл", callback_data="start_create")]
+                ]
             reply_markup = InlineKeyboardMarkup(keyboard)
             await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
             return ConversationHandler.END
