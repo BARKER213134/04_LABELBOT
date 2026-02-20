@@ -20,8 +20,9 @@ Create a Telegram bot for generating shipping labels using the ShipEngine API. T
 - Secure label download (hide original URL)
 - $10 markup on all ShipEngine prices
 
-## User Language
-Russian (Русский)
+## User Languages
+- Russian (Русский) - default
+- English - added December 2025
 
 ## Tech Stack
 - **Backend:** FastAPI (Python)
@@ -39,11 +40,12 @@ Russian (Русский)
 - [x] Telegram bot with ConversationHandler for multi-step wizard
 - [x] Dual bot environment (test bot for sandbox, prod bot for production)
 - [x] Environment switching via admin panel
-- [x] Professional bot messages in Russian
+- [x] Professional bot messages in Russian AND English (i18n)
 - [x] Inline keyboard buttons instead of text commands
 - [x] "Skip" button for phone numbers with random generation
 - [x] "Back to Main Menu" button (works like /start command)
 - [x] Review summary with edit functionality
+- [x] Multi-language support (Russian/English) - December 2025
 
 ### User Management
 - [x] Auto-create users on first bot interaction
