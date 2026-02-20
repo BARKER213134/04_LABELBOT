@@ -95,9 +95,14 @@ async def start_command(update, context):
             # Update cache
             balance_cache.set(f"bal_{user_id}", balance)
     
+    # Get user language
+    from services.localization import get_user_language
+    lang = await get_user_language(Database.db, user_id)
+    context.user_data['language'] = lang
+    
     # Send menu
     telegram_service = TelegramService('production')
-    sent = await telegram_service.send_welcome_message(chat_id, balance)
+    sent = await telegram_service.send_welcome_message(chat_id, balance, lang)
     if sent:
         context.user_data['last_menu_message_id'] = sent.message_id
 
