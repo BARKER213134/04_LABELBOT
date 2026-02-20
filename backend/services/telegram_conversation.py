@@ -12,6 +12,7 @@ from typing import Dict, Any, List
 import random
 from datetime import datetime, timezone
 from services.ai_messages import generate_thank_you_message
+from services.localization import t, get_user_language, DEFAULT_LANGUAGE
 
 # Reduce logging for speed
 logging.getLogger(__name__).setLevel(logging.WARNING)
