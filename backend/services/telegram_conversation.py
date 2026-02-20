@@ -1537,6 +1537,8 @@ class TelegramConversationHandler:
     
     async def _show_rates(self, query, user_id: str, rates: List[Dict[str, Any]], context=None):
         """Display available rates with prices - 4 per carrier"""
+        lang = await self._get_lang(user_id, context) if context else "ru"
+        
         # Carrier display settings - map carrier codes to display info
         carrier_config = {
             'stamps_com': {'icon': '📦', 'name': 'USPS'},
@@ -1564,14 +1566,26 @@ class TelegramConversationHandler:
             if db_user:
                 user_balance = db_user.get('balance', 0.0)
         
-        text = (
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "💰 *ДОСТУПНЫЕ ТАРИФЫ*\n"
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"Прогресс: {self.get_progress_bar(4)} (Шаг 4/4)\n\n"
-            f"💳 Ваш баланс: *${user_balance:.2f}*\n\n"
-            "Выберите тариф доставки:\n\n"
-        )
+        if lang == "en":
+            text = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "💰 *AVAILABLE RATES*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"Progress: {self.get_progress_bar(4)} (Step 4/4)\n\n"
+                f"💳 Your balance: *${user_balance:.2f}*\n\n"
+                "Select shipping rate:\n\n"
+            )
+            back_btn = "◀️ Back to review"
+        else:
+            text = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "💰 *ДОСТУПНЫЕ ТАРИФЫ*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"Прогресс: {self.get_progress_bar(4)} (Шаг 4/4)\n\n"
+                f"💳 Ваш баланс: *${user_balance:.2f}*\n\n"
+                "Выберите тариф доставки:\n\n"
+            )
+            back_btn = "◀️ Назад к проверке"
         
         # Group rates by carrier
         rates_by_carrier = {}
