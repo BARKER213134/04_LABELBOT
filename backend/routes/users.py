@@ -263,18 +263,34 @@ async def unban_user(
     
     # Send notification to user
     try:
+        from services.localization import get_user_language
+        
         settings = get_settings()
         bot = Bot(token=settings.telegram_bot_token)
         
-        message = (
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "✅ *АККАУНТ РАЗБЛОКИРОВАН*\n"
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
-            "Ваш аккаунт был разблокирован.\n"
-            "Вы снова можете пользоваться ботом!\n\n"
-            "Нажмите /start чтобы начать.\n\n"
-            "━━━━━━━━━━━━━━━━━━━━"
-        )
+        # Get user language
+        lang = await get_user_language(db, telegram_id)
+        
+        if lang == "en":
+            message = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "✅ *ACCOUNT UNBLOCKED*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "Your account has been unblocked.\n"
+                "You can use the bot again!\n\n"
+                "Press /start to begin.\n\n"
+                "━━━━━━━━━━━━━━━━━━━━"
+            )
+        else:
+            message = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "✅ *АККАУНТ РАЗБЛОКИРОВАН*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "Ваш аккаунт был разблокирован.\n"
+                "Вы снова можете пользоваться ботом!\n\n"
+                "Нажмите /start чтобы начать.\n\n"
+                "━━━━━━━━━━━━━━━━━━━━"
+            )
         
         await bot.send_message(
             chat_id=int(telegram_id),
