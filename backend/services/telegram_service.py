@@ -69,7 +69,7 @@ class TelegramService:
                 [InlineKeyboardButton("💰 Balance", callback_data="check_balance")],
                 [InlineKeyboardButton("↩️ Refund Label", callback_data="refund_info")],
                 [InlineKeyboardButton("📖 FAQ", callback_data="faq_info")],
-                [InlineKeyboardButton("🌐 Language", callback_data="change_language")],
+                [InlineKeyboardButton("🇷🇺 RU", callback_data="set_lang_ru"), InlineKeyboardButton("🇺🇸 EN", callback_data="set_lang_en")],
                 [InlineKeyboardButton("❓ Help", url="https://t.me/White_Label_Shipping_Bot_Agent")]
             ]
         else:
@@ -79,7 +79,7 @@ class TelegramService:
                 [InlineKeyboardButton("💰 Баланс", callback_data="check_balance")],
                 [InlineKeyboardButton("↩️ Refund Label", callback_data="refund_info")],
                 [InlineKeyboardButton("📖 FAQ", callback_data="faq_info")],
-                [InlineKeyboardButton("🌐 Язык", callback_data="change_language")],
+                [InlineKeyboardButton("🇷🇺 RU", callback_data="set_lang_ru"), InlineKeyboardButton("🇺🇸 EN", callback_data="set_lang_en")],
                 [InlineKeyboardButton("❓ Помощь", url="https://t.me/White_Label_Shipping_Bot_Agent")]
             ]
         reply_markup = InlineKeyboardMarkup(keyboard)
