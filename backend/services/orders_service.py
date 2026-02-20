@@ -100,7 +100,7 @@ class OrdersService:
                     width=float(order_data.get('packageWidth') or 0),
                     height=float(order_data.get('packageHeight') or 0),
                 ),
-                carrier=CarrierEnum(order_data.get('carrier')),
+                carrier=normalize_carrier(order_data.get('carrier')),
                 carrier_id=order_data.get('carrier_id'),
                 serviceCode=order_data.get('serviceCode'),
                 validateAddress=order_data.get('validateAddress', 'validate_and_clean'),
