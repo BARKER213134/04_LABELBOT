@@ -415,9 +415,85 @@ async def check_payment_status_callback(update, context):
         logger.error(f"Failed to check payment status: {e}")
         await query.answer(f"❌ Ошибка: {str(e)}", show_alert=True)
 
+async def change_language_callback(update, context):
+    """Show language selection menu"""
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+    
+    query = update.callback_query
+    await query.answer()
+    
+    # Remove old buttons
+    try:
+        await query.edit_message_reply_markup(reply_markup=None)
+    except Exception:
+        pass
+    
+    text = (
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "🌐 *SELECT LANGUAGE / ВЫБЕРИТЕ ЯЗЫК*\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+    )
+    
+    keyboard = [
+        [InlineKeyboardButton("🇷🇺 Русский", callback_data="set_lang_ru")],
+        [InlineKeyboardButton("🇺🇸 English", callback_data="set_lang_en")],
+        [InlineKeyboardButton("◀️ Back / Назад", callback_data="back_to_menu")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=text,
+        reply_markup=reply_markup,
+        parse_mode="Markdown"
+    )
+
+async def set_language_callback(update, context):
+    """Set user language"""
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+    from database import Database
+    from services.localization import set_user_language, t
+    
+    query = update.callback_query
+    await query.answer()
+    
+    user_id = str(update.effective_user.id)
+    
+    # Parse language from callback data
+    lang = query.data.replace("set_lang_", "")
+    
+    # Save language to database
+    await set_user_language(Database.db, user_id, lang)
+    
+    # Store in context for current session
+    context.user_data['language'] = lang
+    
+    # Remove old message buttons
+    try:
+        await query.edit_message_reply_markup(reply_markup=None)
+    except Exception:
+        pass
+    
+    # Send confirmation
+    if lang == "en":
+        text = "✅ Language changed to English"
+    else:
+        text = "✅ Язык изменён на Русский"
+    
+    keyboard = [[InlineKeyboardButton(t("btn_main_menu", lang), callback_data="back_to_menu")]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=text,
+        reply_markup=reply_markup
+    )
+
 async def back_to_menu_callback(update, context):
     """Back to menu"""
     global _users_service
+    from database import Database
+    from services.localization import get_user_language
     
     query = update.callback_query
     await query.answer()
@@ -426,6 +502,12 @@ async def back_to_menu_callback(update, context):
     if banned_cache.get(f"ban_{user_id}"):
         await send_banned_message(update.effective_chat.id, context.bot)
         return
+    
+    # Get user language
+    lang = context.user_data.get('language')
+    if not lang:
+        lang = await get_user_language(Database.db, user_id)
+        context.user_data['language'] = lang
     
     # Get fresh balance from DB
     balance = 0.0
@@ -438,7 +520,7 @@ async def back_to_menu_callback(update, context):
     asyncio.create_task(_safe_remove_buttons(query))
     
     telegram_service = TelegramService('production')
-    sent = await telegram_service.send_welcome_message(query.message.chat_id, balance)
+    sent = await telegram_service.send_welcome_message(query.message.chat_id, balance, lang)
     if sent:
         context.user_data['last_menu_message_id'] = sent.message_id
 
