@@ -76,6 +76,7 @@ async def notify_user_balance_credited(telegram_id: str, amount: float):
         from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
         from config import get_settings
         from services.users_service import UsersService
+        from services.localization import get_user_language
         
         settings = get_settings()
         bot = Bot(token=settings.telegram_bot_token)
@@ -86,8 +87,8 @@ async def notify_user_balance_credited(telegram_id: str, amount: float):
         user = await users_service.get_user(telegram_id)
         current_balance = user.get('balance', 0) if user else 0
         
-        # Get user language
-        lang = user.get('language', 'ru') if user else 'ru'
+        # Get user language from telegram_users collection (where it's stored)
+        lang = await get_user_language(db, telegram_id)
         
         # Check if user is actively waiting for balance to continue order
         pending_label = await db.pending_label_orders.find_one({
