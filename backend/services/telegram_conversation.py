@@ -1146,21 +1146,32 @@ class TelegramConversationHandler:
             data['packageWidth'] = width
             data['packageHeight'] = height
         except ValueError:
-            text = (
-                "❌ *Некорректный формат*\n\n"
-                "Введите 3 положительных числа через пробел.\n"
-                "_Формат: Длина Ширина Высота_\n"
-                "_Например: 12 8 6_\n\n"
-                "Пожалуйста, попробуйте еще раз:"
-            )
+            if lang == "en":
+                text = (
+                    "❌ *Invalid format*\n\n"
+                    "Enter 3 positive numbers separated by space.\n"
+                    "_Format: Length Width Height_\n"
+                    "_Example: 12 8 6_\n\n"
+                    "Please try again:"
+                )
+            else:
+                text = (
+                    "❌ *Некорректный формат*\n\n"
+                    "Введите 3 положительных числа через пробел.\n"
+                    "_Формат: Длина Ширина Высота_\n"
+                    "_Например: 12 8 6_\n\n"
+                    "Пожалуйста, попробуйте еще раз:"
+                )
             await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
             return PACKAGE_DIMENSIONS
         
         # Check if we're in edit mode
         if data.get('editing_field') == 'dimensions':
             data['editing_field'] = None
+            dims_saved_msg = "Dimensions saved" if lang == "en" else "Размеры сохранены"
+            inches_msg = "inches" if lang == "en" else "дюймов"
             await update.message.reply_text(
-                f"✅ *Размеры сохранены* ({length}×{width}×{height} дюймов)",
+                f"✅ *{dims_saved_msg}* ({length}×{width}×{height} {inches_msg})",
                 parse_mode=ParseMode.MARKDOWN
             )
         
@@ -1171,13 +1182,22 @@ class TelegramConversationHandler:
     async def show_review_summary(self, message, user_id: str, context=None, from_template: bool = False, edit_message: bool = False):
         """Show summary with edit options"""
         data = self.get_user_data(user_id, context)
+        lang = await self._get_lang(user_id, context) if context else "ru"
         
         if from_template:
-            header = (
-                "━━━━━━━━━━━━━━━━━━━━\n"
-                "📋 *ДАННЫЕ ИЗ ШАБЛОНА*\n"
-                "━━━━━━━━━━━━━━━━━━━━\n\n"
-                "Проверьте данные и отредактируйте при необходимости.\n\n"
+            if lang == "en":
+                header = (
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    "📋 *DATA FROM TEMPLATE*\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n\n"
+                    "Check the data and edit if necessary.\n\n"
+                )
+            else:
+                header = (
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    "📋 *ДАННЫЕ ИЗ ШАБЛОНА*\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n\n"
+                    "Проверьте данные и отредактируйте при необходимости.\n\n"
             )
         else:
             header = (
