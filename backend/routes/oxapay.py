@@ -86,6 +86,9 @@ async def notify_user_balance_credited(telegram_id: str, amount: float):
         user = await users_service.get_user(telegram_id)
         current_balance = user.get('balance', 0) if user else 0
         
+        # Get user language
+        lang = user.get('language', 'ru') if user else 'ru'
+        
         # Check if user is actively waiting for balance to continue order
         pending_label = await db.pending_label_orders.find_one({
             "telegram_id": telegram_id,
@@ -95,25 +98,40 @@ async def notify_user_balance_credited(telegram_id: str, amount: float):
         
         # DON'T delete pending order here - it will be deleted when user clicks "Continue order"
         
-        text = (
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "✅ *БАЛАНС ПОПОЛНЕН*\n"
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"💰 Пополнение: *+${amount:.2f}*\n"
-            f"💳 Ваш баланс: *${current_balance:.2f}*\n\n"
-            "Спасибо за пополнение!\n\n"
-            "━━━━━━━━━━━━━━━━━━━━"
-        )
+        if lang == "en":
+            text = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "✅ *BALANCE TOPPED UP*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"💰 Added: *+${amount:.2f}*\n"
+                f"💳 Your balance: *${current_balance:.2f}*\n\n"
+                "Thank you for your payment!\n\n"
+                "━━━━━━━━━━━━━━━━━━━━"
+            )
+            continue_btn = "📦 Continue Order"
+            menu_btn = "🏠 Main Menu"
+        else:
+            text = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "✅ *БАЛАНС ПОПОЛНЕН*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"💰 Пополнение: *+${amount:.2f}*\n"
+                f"💳 Ваш баланс: *${current_balance:.2f}*\n\n"
+                "Спасибо за пополнение!\n\n"
+                "━━━━━━━━━━━━━━━━━━━━"
+            )
+            continue_btn = "📦 Продолжить заказ"
+            menu_btn = "🏠 Главное меню"
         
         # Show "Continue order" button ONLY if user is actively creating a label
         if is_creating_label:
             keyboard = [
-                [InlineKeyboardButton("📦 Продолжить заказ", callback_data="create_label")],
-                [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+                [InlineKeyboardButton(continue_btn, callback_data="create_label")],
+                [InlineKeyboardButton(menu_btn, callback_data="back_to_menu")]
             ]
         else:
             keyboard = [
-                [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+                [InlineKeyboardButton(menu_btn, callback_data="back_to_menu")]
             ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
