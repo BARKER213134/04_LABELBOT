@@ -716,13 +716,15 @@ class TelegramConversationHandler:
     async def ship_to_name(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
         data = self.get_user_data(user_id, context)
+        lang = await self._get_lang(user_id, context)
         name = update.message.text.strip()
         
         # Validate name
-        is_valid, error_msg = self.validate_name(name)
+        is_valid, error_msg = self.validate_name(name, lang)
         if not is_valid:
+            retry_msg = "Please enter the name again:" if lang == "en" else "Пожалуйста, введите имя заново:"
             await update.message.reply_text(
-                f"❌ *{error_msg}*\n\nПожалуйста, введите имя заново:",
+                f"❌ *{error_msg}*\n\n{retry_msg}",
                 parse_mode=ParseMode.MARKDOWN
             )
             return SHIP_TO_NAME
@@ -735,12 +737,20 @@ class TelegramConversationHandler:
             await self.show_review_summary(update.message, user_id, context)
             return REVIEW_SUMMARY
         
-        text = (
-            "✅ *Имя получателя сохранено*\n\n"
-            "▫️ *Подшаг 2.2:* Адрес\n\n"
-            "Введите адрес получателя:\n"
-            "_(Улица, номер дома, квартира)_"
-        )
+        if lang == "en":
+            text = (
+                "✅ *Recipient name saved*\n\n"
+                "▫️ *Substep 2.2:* Address\n\n"
+                "Enter the recipient's address:\n"
+                "_(Street, building, apartment)_"
+            )
+        else:
+            text = (
+                "✅ *Имя получателя сохранено*\n\n"
+                "▫️ *Подшаг 2.2:* Адрес\n\n"
+                "Введите адрес получателя:\n"
+                "_(Улица, номер дома, квартира)_"
+            )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
         return SHIP_TO_ADDRESS
@@ -748,13 +758,15 @@ class TelegramConversationHandler:
     async def ship_to_address(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
         data = self.get_user_data(user_id, context)
+        lang = await self._get_lang(user_id, context)
         address = update.message.text.strip()
         
         # Validate address
-        is_valid, error_msg = self.validate_address(address)
+        is_valid, error_msg = self.validate_address(address, lang)
         if not is_valid:
+            retry_msg = "Please enter the address again:" if lang == "en" else "Пожалуйста, введите адрес заново:"
             await update.message.reply_text(
-                f"❌ *{error_msg}*\n\nПожалуйста, введите адрес заново:",
+                f"❌ *{error_msg}*\n\n{retry_msg}",
                 parse_mode=ParseMode.MARKDOWN
             )
             return SHIP_TO_ADDRESS
@@ -767,11 +779,18 @@ class TelegramConversationHandler:
             await self.show_review_summary(update.message, user_id, context)
             return REVIEW_SUMMARY
         
-        text = (
-            "✅ *Адрес сохранен*\n\n"
-            "▫️ *Подшаг 2.3:* Город\n\n"
-            "Введите название города:"
-        )
+        if lang == "en":
+            text = (
+                "✅ *Address saved*\n\n"
+                "▫️ *Substep 2.3:* City\n\n"
+                "Enter the city name:"
+            )
+        else:
+            text = (
+                "✅ *Адрес сохранен*\n\n"
+                "▫️ *Подшаг 2.3:* Город\n\n"
+                "Введите название города:"
+            )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
         return SHIP_TO_CITY
@@ -779,13 +798,15 @@ class TelegramConversationHandler:
     async def ship_to_city(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
         data = self.get_user_data(user_id, context)
+        lang = await self._get_lang(user_id, context)
         city = update.message.text.strip()
         
         # Validate city
-        is_valid, error_msg = self.validate_city(city)
+        is_valid, error_msg = self.validate_city(city, lang)
         if not is_valid:
+            retry_msg = "Please enter the city again:" if lang == "en" else "Пожалуйста, введите город заново:"
             await update.message.reply_text(
-                f"❌ *{error_msg}*\n\nПожалуйста, введите город заново:",
+                f"❌ *{error_msg}*\n\n{retry_msg}",
                 parse_mode=ParseMode.MARKDOWN
             )
             return SHIP_TO_CITY
@@ -798,26 +819,42 @@ class TelegramConversationHandler:
             await self.show_review_summary(update.message, user_id, context)
             return REVIEW_SUMMARY
         
-        text = (
-            "✅ *Город сохранен*\n\n"
-            "▫️ *Подшаг 2.4:* Штат\n\n"
-            "Введите код штата (2 буквы):\n"
-            "_Например: CA, NY, TX, FL_"
-        )
+        if lang == "en":
+            text = (
+                "✅ *City saved*\n\n"
+                "▫️ *Substep 2.4:* State\n\n"
+                "Enter state code (2 letters):\n"
+                "_Example: CA, NY, TX, FL_"
+            )
+        else:
+            text = (
+                "✅ *Город сохранен*\n\n"
+                "▫️ *Подшаг 2.4:* Штат\n\n"
+                "Введите код штата (2 буквы):\n"
+                "_Например: CA, NY, TX, FL_"
+            )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
         return SHIP_TO_STATE
     
     async def ship_to_state(self, update: Update, context) -> int:
         user_id = str(update.effective_user.id)
+        lang = await self._get_lang(user_id, context)
         state = update.message.text.strip().upper()
         
         if len(state) != 2 or not state.isalpha():
-            text = (
-                "❌ *Некорректный формат*\n\n"
-                "Код штата должен состоять из 2 букв.\n\n"
-                "Пожалуйста, попробуйте еще раз:"
-            )
+            if lang == "en":
+                text = (
+                    "❌ *Invalid format*\n\n"
+                    "State code must be 2 letters.\n\n"
+                    "Please try again:"
+                )
+            else:
+                text = (
+                    "❌ *Некорректный формат*\n\n"
+                    "Код штата должен состоять из 2 букв.\n\n"
+                    "Пожалуйста, попробуйте еще раз:"
+                )
             await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
             return SHIP_TO_STATE
         data = self.get_user_data(user_id, context)
@@ -825,9 +862,18 @@ class TelegramConversationHandler:
         
         # Check if we're in edit mode - editing location chain (city -> state -> zip)
         if data.get('editing_field') == 'to_location':
-            text = (
-                "✅ *Штат сохранен*\n\n"
-                "▫️ ZIP код\n\n"
+            if lang == "en":
+                text = (
+                    "✅ *State saved*\n\n"
+                    "▫️ ZIP code\n\n"
+                    "Enter ZIP code (5 digits):"
+                )
+            else:
+                text = (
+                    "✅ *Штат сохранен*\n\n"
+                    "▫️ ZIP код\n\n"
+                    "Введите почтовый индекс (5 цифр):"
+                )
                 "Введите почтовый индекс (5 цифр):"
             )
             await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
