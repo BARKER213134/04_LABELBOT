@@ -2417,6 +2417,7 @@ class TelegramConversationHandler:
         
         user_id = str(update.effective_user.id)
         logger.info(f"save_template_prompt called for user {user_id}")
+        lang = await self._get_lang(user_id, context)
         
         # Check if we have data
         data = self.get_user_data(user_id, context)
@@ -2426,15 +2427,26 @@ class TelegramConversationHandler:
         data['template_prompt_message_id'] = query.message.message_id
         data['template_prompt_chat_id'] = query.message.chat_id
         
-        text = (
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "💾 *СОХРАНИТЬ ШАБЛОН*\n"
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
-            "Введите название для шаблона:\n"
-            "_Например: Мой офис → Склад_"
-        )
+        if lang == "en":
+            text = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "💾 *SAVE TEMPLATE*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "Enter a name for the template:\n"
+                "_Example: My office → Warehouse_"
+            )
+            cancel_btn = "❌ Cancel"
+        else:
+            text = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "💾 *СОХРАНИТЬ ШАБЛОН*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "Введите название для шаблона:\n"
+                "_Например: Мой офис → Склад_"
+            )
+            cancel_btn = "❌ Отмена"
         
-        keyboard = [[InlineKeyboardButton("❌ Отмена", callback_data="back_to_review_after_save")]]
+        keyboard = [[InlineKeyboardButton(cancel_btn, callback_data="back_to_review_after_save")]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
@@ -2445,6 +2457,7 @@ class TelegramConversationHandler:
         user_id = str(update.effective_user.id)
         template_name = update.message.text.strip()[:50]
         data = self.get_user_data(user_id, context)
+        lang = await self._get_lang(user_id, context)
         
         # Remove the old message with cancel button
         msg_id = data.get('template_prompt_message_id')
@@ -2471,13 +2484,24 @@ class TelegramConversationHandler:
             # Check limit
             count = await self.templates_service.get_templates_count(user_id)
             if count >= 10:
-                text = (
-                    "❌ *Достигнут лимит шаблонов*\n\n"
-                    "У вас уже 10 шаблонов. Удалите один из существующих, чтобы создать новый."
-                )
-                keyboard = [
-                    [InlineKeyboardButton("◀️ Назад к данным", callback_data="back_to_review_after_save")],
-                    [InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")]
+                if lang == "en":
+                    text = (
+                        "❌ *Template limit reached*\n\n"
+                        "You already have 10 templates. Delete one to create a new one."
+                    )
+                    keyboard = [
+                        [InlineKeyboardButton("◀️ Back to data", callback_data="back_to_review_after_save")],
+                        [InlineKeyboardButton("🏠 Main menu", callback_data="back_to_menu")]
+                    ]
+                else:
+                    text = (
+                        "❌ *Достигнут лимит шаблонов*\n\n"
+                        "У вас уже 10 шаблонов. Удалите один из существующих, чтобы создать новый."
+                    )
+                    keyboard = [
+                        [InlineKeyboardButton("◀️ Назад к данным", callback_data="back_to_review_after_save")],
+                        [InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")]
+                    ]
                 ]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 await update.message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
