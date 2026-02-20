@@ -1231,6 +1231,12 @@ async def faq_info_callback(update, context):
     
     await query.answer()
     
+    # Get user language
+    lang = context.user_data.get('language')
+    if not lang:
+        lang = await get_user_language(Database.db, user_id)
+        context.user_data['language'] = lang
+    
     # Remove buttons from old message (keep text)
     try:
         await query.edit_message_reply_markup(reply_markup=None)
@@ -1239,35 +1245,70 @@ async def faq_info_callback(update, context):
     
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
     
-    text = (
-        "━━━━━━━━━━━━━━━━━━━━\n"
-        "📖 *WHITE LABEL SHIPPING BOT*\n"
-        "━━━━━━━━━━━━━━━━━━━━\n\n"
-        "🚀 *О сервисе*\n\n"
-        "White Label Shipping Bot — это удобный инструмент для создания "
-        "shipping labels напрямую в Telegram. Экономьте время и деньги "
-        "на отправке посылок по США!\n\n"
-        "━━━━━━━━━━━━━━━━━━━━\n"
-        "📦 *Перевозчики*\n\n"
-        "▫️ *USPS* — доступные цены, отличный выбор для небольших посылок\n"
-        "▫️ *FedEx* — быстрая доставка, надёжный трекинг\n"
-        "▫️ *UPS* — идеально для тяжёлых грузов\n\n"
-        "━━━━━━━━━━━━━━━━━━━━\n"
-        "💡 *Преимущества*\n\n"
-        "✓ Мгновенное создание labels\n"
-        "✓ Выгодные тарифы\n"
-        "✓ Сохранение шаблонов\n"
-        "✓ Удобное управление балансом\n"
-        "✓ Возврат за неиспользованные labels\n"
-        "✓ Оплата криптовалютой\n\n"
-        "━━━━━━━━━━━━━━━━━━━━\n"
-        "❓ *Частые вопросы*\n\n"
-        "*Как пополнить баланс?*\n"
-        "Нажмите 💰 Баланс → 💳 Пополнить баланс\n"
-        "Принимаем: BTC, ETH, USDT, LTC\n\n"
-        "*Как получить refund?*\n"
-        "Refund возможен через 4 дня после создания label.\n\n"
-        "*Как использовать шаблон?*\n"
+    if lang == "en":
+        text = (
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "📖 *WHITE LABEL SHIPPING BOT*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "🚀 *About the service*\n\n"
+            "White Label Shipping Bot is a convenient tool for creating "
+            "shipping labels directly in Telegram. Save time and money "
+            "on shipping packages within the USA!\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "📦 *Carriers*\n\n"
+            "▫️ *USPS* — affordable prices, great for small packages\n"
+            "▫️ *FedEx* — fast delivery, reliable tracking\n"
+            "▫️ *UPS* — ideal for heavy cargo\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "💡 *Advantages*\n\n"
+            "✓ Instant label creation\n"
+            "✓ Competitive rates\n"
+            "✓ Template saving\n"
+            "✓ Convenient balance management\n"
+            "✓ Refund for unused labels\n"
+            "✓ Cryptocurrency payment\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "❓ *FAQ*\n\n"
+            "*How to top up balance?*\n"
+            "Click 💰 Balance → 💳 Top Up\n"
+            "Accepted: BTC, ETH, USDT, LTC\n\n"
+            "*How to get a refund?*\n"
+            "Refund is available 4 days after label creation.\n\n"
+            "*How to use a template?*\n"
+            "Click 📋 Templates → select the desired template\n\n"
+            "━━━━━━━━━━━━━━━━━━━━"
+        )
+        keyboard = [[InlineKeyboardButton("🏠 Main menu", callback_data="back_to_menu")]]
+    else:
+        text = (
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "📖 *WHITE LABEL SHIPPING BOT*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "🚀 *О сервисе*\n\n"
+            "White Label Shipping Bot — это удобный инструмент для создания "
+            "shipping labels напрямую в Telegram. Экономьте время и деньги "
+            "на отправке посылок по США!\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "📦 *Перевозчики*\n\n"
+            "▫️ *USPS* — доступные цены, отличный выбор для небольших посылок\n"
+            "▫️ *FedEx* — быстрая доставка, надёжный трекинг\n"
+            "▫️ *UPS* — идеально для тяжёлых грузов\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "💡 *Преимущества*\n\n"
+            "✓ Мгновенное создание labels\n"
+            "✓ Выгодные тарифы\n"
+            "✓ Сохранение шаблонов\n"
+            "✓ Удобное управление балансом\n"
+            "✓ Возврат за неиспользованные labels\n"
+            "✓ Оплата криптовалютой\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "❓ *Частые вопросы*\n\n"
+            "*Как пополнить баланс?*\n"
+            "Нажмите 💰 Баланс → 💳 Пополнить баланс\n"
+            "Принимаем: BTC, ETH, USDT, LTC\n\n"
+            "*Как получить refund?*\n"
+            "Refund возможен через 4 дня после создания label.\n\n"
+            "*Как использовать шаблон?*\n"
         "Сохраните данные после создания label и используйте повторно.\n\n"
         "━━━━━━━━━━━━━━━━━━━━"
     )
