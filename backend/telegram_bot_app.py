@@ -170,17 +170,11 @@ async def check_balance_callback(update, context):
             [InlineKeyboardButton("💳 Пополнить", callback_data="topup_balance")],
             [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
         ]
-        "💳 Оплата: BTC, ETH, USDT, LTC\n"
-        "Минимум: $10"
-    )
     
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-    keyboard = [
-        [InlineKeyboardButton("💳 Пополнить", callback_data="topup_balance")],
-        [InlineKeyboardButton("🏠 Меню", callback_data="back_to_menu")]
-    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
     
-    await query.message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+    await query.message.reply_text(text, reply_markup=reply_markup, parse_mode="Markdown")
 
 
 async def _safe_remove_buttons(query):
