@@ -63,7 +63,7 @@ async def create_order(
                 width=request.packageWidth,
                 height=request.packageHeight,
             ),
-            carrier=CarrierEnum(request.carrier),
+            carrier=normalize_carrier(request.carrier),
             serviceCode=request.serviceCode,
             validateAddress=request.validateAddress,
             environment=current_env,
