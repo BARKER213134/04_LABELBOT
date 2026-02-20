@@ -1827,7 +1827,8 @@ class TelegramConversationHandler:
                 text = "❌ Rate not found. Please try again."
             else:
                 text = "❌ Тариф не найден. Попробуйте снова."
-            keyboard = [[InlineKeyboardButton("◀️ Назад", callback_data="back_to_review_from_rates")]]
+            back_btn = "◀️ Back" if lang == "en" else "◀️ Назад"
+            keyboard = [[InlineKeyboardButton(back_btn, callback_data="back_to_review_from_rates")]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
             return SELECT_RATE
@@ -1873,54 +1874,77 @@ class TelegramConversationHandler:
         balance_status = "✅" if user_balance >= total_price else "❌"
         balance_after = user_balance - total_price
         
+        # Localized labels
+        if lang == "en":
+            sender_lbl, recipient_lbl, package_lbl = "SENDER", "RECIPIENT", "PACKAGE"
+            name_lbl, address_lbl, city_lbl, phone_lbl = "Name", "Address", "City", "Phone"
+            weight_lbl, dims_lbl, inches_lbl = "Weight", "Dimensions", "inches"
+            delivery_lbl, carrier_lbl, service_lbl = "DELIVERY", "Carrier", "Service"
+            cost_lbl, balance_lbl, after_payment_lbl, insufficient_lbl = "COST", "Your balance", "After payment", "Insufficient"
+            confirm_header = "ORDER CONFIRMATION"
+        else:
+            sender_lbl, recipient_lbl, package_lbl = "ОТПРАВИТЕЛЬ", "ПОЛУЧАТЕЛЬ", "ПОСЫЛКА"
+            name_lbl, address_lbl, city_lbl, phone_lbl = "Имя", "Адрес", "Город", "Телефон"
+            weight_lbl, dims_lbl, inches_lbl = "Вес", "Размеры", "дюймов"
+            delivery_lbl, carrier_lbl, service_lbl = "ДОСТАВКА", "Перевозчик", "Сервис"
+            cost_lbl, balance_lbl, after_payment_lbl, insufficient_lbl = "СТОИМОСТЬ", "Ваш баланс", "После оплаты", "Не хватает"
+            confirm_header = "ПОДТВЕРЖДЕНИЕ ЗАКАЗА"
+        
         summary = (
             "━━━━━━━━━━━━━━━━━━━━\n"
-            "📋 *ПОДТВЕРЖДЕНИЕ ЗАКАЗА*\n"
+            f"📋 *{confirm_header}*\n"
             "━━━━━━━━━━━━━━━━━━━━\n\n"
-            "📍 *ОТПРАВИТЕЛЬ*\n"
-            f"▫️ Имя: {data.get('shipFromName')}\n"
-            f"▫️ Адрес: {data.get('shipFromAddressLine1')}\n"
-            f"▫️ Город: {data.get('shipFromCity')}, {data.get('shipFromState')} {data.get('shipFromPostalCode')}\n"
+            f"📍 *{sender_lbl}*\n"
+            f"▫️ {name_lbl}: {data.get('shipFromName')}\n"
+            f"▫️ {address_lbl}: {data.get('shipFromAddressLine1')}\n"
+            f"▫️ {city_lbl}: {data.get('shipFromCity')}, {data.get('shipFromState')} {data.get('shipFromPostalCode')}\n"
         )
         
         if data.get('shipFromPhone'):
-            summary += f"▫️ Телефон: {data.get('shipFromPhone')}\n"
+            summary += f"▫️ {phone_lbl}: {data.get('shipFromPhone')}\n"
         
         summary += (
-            f"\n📍 *ПОЛУЧАТЕЛЬ*\n"
-            f"▫️ Имя: {data.get('shipToName')}\n"
-            f"▫️ Адрес: {data.get('shipToAddressLine1')}\n"
-            f"▫️ Город: {data.get('shipToCity')}, {data.get('shipToState')} {data.get('shipToPostalCode')}\n"
+            f"\n📍 *{recipient_lbl}*\n"
+            f"▫️ {name_lbl}: {data.get('shipToName')}\n"
+            f"▫️ {address_lbl}: {data.get('shipToAddressLine1')}\n"
+            f"▫️ {city_lbl}: {data.get('shipToCity')}, {data.get('shipToState')} {data.get('shipToPostalCode')}\n"
         )
         
         if data.get('shipToPhone'):
-            summary += f"▫️ Телефон: {data.get('shipToPhone')}\n"
+            summary += f"▫️ {phone_lbl}: {data.get('shipToPhone')}\n"
         
         weight_lbs = data.get('packageWeightLbs', 0) or (data.get('packageWeight', 0) / 16)
         summary += (
-            f"\n📦 *ПОСЫЛКА*\n"
-            f"▫️ Вес: {weight_lbs:.2f} lbs\n"
-            f"▫️ Размеры: {data.get('packageLength')}×{data.get('packageWidth')}×{data.get('packageHeight')} дюймов\n"
-            f"\n🚚 *ДОСТАВКА*\n"
-            f"▫️ Перевозчик: {carrier_name}\n"
-            f"▫️ Сервис: {service_type}\n"
-            f"\n💰 *СТОИМОСТЬ: ${total_price:.2f}*\n"
-            f"💳 *Ваш баланс: ${user_balance:.2f}* {balance_status}\n"
+            f"\n📦 *{package_lbl}*\n"
+            f"▫️ {weight_lbl}: {weight_lbs:.2f} lbs\n"
+            f"▫️ {dims_lbl}: {data.get('packageLength')}×{data.get('packageWidth')}×{data.get('packageHeight')} {inches_lbl}\n"
+            f"\n🚚 *{delivery_lbl}*\n"
+            f"▫️ {carrier_lbl}: {carrier_name}\n"
+            f"▫️ {service_lbl}: {service_type}\n"
+            f"\n💰 *{cost_lbl}: ${total_price:.2f}*\n"
+            f"💳 *{balance_lbl}: ${user_balance:.2f}* {balance_status}\n"
         )
         
         if user_balance >= total_price:
-            summary += f"▫️ После оплаты: ${balance_after:.2f}\n"
+            summary += f"▫️ {after_payment_lbl}: ${balance_after:.2f}\n"
         else:
             needed = total_price - user_balance
-            summary += f"▫️ Не хватает: ${needed:.2f}\n"
+            summary += f"▫️ {insufficient_lbl}: ${needed:.2f}\n"
         
         summary += "\n━━━━━━━━━━━━━━━━━━━━"
         
-        keyboard = [
-            [InlineKeyboardButton(f"✅ Оплатить ${total_price:.2f} и создать лейбл", callback_data="confirm_yes")],
-            [InlineKeyboardButton("◀️ Выбрать другой тариф", callback_data="back_to_rates")],
-            [InlineKeyboardButton("❌ Отменить", callback_data="confirm_no")]
-        ]
+        if lang == "en":
+            keyboard = [
+                [InlineKeyboardButton(f"✅ Pay ${total_price:.2f} and create label", callback_data="confirm_yes")],
+                [InlineKeyboardButton("◀️ Select different rate", callback_data="back_to_rates")],
+                [InlineKeyboardButton("❌ Cancel", callback_data="confirm_no")]
+            ]
+        else:
+            keyboard = [
+                [InlineKeyboardButton(f"✅ Оплатить ${total_price:.2f} и создать лейбл", callback_data="confirm_yes")],
+                [InlineKeyboardButton("◀️ Выбрать другой тариф", callback_data="back_to_rates")],
+                [InlineKeyboardButton("❌ Отменить", callback_data="confirm_no")]
+            ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         # Send confirmation as NEW message
