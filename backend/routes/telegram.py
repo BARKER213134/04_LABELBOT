@@ -173,10 +173,21 @@ async def telegram_webhook(
             if user_id:
                 try:
                     from telegram import Bot
+                    from services.localization import get_user_language
+                    
                     bot = Bot(token=settings.telegram_bot_token)
+                    
+                    # Get user language
+                    lang = await get_user_language(db, str(user_id))
+                    
+                    if lang == "en":
+                        text = "🔧 *Bot is under maintenance*\n\nPlease wait. We'll be back soon!"
+                    else:
+                        text = "🔧 *Бот на техническом обслуживании*\n\nПожалуйста, подождите. Мы скоро вернёмся!"
+                    
                     await bot.send_message(
                         chat_id=user_id,
-                        text="🔧 *Бот на техническом обслуживании*\n\nПожалуйста, подождите. Мы скоро вернёмся!",
+                        text=text,
                         parse_mode="Markdown"
                     )
                 except:
