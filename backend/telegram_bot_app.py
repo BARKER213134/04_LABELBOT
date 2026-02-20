@@ -187,6 +187,9 @@ async def _safe_remove_buttons(query):
 
 async def topup_balance_callback(update, context):
     """Handle balance top-up - starts text input flow"""
+    from database import Database
+    from services.localization import get_user_language
+    
     query = update.callback_query
     await query.answer()
     
@@ -197,18 +200,34 @@ async def topup_balance_callback(update, context):
     
     asyncio.create_task(_safe_remove_buttons(query))
     
+    # Get user language
+    lang = context.user_data.get('language')
+    if not lang:
+        lang = await get_user_language(Database.db, user_id)
+        context.user_data['language'] = lang
+    
     # Set flag for topup amount input
     context.user_data['awaiting_topup_amount'] = True
     
-    text = (
-        "💳 *ПОПОЛНЕНИЕ БАЛАНСА*\n\n"
-        "Введите сумму в USD\n"
-        "▫️ Минимум: $10\n"
-        "▫️ Крипто: BTC, ETH, USDT, LTC"
-    )
+    if lang == "en":
+        text = (
+            "💳 *TOP UP BALANCE*\n\n"
+            "Enter amount in USD\n"
+            "▫️ Minimum: $10\n"
+            "▫️ Crypto: BTC, ETH, USDT, LTC"
+        )
+        cancel_btn = "❌ Cancel"
+    else:
+        text = (
+            "💳 *ПОПОЛНЕНИЕ БАЛАНСА*\n\n"
+            "Введите сумму в USD\n"
+            "▫️ Минимум: $10\n"
+            "▫️ Крипто: BTC, ETH, USDT, LTC"
+        )
+        cancel_btn = "❌ Отмена"
     
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-    keyboard = [[InlineKeyboardButton("❌ Отмена", callback_data="cancel_topup")]]
+    keyboard = [[InlineKeyboardButton(cancel_btn, callback_data="cancel_topup")]]
     
     sent = await query.message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
     context.user_data['topup_message_id'] = sent.message_id
@@ -217,8 +236,17 @@ async def topup_balance_callback(update, context):
 
 async def process_topup_amount(update, context):
     """Process top-up amount from text input"""
+    from database import Database
+    from services.localization import get_user_language
+    
     user_id = str(update.effective_user.id)
     text_input = update.message.text.strip()
+    
+    # Get user language
+    lang = context.user_data.get('language')
+    if not lang:
+        lang = await get_user_language(Database.db, user_id)
+        context.user_data['language'] = lang
     
     # Remove cancel button from previous message
     message_id = context.user_data.get('topup_message_id')
@@ -235,12 +263,17 @@ async def process_topup_amount(update, context):
     
     try:
         amount = float(text_input.replace('$', '').replace(',', '.'))
+        cancel_btn = "❌ Cancel" if lang == "en" else "❌ Отмена"
         
         if amount < 10:
             from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-            keyboard = [[InlineKeyboardButton("❌ Отмена", callback_data="cancel_topup")]]
+            keyboard = [[InlineKeyboardButton(cancel_btn, callback_data="cancel_topup")]]
+            if lang == "en":
+                text = "❌ *Minimum amount: $10*\n\nPlease enter an amount of $10 or more"
+            else:
+                text = "❌ *Минимальная сумма: $10*\n\nПожалуйста, введите сумму от $10"
             sent_msg = await update.message.reply_text(
-                "❌ *Минимальная сумма: $10*\n\nПожалуйста, введите сумму от $10",
+                text,
                 reply_markup=InlineKeyboardMarkup(keyboard),
                 parse_mode="Markdown"
             )
@@ -250,9 +283,13 @@ async def process_topup_amount(update, context):
         
         if amount > 10000:
             from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-            keyboard = [[InlineKeyboardButton("❌ Отмена", callback_data="cancel_topup")]]
+            keyboard = [[InlineKeyboardButton(cancel_btn, callback_data="cancel_topup")]]
+            if lang == "en":
+                text = "❌ *Maximum amount: $10,000*\n\nPlease enter a smaller amount"
+            else:
+                text = "❌ *Максимальная сумма: $10,000*\n\nПожалуйста, введите меньшую сумму"
             sent_msg = await update.message.reply_text(
-                "❌ *Максимальная сумма: $10,000*\n\nПожалуйста, введите меньшую сумму",
+                text,
                 reply_markup=InlineKeyboardMarkup(keyboard),
                 parse_mode="Markdown"
             )
