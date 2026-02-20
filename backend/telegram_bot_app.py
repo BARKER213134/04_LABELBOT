@@ -932,22 +932,38 @@ async def confirm_pending_order_callback(update, context):
             
             # Generate AI thank you message
             try:
-                thank_you = await generate_thank_you_message()
+                thank_you = await generate_thank_you_message(carrier_name, tracking_number, lang)
             except:
-                thank_you = "Спасибо за заказ! 🎉"
+                thank_you = "Thank you for your order! 🎉" if lang == "en" else "Спасибо за заказ! 🎉"
             
-            success_message = (
-                "━━━━━━━━━━━━━━━━━━━━\n"
-                "✅ *ЛЕЙБЛ СОЗДАН УСПЕШНО!*\n"
-                "━━━━━━━━━━━━━━━━━━━━\n\n"
-                "📋 *Информация о доставке:*\n\n"
-                f"▫️ Tracking номер:\n`{tracking_number}`\n\n"
-                f"▫️ Перевозчик: {carrier_name}\n"
-                f"▫️ Стоимость: ${actual_user_paid:.2f}\n"
-                f"▫️ Остаток на балансе: ${new_balance:.2f}\n\n"
-                "━━━━━━━━━━━━━━━━━━━━\n\n"
-                f"💬 {thank_you}"
-            )
+            if lang == "en":
+                success_message = (
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    "✅ *LABEL CREATED SUCCESSFULLY!*\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n\n"
+                    "📋 *Delivery information:*\n\n"
+                    f"▫️ Tracking number:\n`{tracking_number}`\n\n"
+                    f"▫️ Carrier: {carrier_name}\n"
+                    f"▫️ Cost: ${actual_user_paid:.2f}\n"
+                    f"▫️ Remaining balance: ${new_balance:.2f}\n\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n\n"
+                    f"💬 {thank_you}"
+                )
+                menu_btn = "🏠 Main Menu"
+            else:
+                success_message = (
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    "✅ *ЛЕЙБЛ СОЗДАН УСПЕШНО!*\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n\n"
+                    "📋 *Информация о доставке:*\n\n"
+                    f"▫️ Tracking номер:\n`{tracking_number}`\n\n"
+                    f"▫️ Перевозчик: {carrier_name}\n"
+                    f"▫️ Стоимость: ${actual_user_paid:.2f}\n"
+                    f"▫️ Остаток на балансе: ${new_balance:.2f}\n\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n\n"
+                    f"💬 {thank_you}"
+                )
+                menu_btn = "🏠 Главное меню"
             
             # Delete processing message
             try:
@@ -956,7 +972,7 @@ async def confirm_pending_order_callback(update, context):
                 pass
             
             # Send success message with PDF and menu button attached
-            keyboard = [[InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]]
+            keyboard = [[InlineKeyboardButton(menu_btn, callback_data="back_to_menu")]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             
             if label_url:
