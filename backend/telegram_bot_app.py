@@ -1309,15 +1309,15 @@ async def faq_info_callback(update, context):
             "*Как получить refund?*\n"
             "Refund возможен через 4 дня после создания label.\n\n"
             "*Как использовать шаблон?*\n"
-        "Сохраните данные после создания label и используйте повторно.\n\n"
-        "━━━━━━━━━━━━━━━━━━━━"
-    )
+            "Сохраните данные после создания label и используйте повторно.\n\n"
+            "━━━━━━━━━━━━━━━━━━━━"
+        )
+        keyboard = [
+            [InlineKeyboardButton("💳 Пополнить баланс", callback_data="topup_balance")],
+            [InlineKeyboardButton("👤 Связаться с агентом", url="https://t.me/White_Label_Shipping_Bot_Agent")],
+            [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+        ]
     
-    keyboard = [
-        [InlineKeyboardButton("💳 Пополнить баланс", callback_data="topup_balance")],
-        [InlineKeyboardButton("👤 Связаться с агентом", url="https://t.me/White_Label_Shipping_Bot_Agent")],
-        [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
-    ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     # Send as NEW message
