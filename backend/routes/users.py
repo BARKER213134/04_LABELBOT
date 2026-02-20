@@ -69,7 +69,6 @@ async def update_balance(
         lang = await get_user_language(db, update.telegram_id)
         
         # Check if user is actively waiting for balance to continue order
-        db = Database.db
         pending_label = await db.pending_label_orders.find_one({
             "telegram_id": update.telegram_id,
             "waiting_for_balance": True
