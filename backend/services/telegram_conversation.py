@@ -2502,21 +2502,29 @@ class TelegramConversationHandler:
                         [InlineKeyboardButton("◀️ Назад к данным", callback_data="back_to_review_after_save")],
                         [InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")]
                     ]
-                ]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 await update.message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
                 return REVIEW_SUMMARY
             else:
                 template = await self.templates_service.create_template(user_id, template_name, order_data)
                 if template:
-                    text = f"✅ Шаблон *{template_name}* сохранён!\n\nТеперь вы можете продолжить создание лейбла."
+                    if lang == "en":
+                        text = f"✅ Template *{template_name}* saved!\n\nYou can now continue creating the label."
+                    else:
+                        text = f"✅ Шаблон *{template_name}* сохранён!\n\nТеперь вы можете продолжить создание лейбла."
                 else:
-                    text = "❌ Ошибка сохранения шаблона"
+                    text = "❌ Error saving template" if lang == "en" else "❌ Ошибка сохранения шаблона"
                 
-                keyboard = [
-                    [InlineKeyboardButton("✅ Продолжить → Выбрать тариф", callback_data="continue_to_carrier")],
-                    [InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")]
-                ]
+                if lang == "en":
+                    keyboard = [
+                        [InlineKeyboardButton("✅ Continue → Select rate", callback_data="continue_to_carrier")],
+                        [InlineKeyboardButton("🏠 Main menu", callback_data="back_to_menu")]
+                    ]
+                else:
+                    keyboard = [
+                        [InlineKeyboardButton("✅ Продолжить → Выбрать тариф", callback_data="continue_to_carrier")],
+                        [InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")]
+                    ]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 await update.message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
                 return REVIEW_SUMMARY
@@ -2529,6 +2537,7 @@ class TelegramConversationHandler:
         await query.answer()
         
         user_id = str(update.effective_user.id)
+        lang = await self._get_lang(user_id, context)
         
         # Check if user is banned
         if await self._check_user_banned(user_id):
@@ -2543,12 +2552,14 @@ class TelegramConversationHandler:
             pass
         
         if not self.templates_service:
-            await query.message.reply_text("❌ Сервис шаблонов недоступен")
+            error_msg = "❌ Template service unavailable" if lang == "en" else "❌ Сервис шаблонов недоступен"
+            await query.message.reply_text(error_msg)
             return ConversationHandler.END
         
         template = await self.templates_service.get_template(template_id)
         if not template:
-            await query.message.reply_text("❌ Шаблон не найден")
+            error_msg = "❌ Template not found" if lang == "en" else "❌ Шаблон не найден"
+            await query.message.reply_text(error_msg)
             return ConversationHandler.END
         
         # Load template data into user_data
