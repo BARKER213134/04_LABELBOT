@@ -35,28 +35,53 @@ class TelegramService:
         self.bot = _get_optimized_bot(bot_token)
         self.environment = environment
     
-    async def send_welcome_message(self, chat_id: int, balance: float = None):
+    async def send_welcome_message(self, chat_id: int, balance: float = None, lang: str = "ru"):
         """Send welcome message with instructions"""
-        balance_text = f"💰 Баланс: *${balance:.2f}*\n\n" if balance is not None else ""
+        from services.localization import t
         
-        text = (
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "📦 *WHITE LABEL SHIPPING BOT*\n"
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"{balance_text}"
-            "Создавайте shipping labels для:\n"
-            "USPS • FedEx • UPS\n\n"
-            "━━━━━━━━━━━━━━━━━━━━"
-        )
+        balance_text = f"💰 {t('balance', lang)}: *${balance:.2f}*\n\n" if balance is not None else ""
         
-        keyboard = [
-            [InlineKeyboardButton("📦 Создать Label", callback_data="start_create")],
-            [InlineKeyboardButton("📋 Шаблоны", callback_data="templates_menu")],
-            [InlineKeyboardButton("💰 Баланс", callback_data="check_balance")],
-            [InlineKeyboardButton("↩️ Refund Label", callback_data="refund_info")],
-            [InlineKeyboardButton("📖 FAQ", callback_data="faq_info")],
-            [InlineKeyboardButton("❓ Помощь", url="https://t.me/White_Label_Shipping_Bot_Agent")]
-        ]
+        if lang == "en":
+            text = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "📦 *WHITE LABEL SHIPPING BOT*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"{balance_text}"
+                "Create shipping labels for:\n"
+                "USPS • FedEx • UPS\n\n"
+                "━━━━━━━━━━━━━━━━━━━━"
+            )
+        else:
+            text = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "📦 *WHITE LABEL SHIPPING BOT*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"{balance_text}"
+                "Создавайте shipping labels для:\n"
+                "USPS • FedEx • UPS\n\n"
+                "━━━━━━━━━━━━━━━━━━━━"
+            )
+        
+        if lang == "en":
+            keyboard = [
+                [InlineKeyboardButton("📦 Create Label", callback_data="start_create")],
+                [InlineKeyboardButton("📋 Templates", callback_data="templates_menu")],
+                [InlineKeyboardButton("💰 Balance", callback_data="check_balance")],
+                [InlineKeyboardButton("↩️ Refund Label", callback_data="refund_info")],
+                [InlineKeyboardButton("📖 FAQ", callback_data="faq_info")],
+                [InlineKeyboardButton("🌐 Language", callback_data="change_language")],
+                [InlineKeyboardButton("❓ Help", url="https://t.me/White_Label_Shipping_Bot_Agent")]
+            ]
+        else:
+            keyboard = [
+                [InlineKeyboardButton("📦 Создать Label", callback_data="start_create")],
+                [InlineKeyboardButton("📋 Шаблоны", callback_data="templates_menu")],
+                [InlineKeyboardButton("💰 Баланс", callback_data="check_balance")],
+                [InlineKeyboardButton("↩️ Refund Label", callback_data="refund_info")],
+                [InlineKeyboardButton("📖 FAQ", callback_data="faq_info")],
+                [InlineKeyboardButton("🌐 Язык", callback_data="change_language")],
+                [InlineKeyboardButton("❓ Помощь", url="https://t.me/White_Label_Shipping_Bot_Agent")]
+            ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         return await self.bot.send_message(
