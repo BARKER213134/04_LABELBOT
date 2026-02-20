@@ -1961,6 +1961,7 @@ class TelegramConversationHandler:
         
         user_id = str(update.effective_user.id)
         username = update.effective_user.username
+        lang = await self._get_lang(user_id, context)
         
         # Check if user is banned before creating label
         if await self._check_user_banned(user_id):
@@ -1969,16 +1970,27 @@ class TelegramConversationHandler:
         data = self.get_user_data(user_id, context)
         
         if query.data == "confirm_no":
-            text = (
-                "━━━━━━━━━━━━━━━━━━━━\n"
-                "❌ *ЗАКАЗ ОТМЕНЕН*\n"
-                "━━━━━━━━━━━━━━━━━━━━\n\n"
-                "Создание лейбла отменено.\n\n"
-                "Нажмите кнопку ниже, чтобы вернуться в главное меню:"
-            )
+            if lang == "en":
+                text = (
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    "❌ *ORDER CANCELLED*\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n\n"
+                    "Label creation cancelled.\n\n"
+                    "Press the button below to return to main menu:"
+                )
+                menu_btn = "🏠 Return to main menu"
+            else:
+                text = (
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    "❌ *ЗАКАЗ ОТМЕНЕН*\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n\n"
+                    "Создание лейбла отменено.\n\n"
+                    "Нажмите кнопку ниже, чтобы вернуться в главное меню:"
+                )
+                menu_btn = "🏠 Вернуться в главное меню"
             
             keyboard = [
-                [InlineKeyboardButton("🏠 Вернуться в главное меню", callback_data="back_to_menu")]
+                [InlineKeyboardButton(menu_btn, callback_data="back_to_menu")]
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
             
@@ -1994,8 +2006,10 @@ class TelegramConversationHandler:
                 return SELECT_RATE
             else:
                 # Refetch rates if not available
+                loading_msg = "Loading rates..." if lang == "en" else "Получаю тарифы..."
+                wait_msg = "Please wait." if lang == "en" else "Пожалуйста, подождите."
                 await query.edit_message_text(
-                    "⏳ *Получаю тарифы...*\n\nПожалуйста, подождите.",
+                    f"⏳ *{loading_msg}*\n\n{wait_msg}",
                     parse_mode=ParseMode.MARKDOWN
                 )
                 try:
@@ -2004,7 +2018,8 @@ class TelegramConversationHandler:
                     await self._show_rates(query, user_id, rates, context)
                     return SELECT_RATE
                 except Exception as e:
-                    text = f"❌ Ошибка: {str(e)}"
+                    error_msg = "Error" if lang == "en" else "Ошибка"
+                    text = f"❌ {error_msg}: {str(e)}"
                     await query.edit_message_text(text)
                     return CONFIRM
         
