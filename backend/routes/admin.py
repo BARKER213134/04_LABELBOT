@@ -91,17 +91,6 @@ async def enable_maintenance(
         bot = Bot(token=settings.telegram_bot_token)
         users = await db.telegram_users.find({}).to_list(1000)
         
-        message_text = (
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "🔧 *ТЕХНИЧЕСКОЕ ОБСЛУЖИВАНИЕ*\n"
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
-            "Бот временно недоступен.\n"
-            "Проводятся технические работы.\n\n"
-            "Пожалуйста, подождите. Мы сообщим,\n"
-            "когда бот снова заработает.\n\n"
-            "━━━━━━━━━━━━━━━━━━━━"
-        )
-        
         sent_count = 0
         failed_count = 0
         
@@ -109,6 +98,32 @@ async def enable_maintenance(
             try:
                 telegram_id = user.get("telegram_id")
                 if telegram_id:
+                    # Get user language
+                    lang = user.get("language", "ru")
+                    
+                    if lang == "en":
+                        message_text = (
+                            "━━━━━━━━━━━━━━━━━━━━\n"
+                            "🔧 *MAINTENANCE MODE*\n"
+                            "━━━━━━━━━━━━━━━━━━━━\n\n"
+                            "Bot is temporarily unavailable.\n"
+                            "Technical maintenance in progress.\n\n"
+                            "Please wait. We will notify you\n"
+                            "when the bot is back online.\n\n"
+                            "━━━━━━━━━━━━━━━━━━━━"
+                        )
+                    else:
+                        message_text = (
+                            "━━━━━━━━━━━━━━━━━━━━\n"
+                            "🔧 *ТЕХНИЧЕСКОЕ ОБСЛУЖИВАНИЕ*\n"
+                            "━━━━━━━━━━━━━━━━━━━━\n\n"
+                            "Бот временно недоступен.\n"
+                            "Проводятся технические работы.\n\n"
+                            "Пожалуйста, подождите. Мы сообщим,\n"
+                            "когда бот снова заработает.\n\n"
+                            "━━━━━━━━━━━━━━━━━━━━"
+                        )
+                    
                     await bot.send_message(
                         chat_id=int(telegram_id),
                         text=message_text,
