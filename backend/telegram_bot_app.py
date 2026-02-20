@@ -539,10 +539,11 @@ async def change_language_callback(update, context):
     )
 
 async def set_language_callback(update, context):
-    """Set user language"""
+    """Set user language and show main menu"""
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
     from database import Database
-    from services.localization import set_user_language, t
+    from services.localization import set_user_language
+    from services.telegram_service import TelegramService
     
     query = update.callback_query
     await query.answer()
@@ -566,17 +567,31 @@ async def set_language_callback(update, context):
     
     # Send confirmation
     if lang == "en":
-        text = "✅ Language changed to English"
+        confirm_text = "✅ Language changed to English"
     else:
-        text = "✅ Язык изменён на Русский"
-    
-    keyboard = [[InlineKeyboardButton(t("btn_main_menu", lang), callback_data="back_to_menu")]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+        confirm_text = "✅ Язык изменён на Русский"
     
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text=text,
-        reply_markup=reply_markup
+        text=confirm_text
+    )
+    
+    # Show main menu in the selected language
+    telegram_service = TelegramService(Database.db)
+    
+    # Get user balance
+    balance = 0.0
+    if _users_service:
+        db_user = await _users_service.get_user(user_id)
+        if db_user:
+            balance = db_user.get('balance', 0.0)
+    
+    # Send main menu
+    await telegram_service.send_main_menu(
+        update.effective_chat.id,
+        context.bot,
+        balance,
+        lang
     )
 
 async def back_to_menu_callback(update, context):
