@@ -57,14 +57,16 @@ async def update_balance(
     try:
         from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
         from config import get_settings
+        from services.localization import get_user_language
         
         settings = get_settings()
         bot = Bot(token=settings.telegram_bot_token)
         
         new_balance = user.get('balance', 0)
         
-        # Get user language
-        lang = user.get('language', 'ru')
+        # Get user language from telegram_users collection (where it's stored)
+        db = Database.db
+        lang = await get_user_language(db, update.telegram_id)
         
         # Check if user is actively waiting for balance to continue order
         db = Database.db
