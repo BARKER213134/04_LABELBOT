@@ -109,6 +109,8 @@ async def start_command(update, context):
 async def check_balance_callback(update, context):
     """Handle balance check - FAST"""
     global _users_service
+    from database import Database
+    from services.localization import get_user_language
     
     query = update.callback_query
     await query.answer()  # Answer immediately
@@ -122,6 +124,12 @@ async def check_balance_callback(update, context):
     
     # Remove old buttons in background
     asyncio.create_task(_safe_remove_buttons(query))
+    
+    # Get user language
+    lang = context.user_data.get('language')
+    if not lang:
+        lang = await get_user_language(Database.db, user_id)
+        context.user_data['language'] = lang
     
     # Get balance from cache or DB
     balance = balance_cache.get(f"bal_{user_id}")
@@ -138,11 +146,30 @@ async def check_balance_callback(update, context):
     
     balance = balance or 0.0
     
-    text = (
-        "💰 *ВАШ БАЛАНС*\n\n"
-        f"▫️ Доступно: *${balance:.2f}*\n"
-        f"▫️ Заказов: {total_orders}\n"
-        f"▫️ Потрачено: ${total_spent:.2f}\n\n"
+    if lang == "en":
+        text = (
+            "💰 *YOUR BALANCE*\n\n"
+            f"▫️ Available: *${balance:.2f}*\n"
+            f"▫️ Orders: {total_orders}\n"
+            f"▫️ Spent: ${total_spent:.2f}\n\n"
+            "━━━━━━━━━━━━━━━━━━━━"
+        )
+        keyboard = [
+            [InlineKeyboardButton("💳 Top Up", callback_data="topup_balance")],
+            [InlineKeyboardButton("🏠 Main Menu", callback_data="back_to_menu")]
+        ]
+    else:
+        text = (
+            "💰 *ВАШ БАЛАНС*\n\n"
+            f"▫️ Доступно: *${balance:.2f}*\n"
+            f"▫️ Заказов: {total_orders}\n"
+            f"▫️ Потрачено: ${total_spent:.2f}\n\n"
+            "━━━━━━━━━━━━━━━━━━━━"
+        )
+        keyboard = [
+            [InlineKeyboardButton("💳 Пополнить", callback_data="topup_balance")],
+            [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+        ]
         "💳 Оплата: BTC, ETH, USDT, LTC\n"
         "Минимум: $10"
     )
