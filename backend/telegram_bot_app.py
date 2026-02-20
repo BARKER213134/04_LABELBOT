@@ -413,15 +413,23 @@ async def create_crypto_invoice(update, context, user_id: str, amount: float, la
     except Exception as e:
         logger.error(f"Failed to create crypto invoice: {e}")
         
-        keyboard = [
-            [InlineKeyboardButton("🔄 Попробовать снова", callback_data="topup_balance")],
-            [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
-        ]
+        if lang == "en":
+            keyboard = [
+                [InlineKeyboardButton("🔄 Try again", callback_data="topup_balance")],
+                [InlineKeyboardButton("🏠 Main menu", callback_data="back_to_menu")]
+            ]
+            error_text = f"❌ *Payment creation error*\n\n{str(e)}\n\nPlease try later."
+        else:
+            keyboard = [
+                [InlineKeyboardButton("🔄 Попробовать снова", callback_data="topup_balance")],
+                [InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")]
+            ]
+            error_text = f"❌ *Ошибка создания платежа*\n\n{str(e)}\n\nПопробуйте позже."
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         # Edit loading message to show error
         await loading_msg.edit_text(
-            f"❌ *Ошибка создания платежа*\n\n{str(e)}\n\nПопробуйте позже.",
+            error_text,
             reply_markup=reply_markup,
             parse_mode="Markdown"
         )
@@ -429,7 +437,18 @@ async def create_crypto_invoice(update, context, user_id: str, amount: float, la
 
 async def check_payment_status_callback(update, context):
     """Check crypto payment status"""
+    from database import Database
+    from services.localization import get_user_language
+    
     query = update.callback_query
+    user_id = str(update.effective_user.id)
+    
+    # Get user language
+    db = Database.db
+    lang = context.user_data.get('language')
+    if not lang:
+        lang = await get_user_language(db, user_id)
+        context.user_data['language'] = lang
     
     track_id = query.data.replace("check_payment_", "")
     
