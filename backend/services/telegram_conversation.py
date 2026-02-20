@@ -2322,25 +2322,45 @@ class TelegramConversationHandler:
             
             # Parse carrier-specific errors
             if "carrier error" in error_str.lower() or "FedEx" in error_str or "USPS" in error_str or "UPS" in error_str:
-                carrier_name = data.get('selected_rate', {}).get('carrier_friendly_name', 'перевозчик')
-                error_message = (
-                    "━━━━━━━━━━━━━━━━━━━━\n"
-                    "❌ *ОШИБКА ПЕРЕВОЗЧИКА*\n"
-                    "━━━━━━━━━━━━━━━━━━━━\n\n"
-                    f"⚠️ *{carrier_name}* не может создать лейбл\n"
-                    "для указанных данных.\n\n"
-                    "*Возможные причины:*\n"
-                    "▫️ Некорректный адрес\n"
-                    "▫️ Недоступный маршрут\n"
-                    "▫️ Ограничения sandbox режима\n\n"
-                    "*Рекомендация:*\n"
-                    "Попробуйте выбрать другого перевозчика\n"
-                    "(USPS обычно работает стабильнее)"
-                )
-                keyboard = [
-                    [InlineKeyboardButton("🔄 Выбрать другой тариф", callback_data="back_to_rates")],
-                    [InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")]
-                ]
+                carrier_name = data.get('selected_rate', {}).get('carrier_friendly_name', 'carrier' if lang == "en" else 'перевозчик')
+                if lang == "en":
+                    error_message = (
+                        "━━━━━━━━━━━━━━━━━━━━\n"
+                        "❌ *CARRIER ERROR*\n"
+                        "━━━━━━━━━━━━━━━━━━━━\n\n"
+                        f"⚠️ *{carrier_name}* cannot create a label\n"
+                        "for the specified data.\n\n"
+                        "*Possible reasons:*\n"
+                        "▫️ Invalid address\n"
+                        "▫️ Unavailable route\n"
+                        "▫️ Sandbox mode restrictions\n\n"
+                        "*Recommendation:*\n"
+                        "Try selecting a different carrier\n"
+                        "(USPS usually works more reliably)"
+                    )
+                    keyboard = [
+                        [InlineKeyboardButton("🔄 Select different rate", callback_data="back_to_rates")],
+                        [InlineKeyboardButton("🏠 Main menu", callback_data="back_to_menu")]
+                    ]
+                else:
+                    error_message = (
+                        "━━━━━━━━━━━━━━━━━━━━\n"
+                        "❌ *ОШИБКА ПЕРЕВОЗЧИКА*\n"
+                        "━━━━━━━━━━━━━━━━━━━━\n\n"
+                        f"⚠️ *{carrier_name}* не может создать лейбл\n"
+                        "для указанных данных.\n\n"
+                        "*Возможные причины:*\n"
+                        "▫️ Некорректный адрес\n"
+                        "▫️ Недоступный маршрут\n"
+                        "▫️ Ограничения sandbox режима\n\n"
+                        "*Рекомендация:*\n"
+                        "Попробуйте выбрать другого перевозчика\n"
+                        "(USPS обычно работает стабильнее)"
+                    )
+                    keyboard = [
+                        [InlineKeyboardButton("🔄 Выбрать другой тариф", callback_data="back_to_rates")],
+                        [InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")]
+                    ]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 await query.edit_message_text(error_message, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
                 # Stay in CONFIRM state so back_to_rates button works
@@ -2350,17 +2370,30 @@ class TelegramConversationHandler:
                 error_text = error_str.replace('*', '').replace('_', '').replace('[', '').replace(']', '')
                 if len(error_text) > 200:
                     error_text = error_text[:200] + "..."
-                error_message = (
-                    "━━━━━━━━━━━━━━━━━━━━\n"
-                    "❌ *ОШИБКА*\n"
-                    "━━━━━━━━━━━━━━━━━━━━\n\n"
-                    f"Не удалось создать лейбл.\n\n"
-                    f"Причина: {error_text}"
-                )
-                keyboard = [
-                    [InlineKeyboardButton("🔄 Попробовать снова", callback_data="back_to_rates")],
-                    [InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")]
-                ]
+                if lang == "en":
+                    error_message = (
+                        "━━━━━━━━━━━━━━━━━━━━\n"
+                        "❌ *ERROR*\n"
+                        "━━━━━━━━━━━━━━━━━━━━\n\n"
+                        f"Failed to create label.\n\n"
+                        f"Reason: {error_text}"
+                    )
+                    keyboard = [
+                        [InlineKeyboardButton("🔄 Try again", callback_data="back_to_rates")],
+                        [InlineKeyboardButton("🏠 Main menu", callback_data="back_to_menu")]
+                    ]
+                else:
+                    error_message = (
+                        "━━━━━━━━━━━━━━━━━━━━\n"
+                        "❌ *ОШИБКА*\n"
+                        "━━━━━━━━━━━━━━━━━━━━\n\n"
+                        f"Не удалось создать лейбл.\n\n"
+                        f"Причина: {error_text}"
+                    )
+                    keyboard = [
+                        [InlineKeyboardButton("🔄 Попробовать снова", callback_data="back_to_rates")],
+                        [InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")]
+                    ]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 await query.edit_message_text(error_message, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
                 # Stay in CONFIRM state so back_to_rates button works
