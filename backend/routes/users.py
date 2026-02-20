@@ -319,18 +319,35 @@ async def delete_user(
     
     # Send notification before deletion
     try:
+        from services.localization import get_user_language
+        
         settings = get_settings()
         bot = Bot(token=settings.telegram_bot_token)
         
-        message = (
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "🗑 *АККАУНТ УДАЛЁН*\n"
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
-            "Ваш аккаунт был удалён администратором.\n\n"
-            "Все данные аккаунта удалены.\n"
-            "Нажмите /start чтобы создать новый аккаунт.\n\n"
-            "━━━━━━━━━━━━━━━━━━━━"
-        )
+        # Get user language before deletion
+        db = Database.db
+        lang = await get_user_language(db, telegram_id)
+        
+        if lang == "en":
+            message = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "🗑 *ACCOUNT DELETED*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "Your account has been deleted by administrator.\n\n"
+                "All account data has been removed.\n"
+                "Press /start to create a new account.\n\n"
+                "━━━━━━━━━━━━━━━━━━━━"
+            )
+        else:
+            message = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "🗑 *АККАУНТ УДАЛЁН*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "Ваш аккаунт был удалён администратором.\n\n"
+                "Все данные аккаунта удалены.\n"
+                "Нажмите /start чтобы создать новый аккаунт.\n\n"
+                "━━━━━━━━━━━━━━━━━━━━"
+            )
         
         await bot.send_message(
             chat_id=int(telegram_id),
