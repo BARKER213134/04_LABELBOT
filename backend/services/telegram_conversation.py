@@ -2197,7 +2197,7 @@ class TelegramConversationHandler:
             
             # Generate AI thank you message
             try:
-                thank_you_msg = await generate_thank_you_message(carrier_name, tracking_number)
+                thank_you_msg = await generate_thank_you_message(carrier_name, tracking_number, lang)
             except Exception as ai_err:
                 logger.warning(f"Failed to generate AI thank you message: {ai_err}")
                 thank_you_msg = "Thank you for your order! 🎉" if lang == "en" else "Спасибо за заказ! 🎉"
