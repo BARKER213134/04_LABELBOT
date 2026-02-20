@@ -8,6 +8,38 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
+
+def normalize_carrier(carrier_code: str) -> CarrierEnum:
+    """Normalize carrier code to CarrierEnum, handling various formats"""
+    if not carrier_code:
+        return CarrierEnum.USPS
+    
+    carrier_lower = carrier_code.lower()
+    
+    # Map various carrier codes to our enum
+    if 'fedex' in carrier_lower:
+        if 'walleted' in carrier_lower:
+            return CarrierEnum.FEDEX_WALLETED
+        return CarrierEnum.FEDEX
+    elif 'ups' in carrier_lower:
+        if 'walleted' in carrier_lower:
+            return CarrierEnum.UPS_WALLETED
+        return CarrierEnum.UPS
+    elif 'usps' in carrier_lower:
+        return CarrierEnum.USPS
+    elif 'stamps' in carrier_lower:
+        return CarrierEnum.STAMPS_COM
+    elif 'dhl' in carrier_lower:
+        return CarrierEnum.DHL
+    
+    # Try direct enum match
+    try:
+        return CarrierEnum(carrier_code)
+    except ValueError:
+        logger.warning(f"Unknown carrier code: {carrier_code}, defaulting to USPS")
+        return CarrierEnum.USPS
+
+
 class OrdersService:
     """Service for handling order operations"""
     
