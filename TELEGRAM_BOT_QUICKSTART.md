@@ -119,7 +119,7 @@
 ### Веб-дашборд:
 
 Для полного функционала используйте:
-https://cargo-flow-22.preview.emergentagent.com
+https://shipengine-dashboard.preview.emergentagent.com
 
 **В дашборде можно:**
 - Просмотреть все заказы
