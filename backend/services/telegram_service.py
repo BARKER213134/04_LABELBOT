@@ -133,3 +133,53 @@ class TelegramService:
         except Exception as e:
             logger.error(f"Failed to send message to {chat_id}: {e}")
             raise
+    
+    async def send_main_menu(self, chat_id: int, bot, balance: float = 0.0, lang: str = "ru"):
+        """Send main menu to user"""
+        if lang == "en":
+            text = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "📦 *WHITE LABEL SHIPPING BOT*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"💰 Balance: *${balance:.2f}*\n\n"
+                "Create shipping labels for:\n"
+                "USPS • FedEx • UPS\n\n"
+                "━━━━━━━━━━━━━━━━━━━━"
+            )
+            keyboard = [
+                [InlineKeyboardButton("📦 Create Label", callback_data="start_create")],
+                [InlineKeyboardButton("📋 Templates", callback_data="templates_menu")],
+                [InlineKeyboardButton("💰 Balance", callback_data="check_balance")],
+                [InlineKeyboardButton("↩️ Refund Label", callback_data="refund_info")],
+                [InlineKeyboardButton("📖 FAQ", callback_data="faq_info")],
+                [InlineKeyboardButton("🌐 Language", callback_data="change_language")],
+                [InlineKeyboardButton("❓ Help", url="https://t.me/White_Label_Shipping_Bot_Agent")]
+            ]
+        else:
+            text = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "📦 *WHITE LABEL SHIPPING BOT*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"💰 Баланс: *${balance:.2f}*\n\n"
+                "Создавайте shipping labels для:\n"
+                "USPS • FedEx • UPS\n\n"
+                "━━━━━━━━━━━━━━━━━━━━"
+            )
+            keyboard = [
+                [InlineKeyboardButton("📦 Создать Label", callback_data="start_create")],
+                [InlineKeyboardButton("📋 Шаблоны", callback_data="templates_menu")],
+                [InlineKeyboardButton("💰 Баланс", callback_data="check_balance")],
+                [InlineKeyboardButton("↩️ Refund Label", callback_data="refund_info")],
+                [InlineKeyboardButton("📖 FAQ", callback_data="faq_info")],
+                [InlineKeyboardButton("🌐 Язык", callback_data="change_language")],
+                [InlineKeyboardButton("❓ Помощь", url="https://t.me/White_Label_Shipping_Bot_Agent")]
+            ]
+        
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        await bot.send_message(
+            chat_id=chat_id,
+            text=text,
+            reply_markup=reply_markup,
+            parse_mode=ParseMode.MARKDOWN
+        )
