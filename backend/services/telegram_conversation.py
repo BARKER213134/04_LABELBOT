@@ -607,8 +607,9 @@ class TelegramConversationHandler:
             # Validate phone
             is_valid, result = self.validate_phone(phone, lang)
             if not is_valid:
+                retry_msg = "Please enter a valid phone number:" if lang == "en" else "Пожалуйста, введите корректный номер телефона:"
                 await update.message.reply_text(
-                    f"❌ *{result}*\n\nПожалуйста, введите корректный номер телефона:",
+                    f"❌ *{result}*\n\n{retry_msg}",
                     parse_mode=ParseMode.MARKDOWN
                 )
                 return SHIP_FROM_PHONE
@@ -623,17 +624,30 @@ class TelegramConversationHandler:
             await self.show_review_summary(update.message, user_id, context)
             return REVIEW_SUMMARY
         
-        text = (
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "✅ *ШАГ 1 ЗАВЕРШЕН*\n"
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"Прогресс: {self.get_progress_bar(2)} (Шаг 2/4)\n\n"
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "📍 *ШАГ 2: АДРЕС ПОЛУЧАТЕЛЯ*\n"
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
-            "▫️ *Подшаг 2.1:* Полное имя\n\n"
-            "Введите полное имя получателя:"
-        )
+        if lang == "en":
+            text = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "✅ *STEP 1 COMPLETED*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"Progress: {self.get_progress_bar(2)} (Step 2/4)\n\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "📍 *STEP 2: RECIPIENT ADDRESS*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "▫️ *Substep 2.1:* Full name\n\n"
+                "Enter the recipient's full name:"
+            )
+        else:
+            text = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "✅ *ШАГ 1 ЗАВЕРШЕН*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"Прогресс: {self.get_progress_bar(2)} (Шаг 2/4)\n\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "📍 *ШАГ 2: АДРЕС ПОЛУЧАТЕЛЯ*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "▫️ *Подшаг 2.1:* Полное имя\n\n"
+                "Введите полное имя получателя:"
+            )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
         return SHIP_TO_NAME
@@ -645,6 +659,7 @@ class TelegramConversationHandler:
         
         user_id = str(update.effective_user.id)
         data = self.get_user_data(user_id, context)
+        lang = await self._get_lang(user_id, context)
         
         # Generate random phone
         random_phone = self.generate_random_phone()
@@ -654,26 +669,43 @@ class TelegramConversationHandler:
         if data.get('editing_field') == 'from_phone':
             data['editing_field'] = None
             # Edit the message to remove button and show confirmation
+            auto_gen_msg = "(auto-generated)" if lang == "en" else "(сгенерирован автоматически)"
+            phone_saved_msg = "Phone saved" if lang == "en" else "Телефон сохранен"
             await query.edit_message_text(
-                f"✅ *Телефон сохранен:* {random_phone}\n_(сгенерирован автоматически)_",
+                f"✅ *{phone_saved_msg}:* {random_phone}\n_{auto_gen_msg}_",
                 parse_mode=ParseMode.MARKDOWN
             )
             await self.show_review_summary(query.message, user_id, context)
             return REVIEW_SUMMARY
         
-        text = (
-            f"✅ *Телефон сохранен:* {random_phone}\n"
-            "_(сгенерирован автоматически)_\n\n"
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "✅ *ШАГ 1 ЗАВЕРШЕН*\n"
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"Прогресс: {self.get_progress_bar(2)} (Шаг 2/4)\n\n"
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "📍 *ШАГ 2: АДРЕС ПОЛУЧАТЕЛЯ*\n"
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
-            "▫️ *Подшаг 2.1:* Полное имя\n\n"
-            "Введите полное имя получателя:"
-        )
+        if lang == "en":
+            text = (
+                f"✅ *Phone saved:* {random_phone}\n"
+                "_(auto-generated)_\n\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "✅ *STEP 1 COMPLETED*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"Progress: {self.get_progress_bar(2)} (Step 2/4)\n\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "📍 *STEP 2: RECIPIENT ADDRESS*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "▫️ *Substep 2.1:* Full name\n\n"
+                "Enter the recipient's full name:"
+            )
+        else:
+            text = (
+                f"✅ *Телефон сохранен:* {random_phone}\n"
+                "_(сгенерирован автоматически)_\n\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "✅ *ШАГ 1 ЗАВЕРШЕН*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"Прогресс: {self.get_progress_bar(2)} (Шаг 2/4)\n\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "📍 *ШАГ 2: АДРЕС ПОЛУЧАТЕЛЯ*\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "▫️ *Подшаг 2.1:* Полное имя\n\n"
+                "Введите полное имя получателя:"
+            )
         
         # Edit the message to remove the skip button
         await query.edit_message_text(text, parse_mode=ParseMode.MARKDOWN)
