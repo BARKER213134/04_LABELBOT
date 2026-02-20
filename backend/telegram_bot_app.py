@@ -1137,7 +1137,7 @@ async def templates_menu_callback(update, context):
     )
     
     if templates:
-        text += f"У вас {len(templates)} из 10 шаблонов:\n\n"
+        text += f"You have {len(templates)} out of 10 templates:\n\n" if lang == "en" else f"У вас {len(templates)} из 10 шаблонов:\n\n"
         keyboard = []
         for t in templates:
             from_city = t.get('ship_from_city', '?')
@@ -1145,11 +1145,16 @@ async def templates_menu_callback(update, context):
             btn_text = f"📋 {t['name']} ({from_city} → {to_city})"
             keyboard.append([InlineKeyboardButton(btn_text, callback_data=f"tpl_view_{t['template_id']}")])
     else:
-        text += "У вас пока нет сохранённых шаблонов.\n\n"
-        text += "_Шаблоны можно создать при проверке данных перед оплатой._"
+        if lang == "en":
+            text += "You don't have any saved templates yet.\n\n"
+            text += "_Templates can be created when reviewing data before payment._"
+        else:
+            text += "У вас пока нет сохранённых шаблонов.\n\n"
+            text += "_Шаблоны можно создать при проверке данных перед оплатой._"
         keyboard = []
     
-    keyboard.append([InlineKeyboardButton("🏠 Главное меню", callback_data="back_to_menu")])
+    menu_btn = "🏠 Main Menu" if lang == "en" else "🏠 Главное меню"
+    keyboard.append([InlineKeyboardButton(menu_btn, callback_data="back_to_menu")])
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     # Send new message
@@ -1158,6 +1163,8 @@ async def templates_menu_callback(update, context):
 async def template_view_callback(update, context):
     """View a specific template - sends new message"""
     global _templates_service
+    from services.localization import get_user_language
+    from database import Database
     
     query = update.callback_query
     
@@ -1170,6 +1177,14 @@ async def template_view_callback(update, context):
         return
     
     await query.answer()
+    
+    db = Database.db
+    
+    # Get user language
+    lang = context.user_data.get('language')
+    if not lang:
+        lang = await get_user_language(db, user_id)
+        context.user_data['language'] = lang
     
     template_id = query.data.replace("tpl_view_", "")
     
@@ -1186,18 +1201,31 @@ async def template_view_callback(update, context):
         template = await _templates_service.get_template(template_id)
     
     if not template:
-        await query.message.reply_text("❌ Шаблон не найден")
+        error_msg = "❌ Template not found" if lang == "en" else "❌ Шаблон не найден"
+        await query.message.reply_text(error_msg)
         return
     
-    text = (
-        "━━━━━━━━━━━━━━━━━━━━\n"
-        f"📋 *{template['name']}*\n"
-        "━━━━━━━━━━━━━━━━━━━━\n\n"
-        "*Отправитель:*\n"
-        f"▫️ {template.get('ship_from_name', '-')}\n"
-        f"▫️ {template.get('ship_from_address', '-')}\n"
-        f"▫️ {template.get('ship_from_city', '-')}, {template.get('ship_from_state', '-')} {template.get('ship_from_zip', '-')}\n\n"
-        "*Получатель:*\n"
+    if lang == "en":
+        text = (
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            f"📋 *{template['name']}*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "*Sender:*\n"
+            f"▫️ {template.get('ship_from_name', '-')}\n"
+            f"▫️ {template.get('ship_from_address', '-')}\n"
+            f"▫️ {template.get('ship_from_city', '-')}, {template.get('ship_from_state', '-')} {template.get('ship_from_zip', '-')}\n\n"
+            "*Recipient:*\n"
+        )
+    else:
+        text = (
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            f"📋 *{template['name']}*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "*Отправитель:*\n"
+            f"▫️ {template.get('ship_from_name', '-')}\n"
+            f"▫️ {template.get('ship_from_address', '-')}\n"
+            f"▫️ {template.get('ship_from_city', '-')}, {template.get('ship_from_state', '-')} {template.get('ship_from_zip', '-')}\n\n"
+            "*Получатель:*\n"
         f"▫️ {template.get('ship_to_name', '-')}\n"
         f"▫️ {template.get('ship_to_address', '-')}\n"
         f"▫️ {template.get('ship_to_city', '-')}, {template.get('ship_to_state', '-')} {template.get('ship_to_zip', '-')}\n\n"
