@@ -1033,7 +1033,7 @@ async def confirm_pending_order_callback(update, context):
                     "📋 *Информация о доставке:*\n\n"
                     f"▫️ Tracking номер:\n`{tracking_number}`\n\n"
                     f"▫️ Перевозчик: {carrier_name}\n"
-                    f"▫️ Стоимость: ${total_cost:.2f}\n"
+                    f"▫️ Стоимость: ${actual_user_paid:.2f}\n"
                     f"▫️ Остаток на балансе: ${new_balance:.2f}\n\n"
                     "━━━━━━━━━━━━━━━━━━━━\n\n"
                     f"💬 {thank_you}"
