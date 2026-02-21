@@ -2290,17 +2290,15 @@ class TelegramConversationHandler:
                             try:
                                 from services.admin_notifications import notify_label_created
                                 tg_user = update.effective_user
-                                # Реальная стоимость от ShipEngine
-                                actual_shipengine_cost = result.get('cost', 0) or 0
-                                # Прибыль = что заплатил пользователь - реальная стоимость
-                                profit = total_cost - actual_shipengine_cost if actual_shipengine_cost else 10
+                                # Прибыль всегда $10 (из result)
+                                profit = result.get('profit', 10)
                                 await notify_label_created(
                                     telegram_id=user_id,
                                     username=final_username or tg_user.username,
                                     tracking_number=tracking_number,
                                     carrier=carrier_name,
-                                    cost=total_cost,  # Показываем что заплатил пользователь
-                                    profit=profit
+                                    cost=actual_user_paid,  # Реальная цена + $10
+                                    profit=profit  # Всегда $10
                                 )
                             except Exception as admin_err:
                                 logger.warning(f"Failed to send admin notification: {admin_err}")
