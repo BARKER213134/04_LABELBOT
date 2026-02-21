@@ -49,6 +49,7 @@ class Order(BaseModel):
     package: PackageInfo
     carrier: CarrierEnum
     carrier_id: Optional[str] = None
+    rate_id: Optional[str] = None  # ShipEngine rate_id for fixed pricing
     serviceCode: str
     validateAddress: str = "validate_and_clean"
     status: OrderStatus = OrderStatus.PENDING
