@@ -1114,7 +1114,8 @@ class TelegramConversationHandler:
                 "▫️ *Substep 3.2:* Package dimensions\n\n"
                 "Enter dimensions separated by space in inches:\n"
                 "*Length Width Height*\n\n"
-                "_Example: 12 8 6_"
+                "_Example: 12 8 6_\n\n"
+                "⚠️ _Minimum: 6×4×2 inches_"
             )
         else:
             text = (
@@ -1122,7 +1123,8 @@ class TelegramConversationHandler:
                 "▫️ *Подшаг 3.2:* Размеры посылки\n\n"
                 "Введите размеры через пробел в дюймах:\n"
                 "*Длина Ширина Высота*\n\n"
-                "_Например: 12 8 6_"
+                "_Например: 12 8 6_\n\n"
+                "⚠️ _Минимум: 6×4×2 дюйма_"
             )
         
         await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
