@@ -2199,6 +2199,7 @@ class TelegramConversationHandler:
         
         try:
             # Call orders service to create label
+            logger.info(f"Creating order with rate_id: {data.get('rate_id')}")
             result = await self.orders_service.create_order(data)
             
             # Get new balance after deduction
