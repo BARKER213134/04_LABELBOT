@@ -2185,29 +2185,24 @@ class TelegramConversationHandler:
                 final_username = db_user.get('username')
         data['telegram_username'] = final_username
         
+        # ВАЖНО: Списываем баланс ДО создания лейбла по оценочной цене
+        # Это гарантирует что пользователь платит ту цену которую видел
+        if self.users_service:
+            try:
+                await self.users_service.deduct_for_order(user_id, total_cost)
+                logger.info(f"Deducted ${total_cost:.2f} from user {user_id} BEFORE label creation")
+            except Exception as deduct_err:
+                logger.error(f"Failed to deduct balance: {deduct_err}")
+                error_msg = "Failed to process payment" if lang == "en" else "Ошибка обработки платежа"
+                await query.edit_message_text(f"❌ {error_msg}")
+                return ConversationHandler.END
+        
         try:
             # Call orders service to create label
             result = await self.orders_service.create_order(data)
             
-            # Get actual cost from result (actual ShipEngine cost + $10 markup)
-            actual_user_paid = result.get('userPaid', total_cost)
-            
-            # Check if user has enough balance for actual cost
+            # Get new balance after deduction
             if self.users_service:
-                db_user = await self.users_service.get_user(user_id)
-                current_balance = db_user.get('balance', 0) if db_user else 0
-                
-                if current_balance < actual_user_paid:
-                    # User doesn't have enough for actual cost
-                    # This can happen if ShipEngine actual price > estimated price
-                    # We'll deduct what they have and note the difference
-                    logger.warning(f"User {user_id} balance ${current_balance:.2f} < actual cost ${actual_user_paid:.2f}")
-                    # Deduct what's available - in production you might want to handle this differently
-                    await self.users_service.deduct_for_order(user_id, min(current_balance, actual_user_paid))
-                else:
-                    # Normal case - deduct actual cost
-                    await self.users_service.deduct_for_order(user_id, actual_user_paid)
-                
                 db_user = await self.users_service.get_user(user_id)
                 new_balance = db_user.get('balance', 0) if db_user else 0
             else:
