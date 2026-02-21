@@ -119,10 +119,16 @@ class OrdersService:
             shipengine = ShipEngineService(api_key=api_key)
             
             try:
-                # Always use regular label creation to ensure company_name is empty
-                # rate_id method uses cached shipment data which may have default company
-                logger.info(f"Creating label with service_code: {order.serviceCode}")
-                label_response = await shipengine.create_label(order)
+                # Use rate_id if available - this guarantees the same price as shown in estimate
+                rate_id = order_data.get('rate_id')
+                
+                if rate_id:
+                    logger.info(f"Creating label from rate_id: {rate_id}")
+                    label_response = await shipengine.create_label_from_rate(rate_id)
+                else:
+                    # Fallback to regular creation if no rate_id
+                    logger.info(f"Creating label with service_code: {order.serviceCode}")
+                    label_response = await shipengine.create_label(order)
                 
                 # Get actual label cost from ShipEngine
                 label_cost = label_response.get("shipment_cost", {}).get("amount", 0)
