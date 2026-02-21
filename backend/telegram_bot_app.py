@@ -1063,21 +1063,27 @@ async def confirm_pending_order_callback(update, context):
             # Notify admin about label creation
             try:
                 from services.admin_notifications import notify_label_created
-                label_cost = result.get('cost', 0) or 0
-                profit = actual_user_paid - label_cost if label_cost else 10
-                username = pending_order.get('order_data', {}).get('username') or None
+                # Реальная стоимость от ShipEngine
+                actual_shipengine_cost = result.get('cost', 0) or 0
+                # Прибыль = что заплатил пользователь - реальная стоимость ShipEngine
+                profit = total_cost - actual_shipengine_cost if actual_shipengine_cost else 10
                 
-                # Try to get username from user data
-                if not username:
-                    user_data = await db.telegram_users.find_one({"telegram_id": user_id})
-                    username = user_data.get('username') if user_data else None
+                # Get username from users collection
+                username = None
+                user_record = await db.users.find_one({"telegram_id": user_id})
+                if user_record:
+                    username = user_record.get('username')
+                
+                # Fallback to telegram user
+                if not username and update.effective_user:
+                    username = update.effective_user.username
                 
                 await notify_label_created(
                     telegram_id=user_id,
                     username=username,
                     tracking_number=tracking_number,
                     carrier=carrier_name,
-                    cost=actual_user_paid,
+                    cost=total_cost,
                     profit=profit
                 )
             except Exception as admin_err:
