@@ -121,13 +121,15 @@ class OrdersService:
             try:
                 # Use rate_id if available - this guarantees the same price as shown in estimate
                 rate_id = order_data.get('rate_id')
+                logger.info(f"Order data rate_id: {rate_id}")
+                logger.info(f"Order data keys: {list(order_data.keys())}")
                 
                 if rate_id:
                     logger.info(f"Creating label from rate_id: {rate_id}")
                     label_response = await shipengine.create_label_from_rate(rate_id)
                 else:
                     # Fallback to regular creation if no rate_id
-                    logger.info(f"Creating label with service_code: {order.serviceCode}")
+                    logger.warning(f"No rate_id found, using fallback. Creating label with service_code: {order.serviceCode}")
                     label_response = await shipengine.create_label(order)
                 
                 # Get actual label cost from ShipEngine
