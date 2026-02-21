@@ -1601,6 +1601,13 @@ class TelegramConversationHandler:
         rates_by_carrier = {}
         for rate in rates:
             carrier_code = rate.get('carrier_code', '').lower()
+            service_code = rate.get('service_code', '').lower()
+            
+            # Skip excluded services (unpredictable pricing)
+            if service_code in excluded_services:
+                logger.info(f"Skipping excluded service: {service_code}")
+                continue
+            
             if carrier_code not in rates_by_carrier:
                 rates_by_carrier[carrier_code] = []
             rates_by_carrier[carrier_code].append(rate)
