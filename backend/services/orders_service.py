@@ -102,6 +102,7 @@ class OrdersService:
                 ),
                 carrier=normalize_carrier(order_data.get('carrier')),
                 carrier_id=order_data.get('carrier_id'),
+                rate_id=order_data.get('rate_id'),  # Store rate_id for fixed pricing
                 serviceCode=order_data.get('serviceCode'),
                 validateAddress=order_data.get('validateAddress', 'validate_and_clean'),
                 environment=current_env,
