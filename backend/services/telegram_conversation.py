@@ -2325,6 +2325,18 @@ class TelegramConversationHandler:
             logger.error(f"Error creating label: {e}", exc_info=True)
             error_str = str(e)
             
+            # ВАЖНО: Возвращаем деньги пользователю при ошибке создания лейбла
+            if self.users_service:
+                try:
+                    await self.users_service.update_balance(
+                        telegram_id=user_id,
+                        amount=total_cost,
+                        reason="Refund: label creation failed"
+                    )
+                    logger.info(f"Refunded ${total_cost:.2f} to user {user_id} due to label creation error")
+                except Exception as refund_err:
+                    logger.error(f"Failed to refund user {user_id}: {refund_err}")
+            
             # Notify admin about user error
             try:
                 from services.admin_notifications import notify_user_error
