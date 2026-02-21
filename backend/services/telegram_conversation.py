@@ -2185,22 +2185,21 @@ class TelegramConversationHandler:
                 final_username = db_user.get('username')
         data['telegram_username'] = final_username
         
-        # ВАЖНО: Списываем баланс ДО создания лейбла по оценочной цене
-        # Это гарантирует что пользователь платит ту цену которую видел
-        if self.users_service:
-            try:
-                await self.users_service.deduct_for_order(user_id, total_cost)
-                logger.info(f"Deducted ${total_cost:.2f} from user {user_id} BEFORE label creation")
-            except Exception as deduct_err:
-                logger.error(f"Failed to deduct balance: {deduct_err}")
-                error_msg = "Failed to process payment" if lang == "en" else "Ошибка обработки платежа"
-                await query.edit_message_text(f"❌ {error_msg}")
-                return ConversationHandler.END
-        
         try:
             # Call orders service to create label
             logger.info(f"Creating order with rate_id: {data.get('rate_id')}")
             result = await self.orders_service.create_order(data)
+            
+            # Получаем РЕАЛЬНУЮ стоимость от ShipEngine + $10 наценка
+            actual_user_paid = result.get('userPaid', total_cost)
+            
+            # Списываем баланс ПОСЛЕ создания лейбла по РЕАЛЬНОЙ цене
+            if self.users_service:
+                try:
+                    await self.users_service.deduct_for_order(user_id, actual_user_paid)
+                    logger.info(f"Deducted ${actual_user_paid:.2f} from user {user_id} AFTER label creation")
+                except Exception as deduct_err:
+                    logger.error(f"Failed to deduct balance: {deduct_err}")
             
             # Get new balance after deduction
             if self.users_service:
