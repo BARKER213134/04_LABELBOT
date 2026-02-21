@@ -971,6 +971,15 @@ async def confirm_pending_order_callback(update, context):
         order_data['telegram_user_id'] = user_id
         order_data['total_cost'] = total_cost
         
+        # Get username for order
+        username = None
+        user_record = await db.users.find_one({"telegram_id": user_id})
+        if user_record:
+            username = user_record.get('username')
+        if not username and update.effective_user:
+            username = update.effective_user.username
+        order_data['telegram_username'] = username
+        
         # ВАЖНО: Списываем баланс ДО создания лейбла по оценочной цене
         await users_service.deduct_for_order(user_id, total_cost)
         
