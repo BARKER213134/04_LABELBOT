@@ -2160,7 +2160,13 @@ class TelegramConversationHandler:
         )
         
         data['telegram_user_id'] = user_id
-        data['telegram_username'] = username
+        # Get username from Telegram, fallback to database if not set
+        final_username = username
+        if not final_username and self.users_service:
+            db_user = await self.users_service.get_user(user_id)
+            if db_user:
+                final_username = db_user.get('username')
+        data['telegram_username'] = final_username
         
         try:
             # Call orders service to create label
