@@ -173,8 +173,9 @@ class OrdersService:
                     "orderId": order.id,
                     "labelId": label_response.get("label_id"),
                     "trackingNumber": label_response.get("tracking_number"),
-                    "cost": label_response.get("shipment_cost", {}).get("amount"),
-                    "userPaid": user_paid,  # Actual cost + $10 markup - for balance deduction
+                    "cost": label_cost,  # Real ShipEngine cost
+                    "userPaid": user_paid,  # What user paid (total_cost)
+                    "profit": profit,  # Real profit
                     "labelDownloadUrl": label_response.get("label_download", {}).get("pdf"),
                     "carrier": order_data.get('carrier'),
                 }
