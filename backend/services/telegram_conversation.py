@@ -2290,14 +2290,16 @@ class TelegramConversationHandler:
                             try:
                                 from services.admin_notifications import notify_label_created
                                 tg_user = update.effective_user
-                                label_cost = result.get('cost', 0) or 0
-                                profit = actual_user_paid - label_cost if label_cost else 10
+                                # Реальная стоимость от ShipEngine
+                                actual_shipengine_cost = result.get('cost', 0) or 0
+                                # Прибыль = что заплатил пользователь - реальная стоимость
+                                profit = total_cost - actual_shipengine_cost if actual_shipengine_cost else 10
                                 await notify_label_created(
                                     telegram_id=user_id,
                                     username=final_username or tg_user.username,
                                     tracking_number=tracking_number,
                                     carrier=carrier_name,
-                                    cost=actual_user_paid,
+                                    cost=total_cost,  # Показываем что заплатил пользователь
                                     profit=profit
                                 )
                             except Exception as admin_err:
