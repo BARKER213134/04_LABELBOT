@@ -1162,7 +1162,6 @@ async def cancel_pending_order_callback(update, context):
     lang = context.user_data.get('language')
     if not lang:
         lang = await get_user_language(db, user_id)
-        context.user_data['language'] = lang
     
     # Remove buttons
     try:
@@ -1170,8 +1169,13 @@ async def cancel_pending_order_callback(update, context):
     except Exception:
         pass
     
-    # Delete pending order
+    # Delete pending order from DB
     await db.pending_label_orders.delete_one({"telegram_id": user_id})
+    
+    # ВАЖНО: Очищаем context.user_data чтобы не было конфликтов с новым заказом
+    # Сохраняем только язык
+    context.user_data.clear()
+    context.user_data['language'] = lang
     
     if lang == "en":
         text = "✅ Order cancelled."
