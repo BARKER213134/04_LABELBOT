@@ -2322,84 +2322,97 @@ class TelegramConversationHandler:
             except Exception as admin_err:
                 logger.warning(f"Failed to send admin error notification: {admin_err}")
             
-            # Parse carrier-specific errors
-            if "carrier error" in error_str.lower() or "FedEx" in error_str or "USPS" in error_str or "UPS" in error_str:
-                carrier_name = data.get('selected_rate', {}).get('carrier_friendly_name', 'carrier' if lang == "en" else 'перевозчик')
+            # Parse and display user-friendly error message
+            carrier_name = data.get('selected_rate', {}).get('carrier_friendly_name', 'carrier' if lang == "en" else 'перевозчик')
+            error_lower = error_str.lower()
+            
+            # Determine specific error type and user-friendly message
+            if "unavailable" in error_lower or "try again later" in error_lower:
+                # Temporary service unavailable
                 if lang == "en":
-                    error_message = (
-                        "━━━━━━━━━━━━━━━━━━━━\n"
-                        "❌ *CARRIER ERROR*\n"
-                        "━━━━━━━━━━━━━━━━━━━━\n\n"
-                        f"⚠️ *{carrier_name}* cannot create a label\n"
-                        "for the specified data.\n\n"
-                        "*Possible reasons:*\n"
-                        "▫️ Invalid address\n"
-                        "▫️ Unavailable route\n"
-                        "▫️ Sandbox mode restrictions\n\n"
-                        "*Recommendation:*\n"
-                        "Try selecting a different carrier\n"
-                        "(USPS usually works more reliably)"
-                    )
-                    keyboard = [
-                        [InlineKeyboardButton("🔄 Select different rate", callback_data="back_to_rates")],
-                        [InlineKeyboardButton("🏠 Main menu", callback_data="back_to_menu")]
-                    ]
+                    error_title = "⏳ *SERVICE TEMPORARILY UNAVAILABLE*"
+                    error_reason = f"*{carrier_name}* service is temporarily unavailable."
+                    error_advice = "Please try again in a few minutes\nor select a different carrier."
                 else:
-                    error_message = (
-                        "━━━━━━━━━━━━━━━━━━━━\n"
-                        "❌ *ОШИБКА ПЕРЕВОЗЧИКА*\n"
-                        "━━━━━━━━━━━━━━━━━━━━\n\n"
-                        f"⚠️ *{carrier_name}* не может создать лейбл\n"
-                        "для указанных данных.\n\n"
-                        "*Возможные причины:*\n"
-                        "▫️ Некорректный адрес\n"
-                        "▫️ Недоступный маршрут\n"
-                        "▫️ Ограничения sandbox режима\n\n"
-                        "*Рекомендация:*\n"
-                        "Попробуйте выбрать другого перевозчика\n"
-                        "(USPS обычно работает стабильнее)"
-                    )
-                    keyboard = [
-                        [InlineKeyboardButton("🔄 Выбрать другой тариф", callback_data="back_to_rates")],
-                        [InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")]
-                    ]
-                reply_markup = InlineKeyboardMarkup(keyboard)
-                await query.edit_message_text(error_message, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
-                # Stay in CONFIRM state so back_to_rates button works
-                return CONFIRM
+                    error_title = "⏳ *СЕРВИС ВРЕМЕННО НЕДОСТУПЕН*"
+                    error_reason = f"Сервис *{carrier_name}* временно недоступен."
+                    error_advice = "Попробуйте через несколько минут\nили выберите другого перевозчика."
+            elif "address" in error_lower or "invalid" in error_lower:
+                # Address validation error
+                if lang == "en":
+                    error_title = "📍 *ADDRESS ERROR*"
+                    error_reason = "The address could not be verified."
+                    error_advice = "Please check sender and recipient\naddresses and try again."
+                else:
+                    error_title = "📍 *ОШИБКА АДРЕСА*"
+                    error_reason = "Адрес не прошёл проверку."
+                    error_advice = "Проверьте адреса отправителя\nи получателя и попробуйте снова."
+            elif "weight" in error_lower or "dimension" in error_lower or "package" in error_lower:
+                # Package parameters error
+                if lang == "en":
+                    error_title = "📦 *PACKAGE ERROR*"
+                    error_reason = "Package parameters are invalid for this service."
+                    error_advice = "Check weight and dimensions\nor select a different service."
+                else:
+                    error_title = "📦 *ОШИБКА ПОСЫЛКИ*"
+                    error_reason = "Параметры посылки не подходят для этого сервиса."
+                    error_advice = "Проверьте вес и размеры\nили выберите другой сервис."
+            elif "balance" in error_lower or "funds" in error_lower:
+                # Balance error
+                if lang == "en":
+                    error_title = "💰 *INSUFFICIENT FUNDS*"
+                    error_reason = "Not enough balance to create label."
+                    error_advice = "Please top up your balance."
+                else:
+                    error_title = "💰 *НЕДОСТАТОЧНО СРЕДСТВ*"
+                    error_reason = "Недостаточно средств для создания лейбла."
+                    error_advice = "Пополните баланс."
+            elif "carrier error" in error_lower or "fedex" in error_lower or "usps" in error_lower or "ups" in error_lower:
+                # Generic carrier error
+                if lang == "en":
+                    error_title = "🚚 *CARRIER ERROR*"
+                    error_reason = f"*{carrier_name}* cannot process this shipment."
+                    error_advice = "Try selecting a different carrier.\n(USPS usually works more reliably)"
+                else:
+                    error_title = "🚚 *ОШИБКА ПЕРЕВОЗЧИКА*"
+                    error_reason = f"*{carrier_name}* не может обработать эту отправку."
+                    error_advice = "Попробуйте другого перевозчика.\n(USPS обычно работает стабильнее)"
             else:
-                # Generic error
-                error_text = error_str.replace('*', '').replace('_', '').replace('[', '').replace(']', '')
-                if len(error_text) > 200:
-                    error_text = error_text[:200] + "..."
+                # Unknown error
                 if lang == "en":
-                    error_message = (
-                        "━━━━━━━━━━━━━━━━━━━━\n"
-                        "❌ *ERROR*\n"
-                        "━━━━━━━━━━━━━━━━━━━━\n\n"
-                        f"Failed to create label.\n\n"
-                        f"Reason: {error_text}"
-                    )
-                    keyboard = [
-                        [InlineKeyboardButton("🔄 Try again", callback_data="back_to_rates")],
-                        [InlineKeyboardButton("🏠 Main menu", callback_data="back_to_menu")]
-                    ]
+                    error_title = "❌ *ERROR*"
+                    error_reason = "An unexpected error occurred."
+                    error_advice = "Please try again or contact support."
                 else:
-                    error_message = (
-                        "━━━━━━━━━━━━━━━━━━━━\n"
-                        "❌ *ОШИБКА*\n"
-                        "━━━━━━━━━━━━━━━━━━━━\n\n"
-                        f"Не удалось создать лейбл.\n\n"
-                        f"Причина: {error_text}"
-                    )
-                    keyboard = [
-                        [InlineKeyboardButton("🔄 Попробовать снова", callback_data="back_to_rates")],
-                        [InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")]
-                    ]
-                reply_markup = InlineKeyboardMarkup(keyboard)
-                await query.edit_message_text(error_message, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
-                # Stay in CONFIRM state so back_to_rates button works
-                return CONFIRM
+                    error_title = "❌ *ОШИБКА*"
+                    error_reason = "Произошла непредвиденная ошибка."
+                    error_advice = "Попробуйте снова или обратитесь в поддержку."
+            
+            # Build error message
+            error_message = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                f"{error_title}\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"{error_reason}\n\n"
+                f"💡 {error_advice}\n\n"
+                "━━━━━━━━━━━━━━━━━━━━"
+            )
+            
+            if lang == "en":
+                keyboard = [
+                    [InlineKeyboardButton("🔄 Select different rate", callback_data="back_to_rates")],
+                    [InlineKeyboardButton("🏠 Main menu", callback_data="back_to_menu")]
+                ]
+            else:
+                keyboard = [
+                    [InlineKeyboardButton("🔄 Выбрать другой тариф", callback_data="back_to_rates")],
+                    [InlineKeyboardButton("🏠 В главное меню", callback_data="back_to_menu")]
+                ]
+            
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await query.edit_message_text(error_message, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+            # Stay in CONFIRM state so back_to_rates button works
+            return CONFIRM
         
         return ConversationHandler.END
     
