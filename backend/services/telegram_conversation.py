@@ -2249,7 +2249,7 @@ class TelegramConversationHandler:
                 f"📋 *{delivery_info}:*\n\n"
                 f"▫️ {tracking_lbl}:\n`{tracking_number}`\n\n"
                 f"▫️ {carrier_lbl}: {carrier_name}\n"
-                f"▫️ {cost_lbl}: ${actual_user_paid:.2f}\n"
+                f"▫️ {cost_lbl}: ${total_cost:.2f}\n"
                 f"▫️ {balance_lbl}: ${new_balance:.2f}\n\n"
                 "━━━━━━━━━━━━━━━━━━━━\n\n"
                 f"💬 {thank_you_msg}"
