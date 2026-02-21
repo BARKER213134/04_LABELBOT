@@ -1525,9 +1525,10 @@ class TelegramConversationHandler:
                     "unit": "ounce"
                 },
                 "dimensions": {
-                    "length": data.get('packageLength'),
-                    "width": data.get('packageWidth'),
-                    "height": data.get('packageHeight'),
+                    # Минимальные размеры 6x4x2 дюймов для корректной оценки
+                    "length": max(data.get('packageLength', 0) or 6, 6),
+                    "width": max(data.get('packageWidth', 0) or 4, 4),
+                    "height": max(data.get('packageHeight', 0) or 2, 2),
                     "unit": "inch"
                 }
             }]
