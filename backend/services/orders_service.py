@@ -127,22 +127,30 @@ class OrdersService:
                 # Get actual label cost from ShipEngine
                 label_cost = label_response.get("shipment_cost", {}).get("amount", 0)
                 
-                # Always add $10 markup to actual cost - this ensures consistent profit
-                from services.shipengine_service import RATE_MARKUP
-                user_paid = label_cost + RATE_MARKUP  # Actual cost + $10
-                profit = RATE_MARKUP  # Always $10 profit
+                # Пользователь платит total_cost (оценка + $10 наценка)
+                # Реальная прибыль = total_cost - реальная стоимость ShipEngine
+                total_cost_paid = order_data.get('total_cost', 0)
+                if total_cost_paid > 0:
+                    # Новая логика: пользователь платит оценочную цену
+                    user_paid = total_cost_paid
+                    profit = total_cost_paid - label_cost if label_cost else 10
+                else:
+                    # Fallback на старую логику
+                    from services.shipengine_service import RATE_MARKUP
+                    user_paid = label_cost + RATE_MARKUP
+                    profit = RATE_MARKUP
                 
                 update_data = {
                     "labelId": label_response.get("label_id"),
                     "trackingNumber": label_response.get("tracking_number"),
                     "labelCost": label_cost,  # Original ShipEngine price
-                    "userPaid": user_paid,    # Actual cost + $10 markup
-                    "profit": profit,          # Always $10
+                    "userPaid": user_paid,    # What user actually paid
+                    "profit": profit,          # Real profit
                     "labelDownloadUrl": label_response.get("label_download", {}).get("pdf"),
                     "status": OrderStatus.LABEL_CREATED.value,
                     "shipDate": datetime.utcnow(),
                     "updatedAt": datetime.utcnow(),
-                    "actualCost": user_paid    # Store for balance deduction
+                    "actualCost": label_cost    # Real ShipEngine cost
                 }
                 
                 await self.db.orders.update_one(
