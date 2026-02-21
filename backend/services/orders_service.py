@@ -120,34 +120,14 @@ class OrdersService:
             shipengine = ShipEngineService(api_key=api_key)
             
             try:
-                # Use rate_id if available - this guarantees the same price as shown in estimate
-                rate_id = order_data.get('rate_id')
-                logger.warning(f"[LABEL] Order data rate_id: {rate_id}")
-                logger.warning(f"[LABEL] Order data keys: {list(order_data.keys())}")
-                
-                label_response = None
-                used_rate_id = False
-                
-                if rate_id:
-                    try:
-                        logger.warning(f"[LABEL] Creating label from rate_id: {rate_id}")
-                        label_response = await shipengine.create_label_from_rate(rate_id)
-                        used_rate_id = True
-                        logger.warning(f"[LABEL] SUCCESS - Label created from rate_id")
-                    except Exception as rate_err:
-                        # rate_id may have expired (valid for ~15 minutes)
-                        logger.warning(f"[LABEL] FAILED to create from rate_id: {rate_err}")
-                        logger.warning("[LABEL] Falling back to regular label creation")
-                
-                if not label_response:
-                    # Fallback to regular creation if no rate_id or rate_id expired
-                    logger.warning(f"[LABEL] Creating label with service_code: {order.serviceCode}")
-                    label_response = await shipengine.create_label(order)
-                    logger.warning(f"[LABEL] Label created via fallback method")
+                # НЕ используем rate_id - он даёт неправильную цену!
+                # Используем обычное создание лейбла с полными данными
+                logger.warning(f"[LABEL] Creating label with service_code: {order.serviceCode}")
+                label_response = await shipengine.create_label(order)
                 
                 # Get actual label cost from ShipEngine
                 label_cost = label_response.get("shipment_cost", {}).get("amount", 0)
-                logger.warning(f"[LABEL] ShipEngine actual cost: ${label_cost}, used_rate_id: {used_rate_id}")
+                logger.warning(f"[LABEL] ShipEngine actual cost: ${label_cost}")
                 
                 # Пользователь платит total_cost (оценка + $10) - фиксированная цена
                 # Прибыль = total_cost - реальная стоимость ShipEngine
