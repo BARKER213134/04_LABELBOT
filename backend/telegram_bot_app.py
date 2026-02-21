@@ -980,15 +980,15 @@ async def confirm_pending_order_callback(update, context):
             username = update.effective_user.username
         order_data['telegram_username'] = username
         
-        # ВАЖНО: Списываем баланс ДО создания лейбла по фиксированной цене
-        await users_service.deduct_for_order(user_id, total_cost)
-        
-        # Create label
+        # Create label FIRST
         result = await orders_service.create_order(order_data)
         
         if result.get('success'):
-            # Пользователь платит фиксированную цену total_cost
-            actual_user_paid = total_cost
+            # Получаем РЕАЛЬНУЮ стоимость + $10 от orders_service
+            actual_user_paid = result.get('userPaid', total_cost)
+            
+            # Списываем баланс ПОСЛЕ создания по РЕАЛЬНОЙ цене + $10
+            await users_service.deduct_for_order(user_id, actual_user_paid)
             
             # Get new balance AFTER deduction
             user = await users_service.get_user(user_id)
