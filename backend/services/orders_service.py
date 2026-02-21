@@ -125,12 +125,20 @@ class OrdersService:
                 logger.info(f"Order data rate_id: {rate_id}")
                 logger.info(f"Order data keys: {list(order_data.keys())}")
                 
+                label_response = None
+                
                 if rate_id:
-                    logger.info(f"Creating label from rate_id: {rate_id}")
-                    label_response = await shipengine.create_label_from_rate(rate_id)
-                else:
-                    # Fallback to regular creation if no rate_id
-                    logger.warning(f"No rate_id found, using fallback. Creating label with service_code: {order.serviceCode}")
+                    try:
+                        logger.info(f"Creating label from rate_id: {rate_id}")
+                        label_response = await shipengine.create_label_from_rate(rate_id)
+                    except Exception as rate_err:
+                        # rate_id may have expired (valid for ~15 minutes)
+                        logger.warning(f"Failed to create from rate_id (may be expired): {rate_err}")
+                        logger.info("Falling back to regular label creation")
+                
+                if not label_response:
+                    # Fallback to regular creation if no rate_id or rate_id expired
+                    logger.info(f"Creating label with service_code: {order.serviceCode}")
                     label_response = await shipengine.create_label(order)
                 
                 # Get actual label cost from ShipEngine
