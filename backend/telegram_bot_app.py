@@ -1078,7 +1078,7 @@ async def confirm_pending_order_callback(update, context):
             # Notify admin about label creation
             try:
                 from services.admin_notifications import notify_label_created
-                # Прибыль всегда $10 (из result)
+                # Прибыль из result (total_cost - реальная цена ShipEngine)
                 profit = result.get('profit', 10)
                 
                 # Get username from users collection
@@ -1096,8 +1096,8 @@ async def confirm_pending_order_callback(update, context):
                     username=username,
                     tracking_number=tracking_number,
                     carrier=carrier_name,
-                    cost=actual_user_paid,  # Реальная цена + $10
-                    profit=profit  # Всегда $10
+                    cost=actual_user_paid,  # Фиксированная цена
+                    profit=profit  # Реальная прибыль
                 )
             except Exception as admin_err:
                 logger.warning(f"Failed to send admin notification: {admin_err}")
