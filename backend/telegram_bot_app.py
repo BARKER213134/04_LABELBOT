@@ -983,15 +983,15 @@ async def confirm_pending_order_callback(update, context):
             username = update.effective_user.username
         order_data['telegram_username'] = username
         
-        # Create label FIRST
+        # ВАЖНО: Списываем баланс ДО создания лейбла по фиксированной цене
+        await users_service.deduct_for_order(user_id, total_cost)
+        
+        # Create label
         result = await orders_service.create_order(order_data)
         
         if result.get('success'):
-            # Получаем РЕАЛЬНУЮ стоимость от ShipEngine + $10 наценка
-            actual_user_paid = result.get('userPaid', total_cost)
-            
-            # Списываем баланс ПОСЛЕ создания лейбла по РЕАЛЬНОЙ цене
-            await users_service.deduct_for_order(user_id, actual_user_paid)
+            # Пользователь платит фиксированную цену total_cost
+            actual_user_paid = total_cost
             
             # Get new balance AFTER deduction
             user = await users_service.get_user(user_id)
