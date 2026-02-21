@@ -2282,7 +2282,7 @@ class TelegramConversationHandler:
                                 profit = actual_user_paid - label_cost if label_cost else 10
                                 await notify_label_created(
                                     telegram_id=user_id,
-                                    username=tg_user.username,
+                                    username=final_username or tg_user.username,
                                     tracking_number=tracking_number,
                                     carrier=carrier_name,
                                     cost=actual_user_paid,
