@@ -1154,6 +1154,7 @@ class TelegramConversationHandler:
                     "Enter 3 positive numbers separated by space.\n"
                     "_Format: Length Width Height_\n"
                     "_Example: 12 8 6_\n\n"
+                    "⚠️ _Minimum: 6×4×2 inches_\n\n"
                     "Please try again:"
                 )
             else:
@@ -1162,6 +1163,7 @@ class TelegramConversationHandler:
                     "Введите 3 положительных числа через пробел.\n"
                     "_Формат: Длина Ширина Высота_\n"
                     "_Например: 12 8 6_\n\n"
+                    "⚠️ _Минимум: 6×4×2 дюйма_\n\n"
                     "Пожалуйста, попробуйте еще раз:"
                 )
             await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
