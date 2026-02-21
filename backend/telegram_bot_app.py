@@ -971,6 +971,9 @@ async def confirm_pending_order_callback(update, context):
         order_data['telegram_user_id'] = user_id
         order_data['total_cost'] = total_cost
         
+        # Log rate_id for debugging
+        logger.info(f"[PENDING ORDER] rate_id from saved order: {order_data.get('rate_id')}")
+        
         # Get username for order
         username = None
         user_record = await db.users.find_one({"telegram_id": user_id})
