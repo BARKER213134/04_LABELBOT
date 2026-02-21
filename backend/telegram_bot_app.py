@@ -1094,6 +1094,17 @@ async def confirm_pending_order_callback(update, context):
     except Exception as e:
         logger.error(f"Error creating label from pending order: {e}")
         
+        # ВАЖНО: Возвращаем деньги при ошибке
+        try:
+            await users_service.update_balance(
+                telegram_id=user_id,
+                amount=total_cost,
+                reason="Refund: label creation failed (pending order)"
+            )
+            logger.info(f"Refunded ${total_cost:.2f} to user {user_id} due to pending order error")
+        except Exception as refund_err:
+            logger.error(f"Failed to refund user {user_id}: {refund_err}")
+        
         # Notify admin about error
         try:
             from services.admin_notifications import notify_user_error
@@ -1111,7 +1122,11 @@ async def confirm_pending_order_callback(update, context):
             await processing_msg.delete()
         except:
             pass
-        error_text = f"❌ Error: {str(e)}" if lang == "en" else f"❌ Ошибка: {str(e)}"
+        
+        if lang == "en":
+            error_text = f"❌ Error creating label. Your balance has been refunded."
+        else:
+            error_text = f"❌ Ошибка создания лейбла. Баланс возвращён."
         await context.bot.send_message(chat_id, error_text)
 
 async def cancel_pending_order_callback(update, context):
