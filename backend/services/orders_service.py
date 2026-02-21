@@ -129,26 +129,18 @@ class OrdersService:
                 label_cost = label_response.get("shipment_cost", {}).get("amount", 0)
                 logger.warning(f"[LABEL] ShipEngine actual cost: ${label_cost}")
                 
-                # Пользователь платит total_cost (оценка + $10) - фиксированная цена
-                # Прибыль = total_cost - реальная стоимость ShipEngine
-                total_cost_paid = order_data.get('total_cost', 0)
-                
+                # СТАРАЯ ЛОГИКА: пользователь платит РЕАЛЬНУЮ цену + $10
+                # Это гарантирует прибыль $10
                 from services.shipengine_service import RATE_MARKUP
-                if total_cost_paid > 0:
-                    # Пользователь платит фиксированную цену которую видел
-                    user_paid = total_cost_paid
-                    profit = total_cost_paid - label_cost if label_cost else RATE_MARKUP
-                else:
-                    # Fallback если total_cost не передан
-                    user_paid = label_cost + RATE_MARKUP
-                    profit = RATE_MARKUP
+                user_paid = label_cost + RATE_MARKUP
+                profit = RATE_MARKUP
                 
                 update_data = {
                     "labelId": label_response.get("label_id"),
                     "trackingNumber": label_response.get("tracking_number"),
                     "labelCost": label_cost,  # Реальная цена ShipEngine
-                    "userPaid": user_paid,    # Фиксированная цена для пользователя
-                    "profit": profit,          # Разница
+                    "userPaid": user_paid,    # Реальная + $10
+                    "profit": profit,          # Всегда $10
                     "labelDownloadUrl": label_response.get("label_download", {}).get("pdf"),
                     "status": OrderStatus.LABEL_CREATED.value,
                     "shipDate": datetime.utcnow(),
