@@ -1845,11 +1845,13 @@ class TelegramConversationHandler:
         # Normalize carrier code for our enum
         carrier_code = selected_rate.get('carrier_code', '').lower()
         carrier_mapping = {
-            'stamps_com': 'stampscom',
-            'stamps.com': 'stampscom',
+            'stamps_com': 'stamps_com',
+            'stamps.com': 'stamps_com',
             'usps': 'usps',
             'fedex': 'fedex',
+            'fedex_walleted': 'fedex_walleted',
             'ups': 'ups',
+            'ups_walleted': 'ups_walleted',
             'dhl': 'dhl',
         }
         data['carrier'] = carrier_mapping.get(carrier_code, carrier_code)
