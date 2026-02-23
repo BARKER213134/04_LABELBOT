@@ -2727,6 +2727,10 @@ class TelegramConversationHandler:
         # Check if user is banned
         if await self._check_user_banned(user_id):
             return await self._send_banned_message(update, context)
+        
+        # Clear any previous conversation state first
+        await self.clear_user_data_async(user_id, context)
+        
         template_id = query.data.replace("tpl_edit_", "")
         
         # Remove buttons from old message (keep text)
