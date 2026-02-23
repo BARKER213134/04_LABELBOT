@@ -2230,20 +2230,41 @@ class TelegramConversationHandler:
             # Получаем РЕАЛЬНУЮ стоимость + $10 от orders_service
             actual_user_paid = result.get('userPaid', total_cost)
             
-            # Списываем баланс ПОСЛЕ создания лейбла по РЕАЛЬНОЙ цене + $10
-            if self.users_service:
-                try:
-                    await self.users_service.deduct_for_order(user_id, actual_user_paid)
-                    logger.info(f"Deducted ${actual_user_paid:.2f} from user {user_id}")
-                except Exception as deduct_err:
-                    logger.error(f"Failed to deduct balance: {deduct_err}")
-            
-            # Get new balance after deduction
+            # Проверяем баланс и списываем
+            new_balance = 0
             if self.users_service:
                 db_user = await self.users_service.get_user(user_id)
-                new_balance = db_user.get('balance', 0) if db_user else 0
-            else:
-                new_balance = 0
+                current_balance = db_user.get('balance', 0) if db_user else 0
+                
+                if current_balance < actual_user_paid:
+                    # Недостаточно средств - лейбл уже создан, списываем всё что есть
+                    debt = actual_user_paid - current_balance
+                    if current_balance > 0:
+                        await self.users_service.deduct_for_order(user_id, current_balance)
+                    
+                    logger.warning(f"User {user_id} has debt: ${debt:.2f}")
+                    
+                    # Уведомляем админа о долге
+                    try:
+                        from services.admin_notifications import notify_admin
+                        await notify_admin(
+                            f"⚠️ *ДОЛГ ПОЛЬЗОВАТЕЛЯ*\n\n"
+                            f"▫️ User: {user_id}\n"
+                            f"▫️ Баланс был: ${current_balance:.2f}\n"
+                            f"▫️ Стоимость: ${actual_user_paid:.2f}\n"
+                            f"▫️ Долг: ${debt:.2f}\n"
+                            f"▫️ Tracking: {result.get('trackingNumber')}"
+                        )
+                    except:
+                        pass
+                    
+                    new_balance = 0
+                else:
+                    # Достаточно средств - списываем
+                    await self.users_service.deduct_for_order(user_id, actual_user_paid)
+                    logger.info(f"Deducted ${actual_user_paid:.2f} from user {user_id}")
+                    db_user = await self.users_service.get_user(user_id)
+                    new_balance = db_user.get('balance', 0) if db_user else 0
             
             carrier_name = data.get('selected_rate', {}).get('carrier_friendly_name', data.get('carrier', ''))
             tracking_number = result.get('trackingNumber', 'N/A')
