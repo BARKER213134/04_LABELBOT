@@ -1670,6 +1670,16 @@ class TelegramConversationHandler:
             config = carrier_config.get(carrier_code, {'icon': '📦', 'name': carrier_code})
             popular = popular_services.get(carrier_code, [])
             
+            # Deduplicate by service_code - keep only the cheapest rate for each service
+            unique_rates = {}
+            for rate in carrier_rates:
+                service_code = rate.get('service_code', '')
+                current_price = rate.get('total_amount', 999)
+                if service_code not in unique_rates or current_price < unique_rates[service_code].get('total_amount', 999):
+                    unique_rates[service_code] = rate
+            
+            deduplicated_rates = list(unique_rates.values())
+            
             # Sort rates: prioritize popular services, then by price
             def rate_sort_key(r):
                 service_code = r.get('service_code', '')
@@ -1679,7 +1689,7 @@ class TelegramConversationHandler:
                     priority = 999
                 return (priority, r.get('total_amount', 999))
             
-            sorted_carrier_rates = sorted(carrier_rates, key=rate_sort_key)
+            sorted_carrier_rates = sorted(deduplicated_rates, key=rate_sort_key)
             
             # Take top 4 rates for this carrier
             for rate in sorted_carrier_rates[:4]:
