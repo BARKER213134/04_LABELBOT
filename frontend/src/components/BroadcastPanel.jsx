@@ -3,7 +3,7 @@ import { Send, Users, AlertCircle, CheckCircle, Loader2, Image, X, Eye } from 'l
 import { toast } from 'sonner';
 import axios from 'axios';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const API = `${(process.env.REACT_APP_BACKEND_URL || '').replace(/\/+$/, '')}/api`;
 
 const BroadcastPanel = () => {
   const [message, setMessage] = useState('');
