@@ -150,6 +150,26 @@ class TelegramConversationHandler:
         except Exception:
             pass  # Silently ignore errors during cleanup
     
+    async def clear_user_data_async(self, user_id: str, context=None):
+        """Clear user's conversation data (async version for reliable cleanup)"""
+        if context is not None:
+            context.user_data.clear()
+        elif user_id in self.user_data:
+            del self.user_data[user_id]
+        
+        # Clear MongoDB data
+        try:
+            from database import Database
+            if Database.db is not None:
+                await Database.db.pending_label_orders.delete_one({"telegram_id": user_id})
+                await Database.db.ptb_conversations.delete_many({
+                    "name": "label_creation",
+                    "key": [int(user_id), int(user_id)]
+                })
+                logger.info(f"Cleared all MongoDB state for user {user_id}")
+        except Exception as e:
+            logger.warning(f"Could not clear MongoDB state for user {user_id}: {e}")
+    
     def get_progress_bar(self, step: int) -> str:
         """Generate progress bar for steps"""
         total_steps = 4
