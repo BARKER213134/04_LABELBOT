@@ -338,8 +338,8 @@ class TelegramConversationHandler:
         if await self._check_user_banned(user_id):
             return await self._send_banned_message(update, context)
         
-        # Clear previous data
-        self.clear_user_data(user_id, context)
+        # Clear previous data including MongoDB state
+        await self.clear_user_data_async(user_id, context)
         
         # Ensure user exists and get language
         db_user = await self._ensure_user(update)
