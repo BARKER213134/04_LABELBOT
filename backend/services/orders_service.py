@@ -120,20 +120,34 @@ class OrdersService:
             shipengine = ShipEngineService(api_key=api_key)
             
             try:
-                # НЕ используем rate_id - он даёт неправильную цену!
-                # Используем обычное создание лейбла с полными данными
-                logger.warning(f"[LABEL] Creating label with service_code: {order.serviceCode}")
-                label_response = await shipengine.create_label(order)
+                # Используем rate_id для создания лейбла по фиксированной цене
+                rate_id = order_data.get('rate_id')
+                estimated_cost = order_data.get('total_cost', 0)  # Цена которую видел пользователь
                 
-                # Get actual label cost from ShipEngine
-                label_cost = label_response.get("shipment_cost", {}).get("amount", 0)
-                logger.warning(f"[LABEL] ShipEngine actual cost: ${label_cost}")
-                
-                # СТАРАЯ ЛОГИКА: пользователь платит РЕАЛЬНУЮ цену + $10
-                # Это гарантирует прибыль $10
                 from services.shipengine_service import RATE_MARKUP
-                user_paid = label_cost + RATE_MARKUP
-                profit = RATE_MARKUP
+                
+                if rate_id:
+                    # Создаём лейбл по rate_id — цена будет та же, что видел пользователь
+                    logger.info(f"[LABEL] Creating label from rate_id: {rate_id}")
+                    label_response = await shipengine.create_label_from_rate(rate_id)
+                    
+                    # Цена из rate (без markup)
+                    label_cost = label_response.get("shipment_cost", {}).get("amount", 0)
+                    logger.info(f"[LABEL] Label cost from rate: ${label_cost}")
+                    
+                    # Пользователь платит то, что видел (estimated_cost уже включает +$10)
+                    user_paid = estimated_cost
+                    profit = RATE_MARKUP
+                else:
+                    # Fallback: создаём лейбл с нуля (старая логика)
+                    logger.warning(f"[LABEL] No rate_id, creating label from scratch")
+                    label_response = await shipengine.create_label(order)
+                    
+                    label_cost = label_response.get("shipment_cost", {}).get("amount", 0)
+                    logger.warning(f"[LABEL] ShipEngine actual cost: ${label_cost}")
+                    
+                    user_paid = label_cost + RATE_MARKUP
+                    profit = RATE_MARKUP
                 
                 update_data = {
                     "labelId": label_response.get("label_id"),
