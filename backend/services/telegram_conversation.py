@@ -1144,6 +1144,26 @@ class TelegramConversationHandler:
             if any(d <= 0 for d in [length, width, height]):
                 raise ValueError()
             
+            # Проверка минимальных размеров
+            MIN_LENGTH, MIN_WIDTH, MIN_HEIGHT = 6, 4, 2
+            if length < MIN_LENGTH or width < MIN_WIDTH or height < MIN_HEIGHT:
+                if lang == "en":
+                    text = (
+                        "❌ *Dimensions too small*\n\n"
+                        f"Minimum dimensions: *{MIN_LENGTH}×{MIN_WIDTH}×{MIN_HEIGHT} inches*\n\n"
+                        f"You entered: {length}×{width}×{height}\n\n"
+                        "Please enter correct dimensions:"
+                    )
+                else:
+                    text = (
+                        "❌ *Размеры слишком маленькие*\n\n"
+                        f"Минимальные размеры: *{MIN_LENGTH}×{MIN_WIDTH}×{MIN_HEIGHT} дюймов*\n\n"
+                        f"Вы ввели: {length}×{width}×{height}\n\n"
+                        "Пожалуйста, введите корректные размеры:"
+                    )
+                await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+                return PACKAGE_DIMENSIONS
+            
             data['packageLength'] = length
             data['packageWidth'] = width
             data['packageHeight'] = height
