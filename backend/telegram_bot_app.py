@@ -1200,11 +1200,15 @@ async def cancel_pending_order_callback(update, context):
     # Delete pending order from DB
     await db.pending_label_orders.delete_one({"telegram_id": user_id})
     
-    # Очищаем conversation state в MongoDB
+    # Очищаем conversation state в MongoDB - включая имя conversation handler
     try:
-        await db.ptb_conversations.delete_many({"key": [int(user_id), int(user_id)]})
-    except Exception:
-        pass
+        await db.ptb_conversations.delete_many({
+            "name": "label_creation",
+            "key": [int(user_id), int(user_id)]
+        })
+        logger.info(f"Cleared conversation state for user {user_id}")
+    except Exception as e:
+        logger.warning(f"Could not clear conversation state: {e}")
     
     # ВАЖНО: Очищаем context.user_data чтобы не было конфликтов с новым заказом
     # Сохраняем только язык
