@@ -114,12 +114,27 @@ class ShipEngineService:
             if rate_errors:
                 logger.warning(f"Rate errors from carriers: {rate_errors}")
             
-            # Add markup to each rate
+            # Add markup to each rate - include ALL fees (shipping + fuel surcharge + other)
             for rate in rates:
-                original_amount = rate.get("shipping_amount", {}).get("amount", 0)
-                rate["original_amount"] = original_amount
+                # Get all cost components
+                shipping_amount = rate.get("shipping_amount", {}).get("amount", 0)
+                other_amount = rate.get("other_amount", {}).get("amount", 0)  # Fuel surcharge, etc.
+                insurance_amount = rate.get("insurance_amount", {}).get("amount", 0)
+                confirmation_amount = rate.get("confirmation_amount", {}).get("amount", 0)
+                
+                # Full cost = all fees combined
+                full_cost = shipping_amount + other_amount + insurance_amount + confirmation_amount
+                
+                # Store original amounts for transparency
+                rate["shipping_only"] = shipping_amount
+                rate["other_fees"] = other_amount
+                rate["original_amount"] = full_cost  # Full cost before markup
                 rate["markup"] = RATE_MARKUP
-                rate["total_amount"] = original_amount + RATE_MARKUP
+                rate["total_amount"] = full_cost + RATE_MARKUP  # What user pays
+                
+                carrier = rate.get("carrier_code", "")
+                service = rate.get("service_code", "")
+                logger.info(f"Rate {carrier}/{service}: shipping=${shipping_amount:.2f} + other=${other_amount:.2f} = ${full_cost:.2f} + markup=${RATE_MARKUP} = ${rate['total_amount']:.2f}")
             
             logger.info(f"Got {len(rates)} rates from ShipEngine")
             return rates
