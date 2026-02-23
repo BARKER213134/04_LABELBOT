@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+// Remove trailing slash if present
+const BACKEND_URL = (process.env.REACT_APP_BACKEND_URL || '').replace(/\/+$/, '');
 const API = `${BACKEND_URL}/api`;
 
 // Admin credentials - stored in sessionStorage after login
