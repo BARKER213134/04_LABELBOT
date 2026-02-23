@@ -2865,6 +2865,18 @@ class TelegramConversationHandler:
         
         self.clear_user_data(user_id, context)
         
+        # Also clear conversation state in MongoDB
+        try:
+            from database import Database
+            if Database.db is not None:
+                await Database.db.ptb_conversations.delete_many({
+                    "name": "label_creation",
+                    "key": [int(user_id), int(user_id)]
+                })
+                logger.info(f"Cleared MongoDB conversation state for user {user_id}")
+        except Exception as e:
+            logger.warning(f"Could not clear MongoDB conversation state: {e}")
+        
         logger.info(f"back_to_menu_fallback triggered by user {user_id} - ending conversation")
         
         # Get user balance
