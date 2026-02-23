@@ -2904,6 +2904,19 @@ class TelegramConversationHandler:
         user_id = str(update.effective_user.id)
         self.clear_user_data(user_id, context)
         
+        # Also clear conversation state in MongoDB
+        try:
+            from database import Database
+            if Database.db is not None:
+                await Database.db.ptb_conversations.delete_many({
+                    "name": "label_creation",
+                    "key": [int(user_id), int(user_id)]
+                })
+                await Database.db.pending_label_orders.delete_one({"telegram_id": user_id})
+                logger.info(f"Cleared MongoDB state for user {user_id} on cancel")
+        except Exception as e:
+            logger.warning(f"Could not clear MongoDB state on cancel: {e}")
+        
         text = (
             "━━━━━━━━━━━━━━━━━━━━\n"
             "❌ *СОЗДАНИЕ ОТМЕНЕНО*\n"
