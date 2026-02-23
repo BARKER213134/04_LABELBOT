@@ -1875,12 +1875,8 @@ class TelegramConversationHandler:
         
         # Handle back to review
         if callback_data == "back_to_review_from_rates":
-            # Remove buttons from old message
-            try:
-                await query.edit_message_reply_markup(reply_markup=None)
-            except Exception:
-                pass
-            await self.show_review_summary(query.message, user_id, context)
+            # Edit current message to show review summary
+            await self.show_review_summary(query.message, user_id, context, edit_message=True)
             return REVIEW_SUMMARY
         
         # Get selected rate
