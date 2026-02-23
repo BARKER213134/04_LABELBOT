@@ -2947,7 +2947,8 @@ class TelegramConversationHandler:
         if await self._check_user_banned(user_id):
             return await self._send_banned_message(update, context)
         
-        self.clear_user_data(user_id, context)
+        # Clear all user data including MongoDB
+        await self.clear_user_data_async(user_id, context)
         
         # Import here to avoid circular import
         from services.telegram_service import TelegramService
