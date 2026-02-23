@@ -1288,11 +1288,24 @@ class TelegramConversationHandler:
             text += f"▫️ {phone_lbl}: {data.get('shipToPhone')}\n"
         
         weight_lbs = data.get('packageWeightLbs', 0) or (data.get('packageWeight', 0) / 16)
+        
+        if lang == "en":
+            warning_text = (
+                "⚠️ _If the actual package is larger or heavier,_\n"
+                "_the carrier will recalculate and charge extra._"
+            )
+        else:
+            warning_text = (
+                "⚠️ _Если реальная посылка будет больше или тяжелее,_\n"
+                "_перевозчик пересчитает и спишет дополнительно._"
+            )
+        
         text += (
             f"\n━━━━━━━━━━━━━━━━━━━━\n"
             f"📦 *{package_lbl}*\n"
             f"▫️ {weight_lbl}: {weight_lbs:.2f} lbs\n"
             f"▫️ {dims_lbl}: {data.get('packageLength')}×{data.get('packageWidth')}×{data.get('packageHeight')} {inches_lbl}\n\n"
+            f"{warning_text}\n\n"
             "━━━━━━━━━━━━━━━━━━━━\n\n"
             f"{action_lbl}"
         )
