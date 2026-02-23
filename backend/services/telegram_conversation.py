@@ -2887,19 +2887,8 @@ class TelegramConversationHandler:
         if await self._check_user_banned(user_id):
             return await self._send_banned_message(update, context)
         
-        self.clear_user_data(user_id, context)
-        
-        # Also clear conversation state in MongoDB
-        try:
-            from database import Database
-            if Database.db is not None:
-                await Database.db.ptb_conversations.delete_many({
-                    "name": "label_creation",
-                    "key": [int(user_id), int(user_id)]
-                })
-                logger.info(f"Cleared MongoDB conversation state for user {user_id}")
-        except Exception as e:
-            logger.warning(f"Could not clear MongoDB conversation state: {e}")
+        # Clear all user data including MongoDB
+        await self.clear_user_data_async(user_id, context)
         
         logger.info(f"back_to_menu_fallback triggered by user {user_id} - ending conversation")
         
