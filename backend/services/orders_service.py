@@ -124,8 +124,6 @@ class OrdersService:
                 rate_id = order_data.get('rate_id')
                 estimated_cost = order_data.get('total_cost', 0)  # Цена которую видел пользователь
                 
-                from services.shipengine_service import RATE_MARKUP
-                
                 if rate_id:
                     # Создаём лейбл по rate_id — цена будет та же, что видел пользователь
                     logger.info(f"[LABEL] Creating label from rate_id: {rate_id}")
@@ -137,7 +135,6 @@ class OrdersService:
                     
                     # Пользователь платит то, что видел (estimated_cost уже включает +$10)
                     user_paid = estimated_cost
-                    profit = RATE_MARKUP
                 else:
                     # Fallback: создаём лейбл с нуля (старая логика)
                     logger.warning(f"[LABEL] No rate_id, creating label from scratch")
@@ -146,15 +143,19 @@ class OrdersService:
                     label_cost = label_response.get("shipment_cost", {}).get("amount", 0)
                     logger.warning(f"[LABEL] ShipEngine actual cost: ${label_cost}")
                     
+                    from services.shipengine_service import RATE_MARKUP
                     user_paid = label_cost + RATE_MARKUP
-                    profit = RATE_MARKUP
+                
+                # Реальная прибыль = что заплатил пользователь - стоимость лейбла
+                profit = user_paid - label_cost
+                logger.info(f"[LABEL] Profit: ${profit:.2f} (user paid ${user_paid:.2f} - label cost ${label_cost:.2f})")
                 
                 update_data = {
                     "labelId": label_response.get("label_id"),
                     "trackingNumber": label_response.get("tracking_number"),
                     "labelCost": label_cost,  # Реальная цена ShipEngine
-                    "userPaid": user_paid,    # Реальная + $10
-                    "profit": profit,          # Всегда $10
+                    "userPaid": user_paid,    # Что заплатил пользователь
+                    "profit": profit,          # Реальная прибыль
                     "labelDownloadUrl": label_response.get("label_download", {}).get("pdf"),
                     "status": OrderStatus.LABEL_CREATED.value,
                     "shipDate": datetime.utcnow(),
