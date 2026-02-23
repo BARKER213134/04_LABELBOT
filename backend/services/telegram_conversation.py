@@ -2087,7 +2087,7 @@ class TelegramConversationHandler:
             reply_markup = InlineKeyboardMarkup(keyboard)
             
             await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
-            self.clear_user_data(user_id, context)
+            await self.clear_user_data_async(user_id, context)
             return ConversationHandler.END
         
         if query.data == "back_to_rates":
