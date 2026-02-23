@@ -250,10 +250,9 @@ class ShipEngineService:
                             "unit": "ounce"
                         },
                         "dimensions": {
-                            # Минимальные размеры 6x4x2 дюймов (как при оценке)
-                            "length": max(order.package.length or 6, 6),
-                            "width": max(order.package.width or 4, 4),
-                            "height": max(order.package.height or 2, 2),
+                            "length": order.package.length,
+                            "width": order.package.width,
+                            "height": order.package.height,
                             "unit": "inch"
                         }
                     }
