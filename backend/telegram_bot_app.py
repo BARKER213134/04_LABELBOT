@@ -987,12 +987,39 @@ async def confirm_pending_order_callback(update, context):
             # Получаем РЕАЛЬНУЮ стоимость + $10 от orders_service
             actual_user_paid = result.get('userPaid', total_cost)
             
-            # Списываем баланс ПОСЛЕ создания по РЕАЛЬНОЙ цене + $10
-            await users_service.deduct_for_order(user_id, actual_user_paid)
-            
-            # Get new balance AFTER deduction
+            # Проверяем баланс перед списанием
             user = await users_service.get_user(user_id)
-            new_balance = user.get('balance', 0) if user else 0
+            current_balance = user.get('balance', 0) if user else 0
+            
+            if current_balance < actual_user_paid:
+                # Недостаточно средств - лейбл уже создан, но денег не хватает
+                # Списываем всё что есть и уведомляем админа о долге
+                debt = actual_user_paid - current_balance
+                if current_balance > 0:
+                    await users_service.deduct_for_order(user_id, current_balance)
+                
+                logger.warning(f"User {user_id} has debt: ${debt:.2f} (balance: ${current_balance:.2f}, cost: ${actual_user_paid:.2f})")
+                
+                # Уведомляем админа о долге
+                try:
+                    from services.admin_notifications import notify_admin
+                    await notify_admin(
+                        f"⚠️ *ДОЛГ ПОЛЬЗОВАТЕЛЯ*\n\n"
+                        f"▫️ User: {user_id}\n"
+                        f"▫️ Баланс был: ${current_balance:.2f}\n"
+                        f"▫️ Стоимость: ${actual_user_paid:.2f}\n"
+                        f"▫️ Долг: ${debt:.2f}\n"
+                        f"▫️ Tracking: {result.get('trackingNumber')}"
+                    )
+                except:
+                    pass
+                
+                new_balance = 0
+            else:
+                # Достаточно средств - списываем
+                await users_service.deduct_for_order(user_id, actual_user_paid)
+                user = await users_service.get_user(user_id)
+                new_balance = user.get('balance', 0) if user else 0
             
             # Delete pending order
             await db.pending_label_orders.delete_one({"telegram_id": user_id})
