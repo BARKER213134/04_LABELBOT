@@ -108,7 +108,7 @@ class ShipEngineService:
             # Get carrier IDs first
             carrier_ids = await self._get_carrier_ids()
             if not carrier_ids:
-                raise ValueError("No carriers connected to ShipEngine account")
+                raise ValueError("No carriers available")
             
             # Set company_name to dash to override carrier defaults (SITKAGEAR fix)
             ship_from = shipment_data["ship_from"].copy()
