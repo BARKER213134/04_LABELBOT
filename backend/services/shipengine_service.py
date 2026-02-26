@@ -56,8 +56,7 @@ class ShipEngineService:
     async def get_account_balance(self) -> Dict[str, Any]:
         """Get ShipEngine account balance"""
         try:
-            response = await self.client.get("/v1/account/settings")
-            response.raise_for_status()
+            response = await self._request_with_retry("GET", "/v1/account/settings")
             data = response.json()
             
             # Extract balance info
@@ -77,8 +76,7 @@ class ShipEngineService:
             return self._carrier_ids
         
         try:
-            response = await self.client.get("/v1/carriers")
-            response.raise_for_status()
+            response = await self._request_with_retry("GET", "/v1/carriers")
             carriers_data = response.json()
             
             self._carrier_ids = [
