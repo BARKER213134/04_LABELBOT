@@ -18,6 +18,16 @@ from services.localization import t, get_user_language, DEFAULT_LANGUAGE
 logging.getLogger(__name__).setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
+
+async def safe_answer_query(query):
+    """Safely answer callback query, ignoring 'too old' errors"""
+    try:
+        await query.answer()
+    except Exception as e:
+        # Ignore "Query is too old" and similar errors
+        if "too old" not in str(e).lower() and "invalid" not in str(e).lower():
+            logger.warning(f"Failed to answer query: {e}")
+
 # Conversation states
 (
     SHIP_FROM_NAME,
