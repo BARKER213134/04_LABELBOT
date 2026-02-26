@@ -114,6 +114,11 @@ export const adminAPI = {
     const response = await adminAxios.post(`${API}/admin/maintenance/disable`);
     return response.data;
   },
+  
+  updateMaintenanceWhitelist: async (whitelist) => {
+    const response = await adminAxios.post(`${API}/admin/maintenance/whitelist`, { whitelist });
+    return response.data;
+  },
 };
 
 export const statisticsAPI = {
