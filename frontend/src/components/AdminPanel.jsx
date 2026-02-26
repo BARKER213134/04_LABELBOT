@@ -73,6 +73,8 @@ const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState('settings');
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [maintenanceLoading, setMaintenanceLoading] = useState(false);
+  const [maintenanceWhitelist, setMaintenanceWhitelist] = useState([]);
+  const [whitelistInput, setWhitelistInput] = useState('');
 
   useEffect(() => {
     if (isLoggedIn) {
