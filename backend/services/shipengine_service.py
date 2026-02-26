@@ -209,15 +209,17 @@ class ShipEngineService:
             
         except httpx.HTTPStatusError as e:
             error_detail = e.response.json() if e.response.text else str(e)
-            logger.error(f"ShipEngine API error creating label from rate: {error_detail}")
-            raise ValueError(f"Failed to create label: {error_detail}")
+            logger.error(f"API error creating label from rate: {error_detail}")
+            # Parse user-friendly error message
+            user_error = self._parse_error_message(error_detail)
+            raise ValueError(f"Failed to create label: {user_error}")
         except httpx.RequestError as e:
-            logger.error(f"Request error calling ShipEngine: {e}")
-            raise ValueError(f"Network error: {str(e)}")
+            logger.error(f"Request error: {e}")
+            raise ValueError(f"Network error")
 
     async def create_label(self, order: Order) -> Dict[str, Any]:
         """
-        Create a shipping label via ShipEngine API
+        Create a shipping label via API
         """
         try:
             payload = self._prepare_label_payload(order)
@@ -235,11 +237,23 @@ class ShipEngineService:
             
         except httpx.HTTPStatusError as e:
             error_detail = e.response.json() if e.response.text else str(e)
-            logger.error(f"ShipEngine API error: {error_detail}")
-            raise ValueError(f"Failed to create label: {error_detail}")
+            logger.error(f"API error: {error_detail}")
+            user_error = self._parse_error_message(error_detail)
+            raise ValueError(f"Failed to create label: {user_error}")
         except httpx.RequestError as e:
-            logger.error(f"Request error calling ShipEngine: {e}")
-            raise ValueError(f"Network error: {str(e)}")
+            logger.error(f"Request error: {e}")
+            raise ValueError(f"Network error")
+    
+    def _parse_error_message(self, error_detail) -> str:
+        """Parse error detail and return user-friendly message"""
+        if isinstance(error_detail, dict):
+            errors = error_detail.get("errors", [])
+            if errors:
+                # Get first error message
+                first_error = errors[0] if isinstance(errors, list) else errors
+                if isinstance(first_error, dict):
+                    return first_error.get("message", "Unknown error")
+        return str(error_detail)[:100]  # Truncate long errors
     
     def _prepare_label_payload(self, order: Order) -> Dict[str, Any]:
         """Prepare request payload for ShipEngine label creation"""
