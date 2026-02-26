@@ -78,9 +78,40 @@ async def get_maintenance_status(
     return {
         "enabled": config.get("enabled", False) if config else False,
         "message": config.get("message", "") if config else "",
+        "whitelist": config.get("whitelist", []) if config else [],
         "updated_at": config.get("updated_at") if config else None,
         "updated_by": config.get("updated_by") if config else None
     }
+
+
+@router.post("/maintenance/whitelist")
+async def update_maintenance_whitelist(
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_database),
+    admin: str = Depends(verify_admin)
+):
+    """Update maintenance whitelist"""
+    check_rate_limit(get_client_ip(request), api_limiter)
+    
+    try:
+        data = await request.json()
+        whitelist = data.get("whitelist", [])
+        
+        # Clean whitelist - remove @ from usernames
+        clean_whitelist = [u.lstrip('@') for u in whitelist if u]
+        
+        await db.bot_settings.update_one(
+            {"_id": "maintenance"},
+            {"$set": {"whitelist": clean_whitelist}},
+            upsert=True
+        )
+        
+        clear_maintenance_cache()
+        
+        return {"success": True, "whitelist": clean_whitelist}
+    except Exception as e:
+        logger.error(f"Error updating whitelist: {e}")
+        return {"success": False, "error": str(e)}
 
 
 @router.post("/maintenance/enable")
