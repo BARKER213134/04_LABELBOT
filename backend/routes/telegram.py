@@ -159,18 +159,33 @@ async def telegram_webhook(
         update_data = await request.json()
         
         # Check maintenance mode
-        from routes.admin import get_maintenance_mode
+        from routes.admin import get_maintenance_mode, get_maintenance_whitelist
         is_maintenance = await get_maintenance_mode(db)
         
         if is_maintenance:
-            # In maintenance mode - send message and ignore update
+            # Check if user is in whitelist
             user_id = None
+            username = None
             if "message" in update_data:
                 user_id = update_data["message"].get("from", {}).get("id")
+                username = update_data["message"].get("from", {}).get("username")
             elif "callback_query" in update_data:
                 user_id = update_data["callback_query"].get("from", {}).get("id")
+                username = update_data["callback_query"].get("from", {}).get("username")
             
+            # Check whitelist - allow admins and whitelisted users
+            whitelist = await get_maintenance_whitelist(db)
+            admin_id = settings.admin_telegram_id if hasattr(settings, 'admin_telegram_id') else None
+            
+            is_whitelisted = False
             if user_id:
+                if str(user_id) in whitelist or str(user_id) == str(admin_id):
+                    is_whitelisted = True
+            if username:
+                if username.lower() in [u.lower() for u in whitelist]:
+                    is_whitelisted = True
+            
+            if not is_whitelisted and user_id:
                 try:
                     from telegram import Bot
                     from services.localization import get_user_language
@@ -192,8 +207,8 @@ async def telegram_webhook(
                     )
                 except:
                     pass
-            
-            return JSONResponse(content={"status": "ok"})
+                
+                return JSONResponse(content={"status": "ok"})
         
         # Validate Telegram update structure
         if not validate_telegram_webhook(settings.telegram_bot_token_prod, update_data):
