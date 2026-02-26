@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 async def safe_answer_query(query):
     """Safely answer callback query, ignoring 'too old' errors"""
     try:
-        await query.answer()
+        await safe_answer_query(query)
     except Exception as e:
         # Ignore "Query is too old" and similar errors
         if "too old" not in str(e).lower() and "invalid" not in str(e).lower():
@@ -338,7 +338,7 @@ class TelegramConversationHandler:
     async def start_create_callback(self, update: Update, context) -> int:
         """Start the label creation process from callback button"""
         query = update.callback_query
-        await query.answer()
+        await safe_answer_query(query)
         
         user_id = str(update.effective_user.id)
         chat_id = update.effective_chat.id
@@ -693,7 +693,7 @@ class TelegramConversationHandler:
     async def skip_from_phone_callback(self, update: Update, context) -> int:
         """Handle skip button for from phone"""
         query = update.callback_query
-        await query.answer()
+        await safe_answer_query(query)
         
         user_id = str(update.effective_user.id)
         data = self.get_user_data(user_id, context)
@@ -1044,7 +1044,7 @@ class TelegramConversationHandler:
     async def skip_to_phone_callback(self, update: Update, context) -> int:
         """Handle skip button for to phone"""
         query = update.callback_query
-        await query.answer()
+        await safe_answer_query(query)
         
         user_id = str(update.effective_user.id)
         data = self.get_user_data(user_id, context)
@@ -1378,7 +1378,7 @@ class TelegramConversationHandler:
     async def handle_edit_choice(self, update: Update, context) -> int:
         """Handle edit section choice"""
         query = update.callback_query
-        await query.answer()
+        await safe_answer_query(query)
         
         user_id = str(update.effective_user.id)
         lang = await self._get_lang(user_id, context)
@@ -1751,7 +1751,7 @@ class TelegramConversationHandler:
     async def handle_specific_edit(self, update: Update, context) -> int:
         """Handle specific field edit choice"""
         query = update.callback_query
-        await query.answer()
+        await safe_answer_query(query)
         
         user_id = str(update.effective_user.id)
         data = self.get_user_data(user_id, context)
@@ -1897,7 +1897,7 @@ class TelegramConversationHandler:
     async def select_rate(self, update: Update, context) -> int:
         """Handle rate selection"""
         query = update.callback_query
-        await query.answer()
+        await safe_answer_query(query)
         
         user_id = str(update.effective_user.id)
         logger.warning(f"[SELECT_RATE] User {user_id} selected rate: {query.data}")
@@ -2059,7 +2059,7 @@ class TelegramConversationHandler:
     
     async def confirm_and_create(self, update: Update, context) -> int:
         query = update.callback_query
-        await query.answer()
+        await safe_answer_query(query)
         
         user_id = str(update.effective_user.id)
         username = update.effective_user.username
@@ -2553,7 +2553,7 @@ class TelegramConversationHandler:
     async def back_to_review_from_template(self, update: Update, context) -> int:
         """Return to review summary from template save prompt"""
         query = update.callback_query
-        await query.answer()
+        await safe_answer_query(query)
         
         user_id = str(update.effective_user.id)
         await self.show_review_summary(query.message, user_id, context, edit_message=True)
@@ -2562,7 +2562,7 @@ class TelegramConversationHandler:
     async def save_template_prompt(self, update: Update, context) -> int:
         """Ask for template name"""
         query = update.callback_query
-        await query.answer()
+        await safe_answer_query(query)
         
         user_id = str(update.effective_user.id)
         logger.info(f"save_template_prompt called for user {user_id}")
@@ -2683,7 +2683,7 @@ class TelegramConversationHandler:
     async def use_template(self, update: Update, context) -> int:
         """Use a template to create a new label - sends new message"""
         query = update.callback_query
-        await query.answer()
+        await safe_answer_query(query)
         
         user_id = str(update.effective_user.id)
         lang = await self._get_lang(user_id, context)
@@ -2730,7 +2730,7 @@ class TelegramConversationHandler:
     async def edit_template(self, update: Update, context) -> int:
         """Edit a template - sends new message"""
         query = update.callback_query
-        await query.answer()
+        await safe_answer_query(query)
         
         user_id = str(update.effective_user.id)
         
@@ -2790,7 +2790,7 @@ class TelegramConversationHandler:
     async def save_template_changes(self, update: Update, context) -> int:
         """Save template changes - sends new message"""
         query = update.callback_query
-        await query.answer()
+        await safe_answer_query(query)
         
         user_id = str(update.effective_user.id)
         data = self.get_user_data(user_id, context)
@@ -2896,7 +2896,7 @@ class TelegramConversationHandler:
     async def back_to_menu_fallback(self, update: Update, context) -> int:
         """Handle back to menu button - works like /start command"""
         query = update.callback_query
-        await query.answer()
+        await safe_answer_query(query)
         
         user_id = str(update.effective_user.id)
         
