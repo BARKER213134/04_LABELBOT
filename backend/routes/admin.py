@@ -15,6 +15,8 @@ logger = logging.getLogger(__name__)
 # Maintenance mode cache
 _maintenance_mode = None
 _maintenance_cache_time = 0
+_maintenance_whitelist = None
+_whitelist_cache_time = 0
 
 
 async def get_maintenance_mode(db) -> bool:
@@ -35,11 +37,31 @@ async def get_maintenance_mode(db) -> bool:
         return False
 
 
+async def get_maintenance_whitelist(db) -> list:
+    """Get maintenance whitelist with caching"""
+    global _maintenance_whitelist, _whitelist_cache_time
+    import time
+    
+    current_time = time.time()
+    if _maintenance_whitelist is not None and (current_time - _whitelist_cache_time) < 10:
+        return _maintenance_whitelist
+    
+    try:
+        config = await db.bot_settings.find_one({"_id": "maintenance"})
+        _maintenance_whitelist = config.get("whitelist", []) if config else []
+        _whitelist_cache_time = current_time
+        return _maintenance_whitelist
+    except:
+        return []
+
+
 def clear_maintenance_cache():
     """Clear maintenance mode cache"""
-    global _maintenance_mode, _maintenance_cache_time
+    global _maintenance_mode, _maintenance_cache_time, _maintenance_whitelist, _whitelist_cache_time
     _maintenance_mode = None
     _maintenance_cache_time = 0
+    _maintenance_whitelist = None
+    _whitelist_cache_time = 0
 
 
 @router.get("/maintenance")
