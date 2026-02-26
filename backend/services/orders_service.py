@@ -153,14 +153,14 @@ class OrdersService:
                 update_data = {
                     "labelId": label_response.get("label_id"),
                     "trackingNumber": label_response.get("tracking_number"),
-                    "labelCost": label_cost,  # Реальная цена ShipEngine
+                    "labelCost": label_cost,  # Реальная цена
                     "userPaid": user_paid,    # Что заплатил пользователь
                     "profit": profit,          # Реальная прибыль
                     "labelDownloadUrl": label_response.get("label_download", {}).get("pdf"),
                     "status": OrderStatus.LABEL_CREATED.value,
                     "shipDate": datetime.utcnow(),
                     "updatedAt": datetime.utcnow(),
-                    "actualCost": label_cost    # Real ShipEngine cost
+                    "actualCost": label_cost    # Real cost
                 }
                 
                 await self.db.orders.update_one(
