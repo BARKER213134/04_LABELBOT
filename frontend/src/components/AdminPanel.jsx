@@ -249,6 +249,47 @@ const AdminPanel = () => {
           </div>
         </div>
 
+        {/* Maintenance Whitelist - shown when maintenance is ON */}
+        {maintenanceMode && (
+          <div className="mb-6 p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+            <h3 className="text-yellow-400 text-sm font-medium mb-3">
+              👤 Whitelist (могут использовать бота во время обслуживания)
+            </h3>
+            <div className="flex gap-2 mb-3">
+              <input
+                type="text"
+                value={whitelistInput}
+                onChange={(e) => setWhitelistInput(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleAddToWhitelist()}
+                placeholder="@username или ID"
+                className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm"
+              />
+              <button
+                onClick={handleAddToWhitelist}
+                className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black text-sm font-medium rounded-lg"
+              >
+                Добавить
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {maintenanceWhitelist.map((username) => (
+                <div key={username} className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 rounded-lg">
+                  <span className="text-sm text-gray-300">@{username}</span>
+                  <button
+                    onClick={() => handleRemoveFromWhitelist(username)}
+                    className="text-red-400 hover:text-red-300"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              {maintenanceWhitelist.length === 0 && (
+                <span className="text-sm text-gray-500">Список пуст</span>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Tabs */}
         <div className="flex gap-2 mb-6">
           <button
