@@ -23,9 +23,34 @@ class ShipEngineService:
                 "API-Key": api_key,
                 "Content-Type": "application/json"
             },
-            timeout=30.0
+            timeout=60.0  # Increased timeout
         )
         self._carrier_ids = None
+        self._max_retries = 3
+        self._retry_delay = 2  # seconds
+    
+    async def _request_with_retry(self, method: str, url: str, **kwargs) -> httpx.Response:
+        """Make HTTP request with retry logic"""
+        last_error = None
+        for attempt in range(self._max_retries):
+            try:
+                if method == "GET":
+                    response = await self.client.get(url, **kwargs)
+                elif method == "POST":
+                    response = await self.client.post(url, **kwargs)
+                else:
+                    raise ValueError(f"Unsupported method: {method}")
+                response.raise_for_status()
+                return response
+            except (httpx.TimeoutException, httpx.ConnectError, httpx.ReadTimeout) as e:
+                last_error = e
+                logger.warning(f"[SHIPENGINE] Request attempt {attempt + 1}/{self._max_retries} failed: {e}")
+                if attempt < self._max_retries - 1:
+                    await asyncio.sleep(self._retry_delay)
+            except httpx.HTTPStatusError as e:
+                # Don't retry on HTTP errors (4xx, 5xx)
+                raise
+        raise last_error or Exception("Max retries exceeded")
     
     async def get_account_balance(self) -> Dict[str, Any]:
         """Get ShipEngine account balance"""
