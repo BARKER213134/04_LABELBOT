@@ -26,7 +26,7 @@ _templates_service = None
 async def safe_answer_query(query):
     """Safely answer callback query, ignoring 'too old' errors"""
     try:
-        await query.answer()
+        await safe_answer_query(query)
     except Exception as e:
         # Ignore "Query is too old" and similar errors
         if "too old" not in str(e).lower() and "invalid" not in str(e).lower():
@@ -123,7 +123,7 @@ async def check_balance_callback(update, context):
     from services.localization import get_user_language
     
     query = update.callback_query
-    await query.answer()  # Answer immediately
+    await safe_answer_query(query)  # Answer immediately
     
     user_id = str(update.effective_user.id)
     
@@ -202,7 +202,7 @@ async def topup_balance_callback(update, context):
     from services.localization import get_user_language
     
     query = update.callback_query
-    await query.answer()
+    await safe_answer_query(query)
     
     user_id = str(update.effective_user.id)
     if banned_cache.get(f"ban_{user_id}"):
@@ -333,7 +333,7 @@ async def process_topup_amount(update, context):
 async def cancel_topup_callback(update, context):
     """Cancel top-up process and go back to balance"""
     query = update.callback_query
-    await query.answer()
+    await safe_answer_query(query)
     
     # Clear the waiting flag
     context.user_data['awaiting_topup_amount'] = False
@@ -563,7 +563,7 @@ async def check_payment_status_callback(update, context):
         
         try:
             await query.edit_message_text(text, reply_markup=reply_markup, parse_mode="Markdown")
-            await query.answer()
+            await safe_answer_query(query)
         except BadRequest as e:
             # Message not modified - same content, just answer the callback
             if "message is not modified" in str(e).lower():
@@ -581,7 +581,7 @@ async def change_language_callback(update, context):
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
     
     query = update.callback_query
-    await query.answer()
+    await safe_answer_query(query)
     
     # Remove old buttons
     try:
@@ -617,7 +617,7 @@ async def set_language_callback(update, context):
     from services.telegram_service import TelegramService
     
     query = update.callback_query
-    await query.answer()
+    await safe_answer_query(query)
     
     user_id = str(update.effective_user.id)
     
@@ -672,7 +672,7 @@ async def back_to_menu_callback(update, context):
     from services.localization import get_user_language
     
     query = update.callback_query
-    await query.answer()
+    await safe_answer_query(query)
     
     user_id = str(update.effective_user.id)
     if banned_cache.get(f"ban_{user_id}"):
@@ -708,7 +708,7 @@ async def continue_order_callback(update, context):
     from services.localization import get_user_language
     
     query = update.callback_query
-    await query.answer()
+    await safe_answer_query(query)
     
     user_id = str(update.effective_user.id)
     chat_id = update.effective_chat.id
@@ -1189,7 +1189,7 @@ async def cancel_pending_order_callback(update, context):
     from services.localization import get_user_language
     
     query = update.callback_query
-    await query.answer()
+    await safe_answer_query(query)
     
     user_id = str(update.effective_user.id)
     chat_id = update.effective_chat.id
@@ -1241,15 +1241,15 @@ async def templates_menu_callback(update, context):
     from database import Database
     
     query = update.callback_query
-    await query.answer()
+    await safe_answer_query(query)
     
     user_id = str(update.effective_user.id)
     if banned_cache.get(f"ban_{user_id}"):
-        await query.answer()
+        await safe_answer_query(query)
         await send_banned_message(update.effective_chat.id, context.bot)
         return
     
-    await query.answer()
+    await safe_answer_query(query)
     
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
     
@@ -1321,14 +1321,14 @@ async def template_view_callback(update, context):
     # Check if user is banned
     if await check_user_banned(user_id):
         try:
-            await query.answer()
+            await safe_answer_query(query)
         except Exception:
             pass  # Query may be too old
         await send_banned_message(update.effective_chat.id, context.bot)
         return
     
     try:
-        await query.answer()
+        await safe_answer_query(query)
     except Exception:
         pass  # Query may be too old
     
@@ -1439,11 +1439,11 @@ async def template_delete_callback(update, context):
     
     # Check if user is banned
     if await check_user_banned(user_id):
-        await query.answer()
+        await safe_answer_query(query)
         await send_banned_message(update.effective_chat.id, context.bot)
         return
     
-    await query.answer()
+    await safe_answer_query(query)
     
     # Get user language
     lang = context.user_data.get('language')
@@ -1489,11 +1489,11 @@ async def refund_info_callback(update, context):
     
     # Check if user is banned
     if await check_user_banned(user_id):
-        await query.answer()
+        await safe_answer_query(query)
         await send_banned_message(update.effective_chat.id, context.bot)
         return
     
-    await query.answer()
+    await safe_answer_query(query)
     
     # Get user language
     lang = context.user_data.get('language')
@@ -1557,11 +1557,11 @@ async def faq_info_callback(update, context):
     
     # Check if user is banned
     if await check_user_banned(user_id):
-        await query.answer()
+        await safe_answer_query(query)
         await send_banned_message(update.effective_chat.id, context.bot)
         return
     
-    await query.answer()
+    await safe_answer_query(query)
     
     # Get user language
     lang = context.user_data.get('language')
