@@ -1581,9 +1581,9 @@ class TelegramConversationHandler:
         return EDIT_SECTION
     
     async def _fetch_rates(self, data: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Fetch rates from ShipEngine"""
+        """Fetch shipping rates"""
         if not self.shipengine_service:
-            raise ValueError("ShipEngine service not configured")
+            raise ValueError("Shipping service not configured")
         
         shipment_data = {
             "ship_from": {
