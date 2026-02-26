@@ -1310,11 +1310,17 @@ async def template_view_callback(update, context):
     
     # Check if user is banned
     if await check_user_banned(user_id):
-        await query.answer()
+        try:
+            await query.answer()
+        except Exception:
+            pass  # Query may be too old
         await send_banned_message(update.effective_chat.id, context.bot)
         return
     
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass  # Query may be too old
     
     db = Database.db
     
