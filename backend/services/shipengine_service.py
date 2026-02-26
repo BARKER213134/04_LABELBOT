@@ -166,16 +166,16 @@ class ShipEngineService:
                 service = rate.get("service_code", "")
                 logger.info(f"Rate {carrier}/{service}: shipping=${shipping_amount:.2f} + other=${other_amount:.2f} = ${full_cost:.2f} + markup=${RATE_MARKUP} = ${rate['total_amount']:.2f}")
             
-            logger.info(f"Got {len(rates)} rates from ShipEngine")
+            logger.info(f"Got {len(rates)} rates")
             return rates
             
         except httpx.HTTPStatusError as e:
             error_detail = e.response.json() if e.response.text else str(e)
-            logger.error(f"ShipEngine rates API error: {error_detail}")
-            raise ValueError(f"Failed to get rates: {error_detail}")
+            logger.error(f"Rates API error: {error_detail}")
+            raise ValueError(f"Failed to get rates")
         except httpx.RequestError as e:
-            logger.error(f"Request error calling ShipEngine: {e}")
-            raise ValueError(f"Network error: {str(e)}")
+            logger.error(f"Request error: {e}")
+            raise ValueError(f"Network error")
     
     async def create_label_from_rate(self, rate_id: str) -> Dict[str, Any]:
         """
