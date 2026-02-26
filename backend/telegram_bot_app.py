@@ -23,6 +23,16 @@ _users_service = None
 _templates_service = None
 
 
+async def safe_answer_query(query):
+    """Safely answer callback query, ignoring 'too old' errors"""
+    try:
+        await query.answer()
+    except Exception as e:
+        # Ignore "Query is too old" and similar errors
+        if "too old" not in str(e).lower() and "invalid" not in str(e).lower():
+            logger.warning(f"Failed to answer query: {e}")
+
+
 async def check_user_banned(user_id: str) -> bool:
     """Check if user is banned - CACHED"""
     # Check cache first (instant)
