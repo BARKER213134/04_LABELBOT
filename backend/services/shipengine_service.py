@@ -212,11 +212,7 @@ class ShipEngineService:
         try:
             payload = self._prepare_label_payload(order)
             
-            response = await self.client.post(
-                "/v1/labels",
-                json=payload
-            )
-            response.raise_for_status()
+            response = await self._request_with_retry("POST", "/v1/labels", json=payload)
             
             label_data = response.json()
             
