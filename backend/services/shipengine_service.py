@@ -182,11 +182,11 @@ class ShipEngineService:
             
             logger.info(f"Creating label from rate_id: {rate_id}")
             
-            response = await self.client.post(
+            response = await self._request_with_retry(
+                "POST", 
                 "/v1/labels/rates/" + rate_id,
                 json=payload
             )
-            response.raise_for_status()
             
             label_data = response.json()
             
