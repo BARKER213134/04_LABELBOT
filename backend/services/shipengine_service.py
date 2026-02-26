@@ -1,5 +1,6 @@
 import httpx
 import logging
+import asyncio
 from typing import Dict, Any, List
 from models.order import Order
 
