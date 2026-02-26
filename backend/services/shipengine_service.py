@@ -118,11 +118,7 @@ class ShipEngineService:
                 }
             }
             
-            response = await self.client.post(
-                "/v1/rates",
-                json=payload
-            )
-            response.raise_for_status()
+            response = await self._request_with_retry("POST", "/v1/rates", json=payload)
             
             rates_data = response.json()
             rates = rates_data.get("rate_response", {}).get("rates", [])
