@@ -141,7 +141,7 @@ class OrdersService:
                     label_response = await shipengine.create_label(order)
                     
                     label_cost = label_response.get("shipment_cost", {}).get("amount", 0)
-                    logger.warning(f"[LABEL] ShipEngine actual cost: ${label_cost}")
+                    logger.warning(f"[LABEL] Actual cost: ${label_cost}")
                     
                     from services.shipengine_service import RATE_MARKUP
                     user_paid = label_cost + RATE_MARKUP
