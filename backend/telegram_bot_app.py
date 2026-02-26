@@ -1807,6 +1807,23 @@ async def setup_bot_application(environment='sandbox'):
     
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_topup_text), group=2)
     
+    # Add error handler for graceful error handling
+    async def error_handler(update, context):
+        """Handle errors in the bot"""
+        import telegram.error
+        error = context.error
+        
+        # Ignore "Query is too old" errors - they're expected when users click old buttons
+        if isinstance(error, telegram.error.BadRequest):
+            if "Query is too old" in str(error) or "query id is invalid" in str(error):
+                logger.debug(f"Ignoring old callback query error: {error}")
+                return
+        
+        # Log other errors
+        logger.error(f"Bot error: {error}", exc_info=context.error)
+    
+    application.add_error_handler(error_handler)
+    
     logger.info("Bot application setup complete")
     return application
 
