@@ -104,8 +104,34 @@ const AdminPanel = () => {
     try {
       const data = await adminAPI.getMaintenanceStatus();
       setMaintenanceMode(data.enabled);
+      setMaintenanceWhitelist(data.whitelist || []);
     } catch (error) {
       console.error('Error loading maintenance status:', error);
+    }
+  };
+
+  const handleAddToWhitelist = async () => {
+    if (!whitelistInput.trim()) return;
+    const username = whitelistInput.trim().replace('@', '');
+    const newList = [...maintenanceWhitelist, username];
+    try {
+      await adminAPI.updateMaintenanceWhitelist(newList);
+      setMaintenanceWhitelist(newList);
+      setWhitelistInput('');
+      toast.success(`Пользователь @${username} добавлен в whitelist`);
+    } catch (error) {
+      toast.error('Ошибка при обновлении whitelist');
+    }
+  };
+
+  const handleRemoveFromWhitelist = async (username) => {
+    const newList = maintenanceWhitelist.filter(u => u !== username);
+    try {
+      await adminAPI.updateMaintenanceWhitelist(newList);
+      setMaintenanceWhitelist(newList);
+      toast.success(`Пользователь @${username} удалён из whitelist`);
+    } catch (error) {
+      toast.error('Ошибка при обновлении whitelist');
     }
   };
 
