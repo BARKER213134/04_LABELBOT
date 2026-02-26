@@ -1429,7 +1429,19 @@ class TelegramConversationHandler:
             except Exception as e:
                 logger.error(f"Error fetching rates: {e}")
                 
-                # Notify admin about error
+                # Determine user-friendly error message
+                error_str = str(e).lower()
+                if "network" in error_str or "timeout" in error_str or "connect" in error_str:
+                    user_error_en = "Service temporarily unavailable. Please try again in a few minutes."
+                    user_error_ru = "Сервис временно недоступен. Попробуйте через несколько минут."
+                elif "carrier" in error_str:
+                    user_error_en = "Carriers are temporarily unavailable. Please try again later."
+                    user_error_ru = "Перевозчики временно недоступны. Попробуйте позже."
+                else:
+                    user_error_en = "Failed to load rates. Please check your data and try again."
+                    user_error_ru = "Не удалось загрузить тарифы. Проверьте данные и попробуйте снова."
+                
+                # Notify admin about error (with full details)
                 try:
                     from services.admin_notifications import notify_user_error
                     tg_user = update.effective_user
@@ -1438,7 +1450,7 @@ class TelegramConversationHandler:
                         username=tg_user.username if tg_user else None,
                         error_type="Ошибка получения тарифов",
                         error_message=str(e),
-                        context="ShipEngine API"
+                        context="API тарифов"
                     )
                 except Exception as admin_err:
                     logger.warning(f"Failed to send admin error notification: {admin_err}")
@@ -1446,15 +1458,15 @@ class TelegramConversationHandler:
                 if lang == "en":
                     text = (
                         "❌ *Error loading rates*\n\n"
-                        f"Reason: {str(e)}\n\n"
-                        "Try again later or check your data."
+                        f"{user_error_en}\n\n"
+                        "If the problem persists, contact support."
                     )
                     back_btn = "◀️ Back to review"
                 else:
                     text = (
                         "❌ *Ошибка получения тарифов*\n\n"
-                        f"Причина: {str(e)}\n\n"
-                        "Попробуйте позже или проверьте данные."
+                        f"{user_error_ru}\n\n"
+                        "Если проблема сохраняется, обратитесь в поддержку."
                     )
                     back_btn = "◀️ Назад к проверке"
                 keyboard = [[InlineKeyboardButton(back_btn, callback_data="back_to_review_from_rates")]]
