@@ -246,14 +246,48 @@ class ShipEngineService:
     
     def _parse_error_message(self, error_detail) -> str:
         """Parse error detail and return user-friendly message"""
+        raw_message = ""
+        
         if isinstance(error_detail, dict):
             errors = error_detail.get("errors", [])
             if errors:
                 # Get first error message
                 first_error = errors[0] if isinstance(errors, list) else errors
                 if isinstance(first_error, dict):
-                    return first_error.get("message", "Unknown error")
-        return str(error_detail)[:100]  # Truncate long errors
+                    raw_message = first_error.get("message", "Unknown error")
+        
+        if not raw_message:
+            raw_message = str(error_detail)[:100]
+        
+        # Convert technical messages to user-friendly
+        raw_lower = raw_message.lower()
+        
+        # Carrier system errors
+        if "unavailable" in raw_lower or "try again later" in raw_lower:
+            return "Carrier temporarily unavailable. Please try again in a few minutes."
+        
+        # XML/System errors  
+        if "xml" in raw_lower or "system" in raw_lower:
+            return "Carrier service temporarily unavailable."
+        
+        # Address errors
+        if "address" in raw_lower:
+            return "Address validation failed. Please check the address."
+        
+        # Weight/dimensions errors
+        if "weight" in raw_lower or "dimension" in raw_lower:
+            return "Invalid package weight or dimensions."
+        
+        # Rate errors
+        if "rate" in raw_lower:
+            return "Rate no longer available. Please select a new rate."
+        
+        # Generic carrier error
+        if "carrier" in raw_lower:
+            return "Carrier error. Please try again or select a different carrier."
+        
+        # Return original if no match (truncated)
+        return raw_message[:80] if len(raw_message) > 80 else raw_message
     
     def _prepare_label_payload(self, order: Order) -> Dict[str, Any]:
         """Prepare request payload for ShipEngine label creation"""
