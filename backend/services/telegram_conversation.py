@@ -1637,25 +1637,22 @@ class TelegramConversationHandler:
         }
         
         # Popular services to prioritize (in order of priority)
-        # FedEx: Ground + 1/2/3 day services
+        # FedEx: Ground + Economy + 1/2/3 day services
         popular_services = {
             'stamps_com': ['usps_ground_advantage', 'usps_priority_mail', 'usps_first_class_mail', 'usps_priority_mail_express'],
             'usps': ['usps_ground_advantage', 'usps_priority_mail', 'usps_first_class_mail', 'usps_priority_mail_express'],
-            'fedex': ['fedex_ground', 'fedex_home_delivery', 'fedex_express_saver', 'fedex_2day', 'fedex_standard_overnight'],
-            'fedex_walleted': ['fedex_ground', 'fedex_home_delivery', 'fedex_express_saver', 'fedex_2day', 'fedex_standard_overnight'],
+            'fedex': ['fedex_ground_economy', 'fedex_smart_post', 'fedex_ground', 'fedex_home_delivery', 'fedex_express_saver', 'fedex_2day', 'fedex_standard_overnight'],
+            'fedex_walleted': ['fedex_ground_economy', 'fedex_smart_post', 'fedex_ground', 'fedex_home_delivery', 'fedex_express_saver', 'fedex_2day', 'fedex_standard_overnight'],
             'ups': ['ups_ground', 'ups_3_day_select', 'ups_2nd_day_air', 'ups_next_day_air_saver'],
             'globalpost': [],
         }
         
-        # Services to EXCLUDE
+        # Services to EXCLUDE (только дорогие/ненужные)
         excluded_services = [
-            'fedex_ground_economy',
-            'fedex_ground_economy_parcel_select',
-            'fedex_smart_post',
-            'fedex_2day_am',
-            'fedex_priority_overnight',
-            'fedex_2day_one_rate',
-            'fedex_overnight_one_rate',
+            'fedex_2day_am',           # Дорогой утренний
+            'fedex_priority_overnight', # Очень дорогой
+            'fedex_2day_one_rate',     # One Rate - непредсказуемая цена
+            'fedex_overnight_one_rate', # One Rate - непредсказуемая цена
         ]
         
         # Get user balance
