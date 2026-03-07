@@ -1738,8 +1738,11 @@ class TelegramConversationHandler:
             
             sorted_carrier_rates = sorted(deduplicated_rates, key=rate_sort_key)
             
-            # Take top 4 rates for this carrier
-            for rate in sorted_carrier_rates[:4]:
+            # Set rate limit per carrier: 6 for FedEx, 4 for others
+            rate_limit = 6 if carrier_code in ['fedex', 'fedex_walleted'] else 4
+            
+            # Take top rates for this carrier
+            for rate in sorted_carrier_rates[:rate_limit]:
                 service_type = rate.get('service_type', rate.get('service_code', ''))
                 total_price = rate.get('total_amount', 0)
                 
