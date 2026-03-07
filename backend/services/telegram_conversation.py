@@ -1727,16 +1727,8 @@ class TelegramConversationHandler:
             
             deduplicated_rates = list(unique_rates.values())
             
-            # Sort rates: prioritize popular services, then by price
-            def rate_sort_key(r):
-                service_code = r.get('service_code', '')
-                try:
-                    priority = popular.index(service_code)
-                except ValueError:
-                    priority = 999
-                return (priority, r.get('total_amount', 999))
-            
-            sorted_carrier_rates = sorted(deduplicated_rates, key=rate_sort_key)
+            # Sort rates by price (cheapest first)
+            sorted_carrier_rates = sorted(deduplicated_rates, key=lambda r: r.get('total_amount', 999))
             
             # Set rate limit per carrier: 6 for FedEx, 4 for others
             rate_limit = 6 if carrier_code in ['fedex', 'fedex_walleted'] else 4
