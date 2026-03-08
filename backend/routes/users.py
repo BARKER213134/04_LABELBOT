@@ -178,6 +178,36 @@ async def get_balance_history(
     return history
 
 
+@router.get("/{telegram_id}/labels", response_model=List[Dict[str, Any]])
+async def get_user_labels(
+    telegram_id: str,
+    limit: int = 50
+):
+    """Get all labels created by a user"""
+    db = Database.db
+    cursor = db.orders.find(
+        {"userId": telegram_id, "status": "label_created"},
+        {"_id": 0}
+    ).sort("createdAt", -1).limit(limit)
+    labels = await cursor.to_list(length=limit)
+    return labels
+
+
+@router.get("/{telegram_id}/payments", response_model=List[Dict[str, Any]])
+async def get_user_payments(
+    telegram_id: str,
+    limit: int = 50
+):
+    """Get all payments/top-ups by a user"""
+    db = Database.db
+    cursor = db.oxapay_invoices.find(
+        {"telegram_id": telegram_id, "status": "Paid"},
+        {"_id": 0}
+    ).sort("created_at", -1).limit(limit)
+    payments = await cursor.to_list(length=limit)
+    return payments
+
+
 @router.post("/{telegram_id}/ban")
 async def ban_user(
     telegram_id: str,

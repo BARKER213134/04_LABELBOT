@@ -117,6 +117,36 @@ const UsersManagement = () => {
     }
   };
 
+  const [userLabels, setUserLabels] = useState([]);
+  const [userPayments, setUserPayments] = useState([]);
+  const [showLabels, setShowLabels] = useState(false);
+  const [showPayments, setShowPayments] = useState(false);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+
+  const fetchUserDetails = async (telegramId) => {
+    setLoadingDetails(true);
+    try {
+      const [labelsRes, paymentsRes] = await Promise.all([
+        axios.get(`${API_URL}/users/${telegramId}/labels`),
+        axios.get(`${API_URL}/users/${telegramId}/payments`)
+      ]);
+      setUserLabels(labelsRes.data);
+      setUserPayments(paymentsRes.data);
+    } catch (error) {
+      console.error('Error fetching user details:', error);
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+
+  const handleSelectUser = async (user) => {
+    setSelectedUser(user);
+    setShowLabels(false);
+    setShowPayments(false);
+    setShowHistory(false);
+    await fetchUserDetails(user.telegram_id);
+  };
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleString('ru-RU');
   };
@@ -202,7 +232,7 @@ const UsersManagement = () => {
                     className={`hover:bg-gray-50 cursor-pointer ${
                       selectedUser?.telegram_id === user.telegram_id ? 'bg-blue-50' : ''
                     } ${user.is_banned ? 'bg-red-50' : ''}`}
-                    onClick={() => setSelectedUser(user)}
+                    onClick={() => handleSelectUser(user)}
                   >
                     <td className="px-4 py-3 whitespace-nowrap">
                       <div className="flex items-center">
@@ -415,6 +445,97 @@ const UsersManagement = () => {
                   </button>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* User Payments Section */}
+          {selectedUser && (
+            <div className="bg-white rounded-lg shadow p-4">
+              <div 
+                className="flex justify-between items-center cursor-pointer"
+                onClick={() => setShowPayments(!showPayments)}
+              >
+                <h3 className="font-semibold text-gray-700">
+                  💰 Пополнения ({userPayments.length})
+                </h3>
+                <span className="text-gray-400">{showPayments ? '▼' : '▶'}</span>
+              </div>
+              {showPayments && (
+                <div className="mt-3 max-h-60 overflow-y-auto">
+                  {loadingDetails ? (
+                    <div className="text-center text-gray-500 py-4">Загрузка...</div>
+                  ) : userPayments.length > 0 ? (
+                    <div className="space-y-2">
+                      {userPayments.map((payment, idx) => (
+                        <div key={idx} className="flex justify-between items-center py-2 px-3 bg-green-50 rounded-lg text-sm">
+                          <div>
+                            <div className="font-medium text-green-700">+${payment.amount}</div>
+                            <div className="text-xs text-gray-500">
+                              {payment.created_at ? formatDate(payment.created_at) : '-'}
+                            </div>
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {payment.currency || 'USDT'}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center text-gray-500 py-4">Нет пополнений</div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* User Labels Section */}
+          {selectedUser && (
+            <div className="bg-white rounded-lg shadow p-4">
+              <div 
+                className="flex justify-between items-center cursor-pointer"
+                onClick={() => setShowLabels(!showLabels)}
+              >
+                <h3 className="font-semibold text-gray-700">
+                  📦 Лейблы ({userLabels.length})
+                </h3>
+                <span className="text-gray-400">{showLabels ? '▼' : '▶'}</span>
+              </div>
+              {showLabels && (
+                <div className="mt-3 max-h-80 overflow-y-auto">
+                  {loadingDetails ? (
+                    <div className="text-center text-gray-500 py-4">Загрузка...</div>
+                  ) : userLabels.length > 0 ? (
+                    <div className="space-y-2">
+                      {userLabels.map((label, idx) => (
+                        <div key={idx} className="py-2 px-3 bg-blue-50 rounded-lg text-sm">
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium text-blue-700">
+                              {label.carrier || 'Unknown'} - ${label.userPaid?.toFixed(2) || '0.00'}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {label.createdAt ? formatDate(label.createdAt) : '-'}
+                            </span>
+                          </div>
+                          <div className="text-xs text-gray-600 mt-1">
+                            <div>📍 {label.toCity}, {label.toState}</div>
+                            {label.trackingNumber && (
+                              <div className="font-mono">{label.trackingNumber}</div>
+                            )}
+                          </div>
+                          <div className="flex justify-between text-xs text-gray-500 mt-1">
+                            <span>Стоимость: ${label.labelCost?.toFixed(2) || '0.00'}</span>
+                            <span className={label.profit >= 10 ? 'text-green-600' : 'text-red-600'}>
+                              Прибыль: ${label.profit?.toFixed(2) || '0.00'}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center text-gray-500 py-4">Нет лейблов</div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
