@@ -205,18 +205,59 @@ async def get_user_payments(
     telegram_id: str,
     limit: int = 50
 ):
-    """Get all top-ups by a user from balance logs"""
+    """Get all top-ups by a user from multiple sources"""
     db = Database.db
-    # Get topups from balance_logs (where amount > 0 and reason contains topup/payment)
-    cursor = db.balance_logs.find(
-        {
-            "telegram_id": telegram_id,
-            "amount": {"$gt": 0}  # Only positive amounts (top-ups)
-        },
-        {"_id": 0}
-    ).sort("timestamp", -1).limit(limit)
-    payments = await cursor.to_list(length=limit)
-    return payments
+    payments = []
+    
+    # 1. Get from balance_logs (positive amounts = top-ups)
+    try:
+        cursor = db.balance_logs.find(
+            {
+                "telegram_id": telegram_id,
+                "amount": {"$gt": 0}
+            },
+            {"_id": 0}
+        ).sort("timestamp", -1).limit(limit)
+        balance_logs = await cursor.to_list(length=limit)
+        for log in balance_logs:
+            payments.append({
+                "amount": log.get("amount", 0),
+                "date": log.get("timestamp"),
+                "reason": log.get("reason", "Пополнение"),
+                "source": "balance_log"
+            })
+    except Exception as e:
+        logger.warning(f"Error fetching balance_logs: {e}")
+    
+    # 2. Get from oxapay_invoices (paid invoices)
+    try:
+        cursor = db.oxapay_invoices.find(
+            {
+                "$or": [
+                    {"telegram_id": telegram_id},
+                    {"telegram_id": str(telegram_id)},
+                    {"user_id": telegram_id},
+                    {"user_id": str(telegram_id)}
+                ],
+                "status": {"$in": ["Paid", "paid", "completed", "Completed"]}
+            },
+            {"_id": 0}
+        ).sort("created_at", -1).limit(limit)
+        invoices = await cursor.to_list(length=limit)
+        for inv in invoices:
+            payments.append({
+                "amount": inv.get("amount", 0),
+                "date": inv.get("created_at") or inv.get("paid_at") or inv.get("updated_at"),
+                "reason": f"OxaPay ({inv.get('currency', 'USDT')})",
+                "source": "oxapay"
+            })
+    except Exception as e:
+        logger.warning(f"Error fetching oxapay_invoices: {e}")
+    
+    # Sort by date descending
+    payments.sort(key=lambda x: x.get("date") or "", reverse=True)
+    
+    return payments[:limit]
 
 
 @router.post("/{telegram_id}/ban")

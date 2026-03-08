@@ -462,7 +462,7 @@ const UsersManagement = () => {
                           <div>
                             <div className="font-medium text-green-700">+${payment.amount?.toFixed(2)}</div>
                             <div className="text-xs text-gray-500">
-                              {payment.timestamp ? formatDate(payment.timestamp) : '-'}
+                              {payment.date ? formatDate(payment.date) : '-'}
                             </div>
                           </div>
                           <div className="text-xs text-gray-500 max-w-[150px] truncate">
