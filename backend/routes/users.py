@@ -198,12 +198,16 @@ async def get_user_payments(
     telegram_id: str,
     limit: int = 50
 ):
-    """Get all payments/top-ups by a user"""
+    """Get all top-ups by a user from balance logs"""
     db = Database.db
-    cursor = db.oxapay_invoices.find(
-        {"telegram_id": telegram_id, "status": "Paid"},
+    # Get topups from balance_logs (where amount > 0 and reason contains topup/payment)
+    cursor = db.balance_logs.find(
+        {
+            "telegram_id": telegram_id,
+            "amount": {"$gt": 0}  # Only positive amounts (top-ups)
+        },
         {"_id": 0}
-    ).sort("created_at", -1).limit(limit)
+    ).sort("timestamp", -1).limit(limit)
     payments = await cursor.to_list(length=limit)
     return payments
 

@@ -469,13 +469,13 @@ const UsersManagement = () => {
                       {userPayments.map((payment, idx) => (
                         <div key={idx} className="flex justify-between items-center py-2 px-3 bg-green-50 rounded-lg text-sm">
                           <div>
-                            <div className="font-medium text-green-700">+${payment.amount}</div>
+                            <div className="font-medium text-green-700">+${payment.amount?.toFixed(2)}</div>
                             <div className="text-xs text-gray-500">
-                              {payment.created_at ? formatDate(payment.created_at) : '-'}
+                              {payment.timestamp ? formatDate(payment.timestamp) : '-'}
                             </div>
                           </div>
-                          <div className="text-xs text-gray-500">
-                            {payment.currency || 'USDT'}
+                          <div className="text-xs text-gray-500 max-w-[150px] truncate">
+                            {payment.reason || 'Пополнение'}
                           </div>
                         </div>
                       ))}
