@@ -331,24 +331,15 @@ const UsersManagement = () => {
           {/* Selected User Info */}
           {selectedUser && (
             <div className="bg-white rounded-lg shadow p-4">
-              <h3 className="font-semibold text-gray-700 mb-3">
-                Выбранный пользователь
-              </h3>
+              <div className="border-b pb-3 mb-3">
+                <h3 className="font-bold text-lg text-gray-800">
+                  {selectedUser.first_name} {selectedUser.last_name || ''}
+                </h3>
+                <div className="text-sm text-gray-500">
+                  @{selectedUser.username || '-'} • ID: {selectedUser.telegram_id}
+                </div>
+              </div>
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Имя:</span>
-                  <span className="font-medium">
-                    {selectedUser.first_name} {selectedUser.last_name}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Username:</span>
-                  <span className="font-medium">@{selectedUser.username || '-'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Telegram ID:</span>
-                  <span className="font-medium">{selectedUser.telegram_id}</span>
-                </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Статус:</span>
                   <span className={`font-medium ${selectedUser.is_banned ? 'text-red-600' : 'text-green-600'}`}>
@@ -357,7 +348,7 @@ const UsersManagement = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Баланс:</span>
-                  <span className="font-semibold text-green-600">
+                  <span className="font-semibold text-green-600 text-lg">
                     ${selectedUser.balance?.toFixed(2)}
                   </span>
                 </div>

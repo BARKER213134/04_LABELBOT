@@ -185,8 +185,15 @@ async def get_user_labels(
 ):
     """Get all labels created by a user"""
     db = Database.db
+    # Try both field names for compatibility
     cursor = db.orders.find(
-        {"userId": telegram_id, "status": "label_created"},
+        {
+            "$or": [
+                {"telegram_user_id": telegram_id},
+                {"userId": telegram_id}
+            ],
+            "status": "label_created"
+        },
         {"_id": 0}
     ).sort("createdAt", -1).limit(limit)
     labels = await cursor.to_list(length=limit)
