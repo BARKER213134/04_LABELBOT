@@ -26,7 +26,7 @@ _templates_service = None
 async def safe_answer_query(query):
     """Safely answer callback query, ignoring 'too old' errors"""
     try:
-        await safe_answer_query(query)
+        await query.answer()
     except Exception as e:
         # Ignore "Query is too old" and similar errors
         if "too old" not in str(e).lower() and "invalid" not in str(e).lower():
