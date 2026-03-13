@@ -7,14 +7,13 @@ import sys
 import asyncio
 from pathlib import Path
 
-# Configure logging - WARNING level for speed
 logging.basicConfig(
     level=logging.WARNING,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     stream=sys.stdout
 )
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)  # Keep server logs at INFO
+logger.setLevel(logging.INFO)
 
 logger.info("=" * 50)
 logger.info("Starting ShipBot API server...")
@@ -26,8 +25,6 @@ try:
     if env_file.exists():
         load_dotenv(env_file)
         logger.info(f"Loaded .env from {env_file}")
-    else:
-        logger.info("No .env file found, using environment variables")
 except Exception as e:
     logger.warning(f"Error loading .env: {e}")
 
@@ -39,43 +36,56 @@ except Exception as e:
     logger.error(f"Failed to load settings: {e}")
     raise
 
-try:
-    from database import connect_db, close_db
-    logger.info("Database module loaded")
-except Exception as e:
-    logger.error(f"Failed to import database: {e}")
-    raise
-
-try:
-    from routes import orders, admin, telegram, statistics, users, oxapay, broadcast
-    logger.info("Routes modules loaded")
-except Exception as e:
-    logger.error(f"Failed to import routes: {e}")
-    raise
+_routes_loaded = False
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Handle application startup and shutdown"""
+    global _routes_loaded
     logger.info("Lifespan startup...")
+
     try:
+        from database import connect_db, close_db
         await connect_db()
         logger.info("Database connected")
     except Exception as e:
         logger.error(f"Database connection failed: {e}")
-    
-    # Initialize security
+
     try:
         from services.security import set_admin_password
         if settings.admin_password:
             set_admin_password(settings.admin_password)
             logger.info("Admin security initialized")
-        else:
-            logger.warning("[SECURITY] Admin password not set!")
     except Exception as e:
         logger.error(f"Security init failed: {e}")
-    
-    # Preload telegram bot in BACKGROUND to avoid blocking server startup
-    # This allows the server to respond to health checks immediately
+
+    # Load routes LAZILY inside lifespan so server binds to port faster
+    try:
+        from routes import orders, admin, telegram, statistics, users, oxapay, broadcast
+        api_router = APIRouter(prefix="/api")
+
+        @api_router.get("/")
+        async def root():
+            return {"message": "ShipBot API is running"}
+
+        @api_router.get("/health")
+        async def api_health_check():
+            return {"status": "healthy", "environment": settings.environment}
+
+        api_router.include_router(orders.router)
+        api_router.include_router(admin.router)
+        api_router.include_router(telegram.router)
+        api_router.include_router(statistics.router)
+        api_router.include_router(users.router)
+        api_router.include_router(oxapay.router)
+        api_router.include_router(broadcast.router)
+        app.include_router(api_router)
+        _routes_loaded = True
+        logger.info("Routes loaded successfully")
+    except Exception as e:
+        logger.error(f"Failed to load routes: {e}")
+
+    # Preload telegram bot in BACKGROUND
     async def _background_bot_preload():
         try:
             from routes.telegram import _preload_bot
@@ -83,50 +93,28 @@ async def lifespan(app: FastAPI):
             logger.info("Bot preloaded successfully (background)")
         except Exception as e:
             logger.error(f"Bot preload failed: {e}")
-    
+
     asyncio.create_task(_background_bot_preload())
-    
+
     yield
     logger.info("Shutting down...")
-    await close_db()
+    try:
+        from database import close_db
+        await close_db()
+    except Exception:
+        pass
 
 app = FastAPI(
     title="ShipBot API",
     version="1.0.0",
-    description="Shipping label management with Telegram bot integration",
     lifespan=lifespan,
     redirect_slashes=False
 )
 
-# Root level health check for Kubernetes probes
+# Health check available IMMEDIATELY - before any routes load
 @app.get("/health")
 async def root_health_check():
     return {"status": "healthy", "environment": settings.environment}
-
-# Create API router
-api_router = APIRouter(prefix="/api")
-
-@api_router.get("/")
-async def root():
-    return {"message": "ShipBot API is running"}
-
-@api_router.get("/health")
-async def health_check():
-    return {
-        "status": "healthy",
-        "environment": settings.environment
-    }
-
-# Include routers
-api_router.include_router(orders.router)
-api_router.include_router(admin.router)
-api_router.include_router(telegram.router)
-api_router.include_router(statistics.router)
-api_router.include_router(users.router)
-api_router.include_router(oxapay.router)
-api_router.include_router(broadcast.router)
-
-app.include_router(api_router)
 
 # CORS
 app.add_middleware(
