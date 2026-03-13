@@ -19,15 +19,20 @@ Create a Telegram bot for generating shipping labels using the ShipEngine API. T
 - AI-generated thank-you messages
 - Secure label download (hide original URL)
 - $10 markup on all ShipEngine prices
+- Mass messaging/advertising to all users
+- Admin ban/unban/delete users
+- Maintenance mode with whitelist
+- Admin notifications for new users, balance top-ups, label creations, errors
+- i18n support (Russian/English)
 
 ## User Languages
-- Russian (Русский) - default
-- English - added December 2025
+- Russian - default
+- English
 
 ## Tech Stack
 - **Backend:** FastAPI (Python)
 - **Frontend:** React + Tailwind CSS
-- **Database:** MongoDB
+- **Database:** MongoDB Atlas
 - **Bot:** python-telegram-bot v22.5
 - **API Integrations:** ShipEngine, OxaPay, OpenAI (via emergentintegrations)
 
@@ -35,17 +40,22 @@ Create a Telegram bot for generating shipping labels using the ShipEngine API. T
 
 ### Core Features (Completed)
 - [x] Full-stack application with FastAPI backend, React frontend, MongoDB
-- [x] Web dashboard with pages: Dashboard, Orders List, Admin Panel, Users
+- [x] Web dashboard with pages: Dashboard, Orders List, Admin Panel, Users, Broadcast
 - [x] ShipEngine API integration (sandbox + production keys)
 - [x] Telegram bot with ConversationHandler for multi-step wizard
-- [x] Dual bot environment (test bot for sandbox, prod bot for production)
 - [x] Environment switching via admin panel
 - [x] Professional bot messages in Russian AND English (i18n)
 - [x] Inline keyboard buttons instead of text commands
 - [x] "Skip" button for phone numbers with random generation
-- [x] "Back to Main Menu" button (works like /start command)
 - [x] Review summary with edit functionality
-- [x] Multi-language support (Russian/English) - December 2025
+- [x] Price fix: uses rate_id for accurate final pricing
+- [x] Accurate profit calculation (user_paid - label_cost)
+- [x] Bot state management with MongoDB ptb_conversations clearing
+- [x] Maintenance mode with whitelist UI
+- [x] User detail view with label and top-up history
+- [x] Retry mechanism for ShipEngine API
+- [x] Global error handler for Telegram bot
+- [x] Carrier rate sorting by price
 
 ### User Management
 - [x] Auto-create users on first bot interaction
@@ -55,26 +65,20 @@ Create a Telegram bot for generating shipping labels using the ShipEngine API. T
 - [x] Balance, Templates, Refund, FAQ, Help menu buttons
 
 ### Template System
-- [x] Create templates from label creation flow
+- [x] Full CRUD for templates (create, view, use, edit, delete)
 - [x] Save up to 10 templates per user
-- [x] View template details
-- [x] Use template to create new label
-- [x] Edit templates
-- [x] Delete templates
-- [x] **NEW: Conversational template flow** - each action sends a new message instead of editing one
 
 ### Payments
 - [x] OxaPay cryptocurrency integration
 - [x] Top-up balance flow
 - [x] Payment status tracking
-- [x] Insufficient balance handling with top-up prompt
 
 ### Label Creation
 - [x] $10 markup on all ShipEngine rates
 - [x] Rate selection with carrier info
 - [x] Balance check before label creation
-- [x] Secure label download (PDF sent as Telegram document, hides URL)
-- [x] AI-generated thank-you messages in Russian after successful label creation
+- [x] Secure label download (PDF sent as Telegram document)
+- [x] AI-generated thank-you messages
 
 ## API Endpoints
 - `POST /api/telegram/webhook` - Webhook for Telegram bots
@@ -83,54 +87,54 @@ Create a Telegram bot for generating shipping labels using the ShipEngine API. T
 - `GET /api/orders/` - List all orders
 - `GET /api/users/` - Get all users
 - `POST /api/users/{telegram_id}/balance` - Update user balance
-- `GET /api/admin/environment` - Get current environment
-- `POST /api/admin/environment` - Set environment
+- `GET /api/admin/api-config` - Get current environment
+- `POST /api/admin/api-config` - Set environment
+- `GET /api/admin/maintenance` - Get maintenance mode status
+- `POST /api/admin/maintenance/whitelist` - Manage whitelist
+- `GET /api/users/:userId/labels` - User label history
+- `GET /api/users/:userId/topups` - User top-up history
 
 ## Database Schema
-- **orders**: Stores order documents with sender/recipient details, package info, carrier, tracking number, cost, status
+- **orders**: Label info with sender/recipient, package, carrier, tracking, cost, status
 - **users**: `{ telegram_id, username, first_name, balance, balance_history, total_orders, total_spent }`
 - **templates**: `{ user_id, name, ship_from_*, ship_to_*, package_* }`
-- **settings**: Global app settings (environment)
-- **oxapay_invoices**: Payment invoice records
+- **settings**: Global app settings (environment, maintenance)
+- **oxapay_invoices**: Payment records
+- **ptb_conversations**: Bot conversation state persistence
+- **balance_logs**: Balance top-up history
 
 ## Key Files
-- `/app/backend/telegram_bot_app.py` - Bot application setup, menu handlers, template handlers
+- `/app/backend/telegram_bot_app.py` - Bot application setup, menu handlers
 - `/app/backend/services/telegram_conversation.py` - Bot conversation wizard logic
-- `/app/backend/services/oxapay_service.py` - OxaPay integration
-- `/app/backend/services/ai_messages.py` - AI message generation
-- `/app/backend/routes/oxapay.py` - OxaPay webhook
-- `/app/backend/config.py` - Configuration management
+- `/app/backend/services/shipengine_service.py` - ShipEngine API integration
+- `/app/backend/routes/admin.py` - Admin API endpoints
+- `/app/frontend/src/pages/AdminPanel.jsx` - Admin panel UI
 
 ## Environment Variables (backend/.env)
-- MONGO_URL
-- DB_NAME
-- SHIPENGINE_SANDBOX_KEY
-- SHIPENGINE_PRODUCTION_KEY
-- TELEGRAM_BOT_TOKEN (sandbox/test)
-- TELEGRAM_BOT_TOKEN_PROD (production)
-- WEBHOOK_URL
-- WEBHOOK_SECRET
+- MONGO_URL, DB_NAME
+- SHIPENGINE_SANDBOX_KEY, SHIPENGINE_PRODUCTION_KEY
+- TELEGRAM_BOT_TOKEN, TELEGRAM_BOT_TOKEN_PROD
+- WEBHOOK_URL, WEBHOOK_SECRET
 - OXAPAY_MERCHANT_API_KEY
 - EMERGENT_LLM_KEY
+- ADMIN_PASSWORD
+
+## Pending Issues
+- **P1**: ShipEngine `/v1/carriers` API instability - need hardcoded carrier_ids as fallback (BLOCKED on user providing IDs)
+- **P2**: Incorrect weight/dimensions when loading from a template
+- **P3**: "SITKAGEAR" on UPS labels - user verification pending (likely ShipEngine account setting)
+- **P2**: Hide FedEx in sandbox mode
 
 ## Future Tasks / Backlog
+- **P1**: Refactor `telegram_conversation.py` (~3000 lines) into smaller modules
+- **P2**: Refactor `AdminPanel.jsx` into smaller components
+- **P2**: FedEx sandbox handling
 
-### P1 - Code Refactoring
-- [ ] Break down `telegram_bot_app.py` and `telegram_conversation.py` into smaller modules
-- [ ] Create `/app/backend/bot_handlers/` directory structure:
-  - `templates.py` - Template management handlers
-  - `balance.py` - Balance and payment handlers
-  - `labels.py` - Label creation handlers
-  - `menu.py` - Main menu handlers
-
-### P2 - FedEx Sandbox
-- [ ] Hide FedEx as carrier option in sandbox mode (it's unstable)
-
-## Known Issues
-- FedEx is unstable in ShipEngine sandbox environment (external limitation)
-- UPS sometimes returns errors in sandbox (external limitation)
-- USPS is the most reliable carrier for testing
+## Credentials
+- **Admin Panel:** admin / ShipBot2026!Secure (HTTP Basic Auth)
+- **Admin Telegram ID:** 7066790254
 
 ## Update Log
-- **2026-01-15**: Refactored template management flow to use new messages for each action (better UX)
-- **2026-01-15**: Updated webhook to current URL
+- **2026-01-15**: Refactored template management flow
+- **2026-02-18**: Core pricing fix, profit calculation, bot state management
+- **2026-03-13**: Fixed critical infinite recursion bug in safe_answer_query (both telegram_bot_app.py and telegram_conversation.py)
