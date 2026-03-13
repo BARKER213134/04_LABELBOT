@@ -119,7 +119,7 @@
 ### Веб-дашборд:
 
 Для полного функционала используйте:
-https://telegram-shipper.preview.emergentagent.com
+https://shipping-dashboard-8.preview.emergentagent.com
 
 **В дашборде можно:**
 - Просмотреть все заказы

@@ -27,140 +27,184 @@ PRODUCT REQUIREMENTS:
 **User's preferred language**: Russian. The next agent MUST respond in Russian.
 
 **what currently exists?**
-A full-stack application (FastAPI backend, React admin panel, MongoDB) for a Telegram shipping bot. The session focused heavily on debugging a recurring, critical issue where the estimated price from ShipEngine differs from the final charged price, particularly for FedEx. This led to multiple failed attempts at fixing the payment logic. The agent cycled through several implementations (pre-paid fixed price, post-paid actual price) before landing on a system that charges the user the final *actual* price plus a 0 markup. A critical bug was discovered and fixed where a user with insufficient funds received a free label; the new logic deducts what it can and creates a debt for the user, notifying the admin.
+A full-stack application (FastAPI backend, React admin panel, MongoDB) for a Telegram shipping bot. A significant amount of work has been done in this session to fix core issues and add new features.
+
+The most critical issue, a price discrepancy between the estimate and final charge from ShipEngine, has been addressed by enforcing the use of  during label creation. The price estimation logic was also improved to include additional fees () for better accuracy.
+
+Numerous bot stability issues were resolved by implementing a robust state-clearing mechanism that manually deletes conversation states from the  collection in MongoDB, fixing cases where the bot would hang.
+
+The admin panel received major enhancements: a full UI to manage a maintenance mode whitelist, and a new user detail view that displays collapsible lists of the user's entire label and top-up history.
+
+The agent also improved user-facing error messages, added retry logic for unstable ShipEngine API calls, and adjusted carrier rate filtering and sorting based on user feedback. However, the session ended with the production environment being down due to a failed deployment.
 
 **Last working item**:
-- Last item agent was working: Fixing a critical bug where if a user's balance was insufficient to cover the *final* cost of a label, no funds were deducted. The agent implemented a fix to deduct the user's entire available balance, set their balance to zero, and notify the admin of the debt.
-- Status: USER VERIFICATION PENDING
+- Last item agent was working: Debugging a failed deployment which caused the admin panel and backend to be inaccessible on the production environment. The user provided deployment logs indicating the backend application was failing to start correctly.
+- Status: IN PROGRESS
 - Agent Testing Done: N
-- Which testing method agent to use? backend testing agent. The agent should create a test that mocks a ShipEngine  response where the cost is higher than a mocked user's balance to verify the new debt-handling logic.
+- Which testing method agent to use? The main agent needs to analyze the deployment logs to fix the application startup crash. After a successful deployment, the frontend testing agent should be used to verify the admin panel, and the backend testing agent to verify the bot's core functionality.
 - User Testing Done: N
 
 **All Pending/In progress Issue list**:
-- Issue 1: Price discrepancy between estimate and final cost (P0)
-- Issue 2: Incorrect weight/dimensions when loading from a template (P1)
-- Issue 3: SITKAGEAR text may still appear on UPS labels (P2)
+- Issue 1: Production deployment is failing (P0)
+- Issue 2: ShipEngine API for getting carriers is unstable (P1)
+- Issue 3: Incorrect weight/dimensions when loading from a template (P2)
+- Issue 4: SITKAGEAR text may still appear on UPS labels (P3)
 
 **Issues Detail:**
 - **Issue 1:**
-    - **Description:** The price shown to the user during rate selection (estimate + 0) often differs significantly from the actual price charged by ShipEngine upon label creation, especially for FedEx. This is the root cause of all recent payment logic problems and user frustration. The user wants the displayed price to be the final price AND the profit to be a guaranteed 0.
-    - **Attempted fixes:** The agent tried multiple, conflicting payment logic implementations (using , pre-paying based on estimate, post-paying actual cost). The latest fix was adding validation for minimum dimensions (6x4x2), which did not solve the problem. The core issue has not been addressed.
+    - **Description:** The production deployment is failing, making the entire application inaccessible. The logs provided by the user in message #790 show  errors, which indicates that the NGINX ingress proxy cannot connect to the backend Uvicorn server. This strongly suggests the FastAPI application is crashing on startup.
+    - **Attempted fixes:** None for this specific log. The agent was about to start debugging when the session ended.
     - **Next debug checklist:**
-        1. **STOP changing the payment logic.** Focus on the **root cause**: why the estimate from  differs from the result of .
-        2. Re-examine the payloads for both API calls. A previous agent noted that  is called without  and . This is a critical lead.
-        3. Modify the  call in  to be as specific as possible, mirroring the data that will be sent to .
-        4. Add detailed logging for the **full request payload** and **full response body** for both  and  to perform a side-by-side comparison.
-        5. If the issue persists, research ShipEngine's documentation for FedEx One Balance to see if there are specific parameters or validation rules being missed.
-    - **Why fix this issue and what will be achieved with the fix?** This is the single most critical issue in the project. Fixing it will stabilize the bot's financials, restore user trust, and allow for a consistent and predictable payment logic.
+        1.  Carefully analyze the backend startup logs provided by the user in message #790.
+        2.  The  error means the backend process on port 8001 is not running or not responding. Look for any Python tracebacks or fatal errors that occur immediately after the  message.
+        3.  The previous deployment failed due to an unhandled  exception. While the agent added an error handler for this, it's possible a new unhandled exception is causing the crash.
+        4.  Review all recent changes, especially in , , and  for potential startup issues.
+    - **Why fix this issue and what will be achieved with the fix?** This is a critical blocker. The production application is down and unusable. Fixing this will restore service and allow verification of all other fixes.
     - **Status:** IN PROGRESS
     - **Is recurring issue?** Y
-    - **Should Test frontend/backend/both after fix?** backend
+    - **Should Test frontend/backend/both after fix?** both
     - **Blocked on other issue:** None. This is the primary blocker.
 
 - **Issue 2:**
-    - **Description:** When loading a shipping template, the weight and dimensions are displayed incorrectly in the review summary.
+    - **Description:** The ShipEngine API endpoint  is highly unstable and frequently times out, which prevents the bot from fetching shipping rates.
+    - **Attempted fixes:** The agent implemented a retry mechanism, which helps but doesn't solve the root problem of the slow endpoint. The agreed-upon solution is to use a hardcoded fallback list of carrier IDs.
     - **Next debug checklist:**
-        1. Review  -> .
-        2. Review  -> .
+        1.  Politely ask the user again to provide the  for their FedEx, UPS, and USPS accounts from their ShipEngine dashboard. They look like .
+        2.  Modify the  function in  to use this hardcoded list as a fallback if the API call fails or times out.
+    - **Why fix this issue and what will be achieved with the fix?** This will make the bot's core functionality (fetching rates) reliable even when the ShipEngine API is having issues.
+    - **Status:** BLOCKED (on user providing carrier IDs)
+    - **Is recurring issue?** Y
+    - **Should Test frontend/backend/both after fix?** backend
+    - **Blocked on other issue:** Issue 1.
+
+- **Issue 3:**
+    - **Description:** When loading a shipping template, the weight and dimensions are displayed incorrectly in the review summary. This is a carry-over issue from a previous session.
+    - **Next debug checklist:**
+        1.  Review  -> .
+        2.  Review  ->  to trace how template data is processed and displayed.
     - **Status:** NOT STARTED
     - **Is recurring issue?** N
     - **Should Test frontend/backend/both after fix?** backend
-    - **Blocked on other issue:** Blocked by Issue 1 (P0).
+    - **Blocked on other issue:** Issue 1.
 
-- **Issue 3:**
-    - **Description:** SITKAGEAR text appears as the company name on UPS labels.
-    - **Next debug checklist:** Advise the user to create a label in the production environment and check if the issue persists. Inform them this is likely a setting in their ShipEngine account dashboard.
+- **Issue 4:**
+    - **Description:** SITKAGEAR text appears as the company name on UPS labels. This is a recurring issue.
+    - **Next debug checklist:** Advise the user to create a label in the production environment (once it's working) and check if the issue persists. Inform them this is very likely a setting in their ShipEngine account dashboard and not in the code.
     - **Status:** USER VERIFICATION PENDING
     - **Is recurring issue?** Y
     - **Should Test frontend/backend/both after fix?** N/A
-    - **Blocked on other issue:** None.
+    - **Blocked on other issue:** Issue 1.
 
 **In progress Task List**:
 None.
 
 **Upcoming and Future Tasks**
 - **Upcoming Tasks:**
-    - **FedEx Sandbox Handling (P2):** Implement a feature to hide FedEx as a carrier option when the bot is in sandbox mode.
+  - **FedEx Sandbox Handling (P2):** Implement a feature to hide FedEx as a carrier option when the bot is in sandbox mode.
 - **Future Tasks:**
-    - **Refactor  (P2):** This file is over 2000 lines long and has undergone significant churn, making it a maintenance liability. It needs to be broken down into smaller modules.
+  - **Refactor  (P2):** This file is now nearly 3000 lines and is a significant maintenance liability. It urgently needs to be broken down into smaller, manageable modules (e.g., one module per conversation step).
 
 **Completed work in this session**
-- **Critical Payment Bug Fix:** Fixed a bug where users with insufficient funds for a final label cost were not charged at all. The new system creates a debt and notifies the admin.
-- **Payment Logic Iterations:** The agent cycled through multiple, ultimately reverted, payment logic implementations in an attempt to solve the price discrepancy issue.
-- **Localization:** Fixed localization bugs in the OxaPay webhook and various admin-facing messages.
-- **UI/UX Improvements:** Replaced the Language button with RU/EN flag buttons, added user-friendly ShipEngine error messages, and added warnings/validation for minimum package dimensions.
-- **Username Display:** Corrected logic to ensure the user's Telegram username is displayed in admin notifications and the dashboard, falling back to user ID if no username is set.
-- **Bot State Fix:** Resolved an issue where the bot would hang after a user canceled a pending order by ensuring the conversation state is cleared.
+- **Core Pricing Fix:** Corrected logic to use  to guarantee the price seen by the user is the final price.
+- **Accurate Price Estimation:** Rate calculation now includes  (e.g., fuel surcharges) for more precise estimates.
+- **Accurate Profit Calculation:** Profit is now calculated dynamically () instead of being hardcoded.
+- **Bot State Management:** Fixed bot hanging issues by implementing robust state clearing in the MongoDB  collection on all cancellation/exit flows.
+- **Admin Panel UI/UX:**
+    - Implemented a full UI in the admin panel to manage a maintenance mode whitelist.
+    - Added collapsible sections in the user detail view to display the complete history of a user's created labels and balance top-ups.
+- **API & Deployment Resiliency:**
+    - Added a global Telegram bot error handler to prevent crashes from  errors.
+    - Implemented a retry mechanism for unstable ShipEngine API calls.
+    - Fixed API endpoints for user history to query correct fields ().
+- **Carrier Rate Handling:**
+    - Adjusted FedEx service filters to show a better mix of economy and express services.
+    - Increased the number of displayed FedEx rates to 6.
+    - Implemented sorting of all carrier rates by price (cheapest first).
+    - Removed duplicate USPS services from the rate list.
+- **Error Message Improvement:** Replaced technical ShipEngine/carrier error messages with generic, user-friendly text.
 
 **Earlier issues found/mentioned but not fixed**
-None not already listed.
+None not already listed in the pending issues.
 
 **Known issue recurrence from previous fork**
-- The price discrepancy issue has been the central, recurring theme of the last two forks.
-- The SITKAGEAR on UPS labels is a recurring topic.
+- **Price Discrepancy:** The root cause was found and fixed, but this needs to be verified on production.
+- **SITKAGEAR on UPS labels:** Still pending user verification.
+- **NEW: ShipEngine API instability:** The API is frequently timing out. A retry mechanism was added, but a more permanent fallback is needed.
+- **NEW: Deployment Failures:** The application is currently failing to deploy.
 
 **Code Architecture**
-rate_id
+
 
 **Key Technical Concepts**
-- **ShipEngine API Price Discrepancy:** The core unresolved technical challenge. The estimated rate from  and the final charge from  do not match for FedEx, breaking the desired business logic (fixed price for user, fixed profit for owner).
-- **State Management:** Debugged and fixed issues with 's conversation handler state persistence in MongoDB ( collection).
-- **Debt Handling:** A new business logic concept was introduced to handle cases where a user's balance is insufficient for the final label cost, preventing financial loss for the bot owner.
+- ** State Persistence:** Deep understanding that conversation state is persisted in the  MongoDB collection and requires manual deletion to properly reset the bot's flow.
+- **ShipEngine API Instability:** Encountered and mitigated frequent  and  issues with a retry wrapper. Identified the  endpoint as the primary bottleneck.
+- **Deployment Debugging:** The agent debugged multiple deployment failures by analyzing production logs, identifying application crashes caused by unhandled exceptions () and startup issues ().
+- **React UI Development:** Built complex, stateful UI components in the admin panel using  and  to fetch and display historical data and manage settings.
 
 **key DB schema**
-- **orders:** Contains all order information. A  field was added but the logic relying on it was reverted.
-- **ptb_conversations:** Collection used by  for managing conversation state. The agent had to interact with it directly to fix a hanging bot state.
+- **ptb_conversations:** Manually manipulated to clear bot state. Key is  and a  for the handler.
+- **orders:** Stores created label information. Queried for the user history view.
+- **balance_logs:** Used as the primary source for user top-up history.
+- **oxapay_invoices:** Used as a secondary source for user top-up history.
+- **settings:** A collection now used to store configuration, including the .
 
 **All files of reference**
-- : Contains the core logic for creating orders and calculating profit. This is where the payment logic lives.
-- : Contains the direct API calls to ShipEngine for  and . This is where the root cause of the price discrepancy likely lies.
-- : Handles the user-facing wizard flow, including payment steps.
-- : Handles the continue order flow after a user tops up their balance.
-- : Contains the  function, now with debt-handling logic.
+- : The monolithic file for all bot logic.
+- : All interaction with the ShipEngine API.
+- : The main file for the admin UI.
+- : Where the Telegram bot application is configured.
+- : API endpoints for the admin panel.
 
 **Areas that need refactoring**:
--  and  have been modified extensively with conflicting logic. Once the price discrepancy issue is truly solved, these files should be cleaned up to reflect a single, stable approach.
-- The monolithic  file remains a high-priority candidate for refactoring.
+- **:** This is the highest priority for refactoring. The file is extremely large (approaching 3000 lines) and contains convoluted logic for the entire user flow, making it nearly unmaintainable. It must be broken down into smaller, single-responsibility modules.
+- **:** This React component has grown very large. The logic for user details, balance management, label history, and top-up history should be extracted into separate, reusable components.
 
 **key api endpoints**
-- : The main bot webhook where all user interactions are processed.
+- : Add/remove users from the maintenance whitelist.
+- : Get all created labels for a specific user.
+- : Get the balance top-up history for a specific user.
 
 **Critical Info for New Agent**
-- **THE ROOT CAUSE IS NOT THE PAYMENT LOGIC:** The core, unresolved problem is that the price estimate from ShipEngine's  API call does not match the final price from . Do NOT waste time changing the payment deduction logic again. You MUST investigate and fix the discrepancy in the ShipEngine API calls themselves.
-- **INVESTIGATE API PAYLOADS:** A previous agent identified a critical lead that was never followed up on: the  API call is likely missing  and  in its payload. Your first action should be to make the  payload as identical as possible to the  payload.
-- **USER FRUSTRATION:** The user is paying real money for failing test labels and is frustrated. Be methodical, focus on fixing the root cause, and communicate clearly about the plan to fix the price discrepancy itself. Do not suggest more workarounds.
-- **MISTAKE TO AVOID:** A previous agent accidentally wiped all user conversation states () while trying to fix one user's stuck state. Be extremely careful when performing direct database operations.
+- **PRODUCTION IS DOWN.** Your first and only priority is to fix the failed deployment. Analyze the logs in the user's last message (#790). The  error means the backend app is crashing on startup. You must find and fix this crash.
+- After fixing the deployment, you will need to get the  from the user to implement the fallback for the unstable ShipEngine API. This is the next most critical issue.
+- A massive number of features and fixes were implemented. Once production is back up, you should guide the user to test the key fixes:
+    1.  Create a FedEx label to confirm the price is now fixed and accurate.
+    2.  Cancel a label partway through and start a new one to confirm the bot no longer hangs.
+    3.  Check the new user history and maintenance whitelist features in the admin panel.
+- Be prepared to continue debugging, as many changes have been made and may have unintended side effects.
+- **Strongly recommend** proposing the refactoring of  as the next major task after the critical issues are resolved. The file's complexity is a huge risk to the project's stability.
 
 **documents and test reports created in this job**
 None.
 
 **Last 10 User Messages and any pending HUMAN messages**
-1. **User:** The price was the same everywhere, but the profit was less. (Reports profit is still wrong).
-2. **User:** Okay, so I should earn 0 on every label, but before, the price was always static. Check why it started changing. (Asks to investigate the root cause).
-3. **User:** Correct, but I should also earn 0 from each label. (Reiterates the core business requirement).
-4. **User:** You need to do it so the user buys the label for the amount they expect. Leave only FedEx 1,2,3 day services. The logic is wrong, I lost 0 because the balance wasn't deducted. (Confirms the desired logic and reports the critical bug of non-deduction).
-5. **User:** The FedEx label cost was 4.76, user paid 5, but the label was created with a final cost of 3.86 and the balance remained 5. Don't change anything yet, explain why this happened. (Reports the price discrepancy and non-deduction bug).
-6. **User:** The ID issue remains, and the admin panel also shows the user ID. (Reports the username display bug).
-7. **User:** If the price will be different, do I refund him the money? (Asks for clarification on the payment logic).
-8. **User:** Why was the cost 6 at first and then 0? (Points out price discrepancy in the continue order flow).
-9. **User:** A user was creating a label, ran out of money, paid, then canceled and started a new one. The bot got stuck on step 1.2 address. (Reports a bug with the conversation state).
-10. **User:** Is it normal that it stopped working for other users too? (Reports the agent's mistake of deleting all conversation states).
+1.  **User:** Asks for sorting rates by price, not by carrier. (Implemented)
+2.  **User:** Requests to see a user's full label and top-up history in the admin panel. (Implemented)
+3.  **User:** Asks to see the amount and date of top-ups, not just the balance. (Implemented)
+4.  **User:** Reports that the label/top-up history is showing up empty (0). (Fixed by correcting API query fields)
+5.  **User:** Confirms labels are showing but top-ups are still missing. (Fixed by adding a second data source for top-ups)
+6.  **User:** admin panel stopped working (Reports production is down after a deployment).
+7.  **User:** (Provides deployment logs showing  errors).
+8.  **User:** (Responds to agent's clarification)
+9.  **User:** Reports a UPS-specific error: XML Shipping System is unavailable. (Fixed by adding better error messages)
+10. **User:** Notes that FedEx Ground Delivery is not showing up as an option. (Agent explained this is normal for residential addresses).
+11. **User:** Complains that FedEx rates are much higher than a competitor's. (Agent enabled cheaper FedEx services in response).
 
 **Project Health Check:**
-- **Broken:** The core pricing model is fundamentally flawed and unreliable due to the unresolved ShipEngine price discrepancy. This is causing financial loss and breaking user trust.
+- **Broken:** The application is not deployable to the production environment, which is currently down.
 
 **3rd Party Integrations**
 - **ShipEngine API**: For rates and labels.
-- **Telegram Bot API**: Via .
-- **OxaPay**: For crypto payments.
-- **OpenAI GPT-4o-mini**: For AI thank-you messages. Uses Emergent LLM Key.
-- **MongoDB Atlas**: Production database and bot state persistence.
+- **Telegram Bot API**: Via  library.
+- **OxaPay**: For cryptocurrency payments.
+- **OpenAI GPT-4o-mini**: For generating thank-you messages (uses Emergent LLM Key).
+- **MongoDB Atlas**: Production database.
 
 **Testing status**
 - **Testing agent used after significant changes:** NO
 - **Troubleshoot agent used after agent stuck in loop:** NO
 - **Test files created:** None
-- **Known regressions:** The payment logic has been in flux all session. The current implementation, while financially safer for the owner, results in a final charge that can be different from the user's expectation.
+- **Known regressions:** The entire production application is down due to a deployment failure.
 
 **Credentials to test flow:**
 - **Admin Panel Login:**
@@ -169,5 +213,6 @@ None.
 - **Admin Telegram ID**: 
 
 **What agent forgot to execute**
-- The agent failed to investigate the root cause of the price discrepancy (e.g., the missing parameters in ). Instead, it repeatedly changed the payment logic, which only addressed the symptoms.
-- The agent made a critical error by deleting all conversation states from the database () instead of targeting a single user, affecting all active users.</analysis>
+- The agent did not fix the long-standing issue with incorrect weight/dimensions when loading from a template.
+- The agent did not follow up on getting the required  from the user to create a permanent fix for the ShipEngine API instability.
+- The agent did not analyze the final set of deployment logs provided by the user just before the session ended.</analysis>
