@@ -4,6 +4,7 @@ from starlette.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import logging
 import sys
+import asyncio
 from pathlib import Path
 
 # Configure logging - WARNING level for speed
@@ -73,13 +74,17 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Security init failed: {e}")
     
-    # Preload telegram bot SYNCHRONOUSLY to ensure it's ready
-    try:
-        from routes.telegram import _preload_bot
-        await _preload_bot()
-        logger.info("Bot preloaded successfully")
-    except Exception as e:
-        logger.error(f"Bot preload failed: {e}")
+    # Preload telegram bot in BACKGROUND to avoid blocking server startup
+    # This allows the server to respond to health checks immediately
+    async def _background_bot_preload():
+        try:
+            from routes.telegram import _preload_bot
+            await _preload_bot()
+            logger.info("Bot preloaded successfully (background)")
+        except Exception as e:
+            logger.error(f"Bot preload failed: {e}")
+    
+    asyncio.create_task(_background_bot_preload())
     
     yield
     logger.info("Shutting down...")
