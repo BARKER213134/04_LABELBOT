@@ -125,16 +125,22 @@ class OrdersService:
                 estimated_cost = order_data.get('total_cost', 0)  # Цена которую видел пользователь
                 
                 if rate_id:
-                    # Создаём лейбл по rate_id — цена будет та же, что видел пользователь
+                    # Create label from rate_id for fixed pricing
                     logger.info(f"[LABEL] Creating label from rate_id: {rate_id}")
                     label_response = await shipengine.create_label_from_rate(rate_id)
                     
-                    # Цена из rate (без markup)
+                    # Get actual cost from ShipEngine (total of all components)
                     label_cost = label_response.get("shipment_cost", {}).get("amount", 0)
                     logger.info(f"[LABEL] Label cost from rate: ${label_cost}")
                     
-                    # Пользователь платит то, что видел (estimated_cost уже включает +$10)
-                    user_paid = estimated_cost
+                    # SAFETY CHECK: if actual cost exceeds estimate, use actual cost + markup
+                    # This prevents negative profit when ShipEngine charges more than estimated
+                    if label_cost > estimated_cost:
+                        logger.warning(f"[LABEL] COST DISCREPANCY! Estimated: ${estimated_cost:.2f}, Actual label cost: ${label_cost:.2f}")
+                        user_paid = label_cost + RATE_MARKUP
+                        logger.warning(f"[LABEL] Adjusted user_paid to ${user_paid:.2f} (actual + markup)")
+                    else:
+                        user_paid = estimated_cost
                 else:
                     # Fallback: создаём лейбл с нуля (старая логика)
                     logger.warning(f"[LABEL] No rate_id, creating label from scratch")

@@ -144,7 +144,7 @@ class ShipEngineService:
             if rate_errors:
                 logger.warning(f"Rate errors from carriers: {rate_errors}")
             
-            # Add markup to each rate - include shipping + fuel surcharge only
+            # Add markup to each rate - include ALL cost components
             for rate in rates:
                 # Get all cost components
                 shipping_amount = rate.get("shipping_amount", {}).get("amount", 0)
@@ -152,9 +152,8 @@ class ShipEngineService:
                 insurance_amount = rate.get("insurance_amount", {}).get("amount", 0)
                 confirmation_amount = rate.get("confirmation_amount", {}).get("amount", 0)
                 
-                # Only include shipping + fuel surcharge (skip optional insurance/confirmation)
-                # Fuel surcharge is mandatory, insurance/confirmation are optional
-                full_cost = shipping_amount + other_amount
+                # Include ALL cost components to match what ShipEngine actually charges
+                full_cost = shipping_amount + other_amount + insurance_amount + confirmation_amount
                 
                 # Store original amounts for transparency
                 rate["shipping_only"] = shipping_amount
@@ -167,9 +166,7 @@ class ShipEngineService:
                 
                 carrier = rate.get("carrier_code", "")
                 service = rate.get("service_code", "")
-                if insurance_amount > 0 or confirmation_amount > 0:
-                    logger.warning(f"Rate {carrier}/{service}: shipping=${shipping_amount:.2f} + fuel=${other_amount:.2f} + ins=${insurance_amount:.2f} + confirm=${confirmation_amount:.2f}")
-                logger.info(f"Rate {carrier}/{service}: ${shipping_amount:.2f} + ${other_amount:.2f} + markup=${RATE_MARKUP} = ${rate['total_amount']:.2f}")
+                logger.info(f"Rate {carrier}/{service}: ship=${shipping_amount:.2f} + fuel=${other_amount:.2f} + ins=${insurance_amount:.2f} + confirm=${confirmation_amount:.2f} + markup=${RATE_MARKUP} = ${rate['total_amount']:.2f}")
             
             logger.info(f"Got {len(rates)} rates")
             return rates
