@@ -576,6 +576,83 @@ async def check_payment_status_callback(update, context):
         error_text = f"❌ Error: {str(e)}" if lang == "en" else f"❌ Ошибка: {str(e)}"
         await query.answer(error_text, show_alert=True)
 
+async def platform_info_callback(update, context):
+    """Show WhiteLabelPlatform.cc info"""
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+    from database import Database
+    from services.localization import get_user_language
+
+    query = update.callback_query
+    await safe_answer_query(query)
+
+    user_id = str(update.effective_user.id)
+    lang = context.user_data.get('language')
+    if not lang:
+        lang = await get_user_language(Database.db, user_id)
+        context.user_data['language'] = lang
+
+    try:
+        await query.edit_message_reply_markup(reply_markup=None)
+    except Exception:
+        pass
+
+    if lang == "en":
+        text = (
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "🌐 *WHITE LABEL PLATFORM*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "We want to give you a choice — that's why\n"
+            "we created a full web platform for\n"
+            "your convenience.\n\n"
+            "Everything the bot does, but in your browser:\n\n"
+            "✅ USPS, FedEx, UPS — best rates\n"
+            "✅ Create labels in a few clicks\n"
+            "✅ Crypto payments\n"
+            "✅ Convenient personal dashboard\n"
+            "✅ International shipping worldwide 🌍\n"
+            "✅ Schedule courier pickup from home 🚚\n"
+            "✅ Track all packages in one place 📦\n\n"
+            "Fast, simple, no extra steps —\n"
+            "everything at your fingertips in one browser window.\n\n"
+            "Choose what works best — bot or platform!"
+        )
+        keyboard = [
+            [InlineKeyboardButton("🚀 Open Platform", url="https://whitelabelplatform.cc")],
+            [InlineKeyboardButton("⬅️ Back", callback_data="back_to_menu")]
+        ]
+    else:
+        text = (
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "🌐 *WHITE LABEL PLATFORM*\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Мы хотим дать вам выбор — поэтому помимо\n"
+            "бота мы создали полноценную веб-платформу\n"
+            "для вашего удобства.\n\n"
+            "Всё то же самое, но через браузер:\n\n"
+            "✅ USPS, FedEx, UPS — лучшие тарифы\n"
+            "✅ Создание лейблов в пару кликов\n"
+            "✅ Оплата криптовалютой\n"
+            "✅ Удобный личный кабинет\n"
+            "✅ Международные отправки по всему миру 🌍\n"
+            "✅ Заказ пикапа курьером прямо из дома 🚚\n"
+            "✅ Отслеживание всех посылок в одном месте 📦\n\n"
+            "Быстро, просто и без лишних шагов —\n"
+            "всё под рукой в одном окне браузера.\n\n"
+            "Выбирайте как вам удобнее — бот или платформа!"
+        )
+        keyboard = [
+            [InlineKeyboardButton("🚀 Перейти на платформу", url="https://whitelabelplatform.cc")],
+            [InlineKeyboardButton("⬅️ Назад", callback_data="back_to_menu")]
+        ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=text,
+        reply_markup=reply_markup,
+        parse_mode="Markdown"
+    )
+
 async def change_language_callback(update, context):
     """Show language selection menu"""
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
@@ -1807,6 +1884,7 @@ async def setup_bot_application(environment='sandbox'):
     application.add_handler(CallbackQueryHandler(template_delete_callback, pattern="^tpl_del_"))
     application.add_handler(CallbackQueryHandler(refund_info_callback, pattern="^refund_info$"))
     application.add_handler(CallbackQueryHandler(faq_info_callback, pattern="^faq_info$"))
+    application.add_handler(CallbackQueryHandler(platform_info_callback, pattern="^platform_info$"))
     
     # Text handler for topup amount - in group 2 (lowest priority)
     # Only processes if user is in topup mode AND not in ConversationHandler
