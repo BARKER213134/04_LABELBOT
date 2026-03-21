@@ -78,9 +78,9 @@ class ShipEngineService:
         # Fallback carrier IDs - update these if carriers change in ShipEngine account
         # These are typical carrier IDs for ShipEngine accounts
         FALLBACK_CARRIER_IDS = [
-            "se-5471482",   # stamps_com (USPS)
-            "se-5471483",   # ups_walleted
-            "se-5471484",   # fedex_walleted
+            "se-4002321",   # usps
+            "se-4002326",   # ups
+            "se-4002328",   # fedex_walleted
         ]
         
         try:
@@ -90,6 +90,7 @@ class ShipEngineService:
             self._carrier_ids = [
                 carrier["carrier_id"] 
                 for carrier in carriers_data.get("carriers", [])
+                if carrier.get("carrier_code") != "globalpost"
             ]
             logger.info(f"Found {len(self._carrier_ids)} carriers: {self._carrier_ids}")
             return self._carrier_ids
