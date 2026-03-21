@@ -80,7 +80,10 @@ async def _check_admin_api():
 
 
 async def _send_admin_report(bot, results):
-    """Send health report to admin"""
+    """Send health report to admin via Telegram API directly"""
+    import os
+    import httpx
+
     now = datetime.now(timezone.utc).strftime("%d.%m.%Y %H:%M UTC")
 
     all_ok = all(ok for ok, _ in results.values())
@@ -113,13 +116,21 @@ async def _send_admin_report(bot, results):
 
     text = "\n".join(lines)
 
+    # Send directly via Telegram Bot API (works without bot application loaded)
+    token = os.environ.get("TELEGRAM_BOT_TOKEN_PROD", "")
+    if not token:
+        logger.warning("[MONITOR] No TELEGRAM_BOT_TOKEN_PROD, cannot send report")
+        return
+
     try:
-        await bot.send_message(
-            chat_id=ADMIN_TELEGRAM_ID,
-            text=text
-        )
+        async with httpx.AsyncClient(timeout=10) as client:
+            await client.post(
+                f"https://api.telegram.org/bot{token}/sendMessage",
+                json={"chat_id": ADMIN_TELEGRAM_ID, "text": text}
+            )
+            logger.info("[MONITOR] Health report sent to admin")
     except Exception as e:
-        logger.error(f"[MONITOR] Failed to send report to admin: {e}")
+        logger.error(f"[MONITOR] Failed to send report: {e}")
 
 
 async def run_health_check():
@@ -133,22 +144,7 @@ async def run_health_check():
     results["webhook"] = await _check_webhook()
     results["api"] = await _check_admin_api()
 
-    # Get bot instance for sending message
-    try:
-        from routes.telegram import _production_app, _sandbox_app
-        from database import Database
-        from routes.telegram import _get_current_environment_cached
-
-        env = await _get_current_environment_cached(Database.db)
-        app = _production_app if env == "production" else _sandbox_app
-
-        if app and app.bot:
-            await _send_admin_report(app.bot, results)
-            logger.info("[MONITOR] Health report sent to admin")
-        else:
-            logger.warning("[MONITOR] No bot available to send report")
-    except Exception as e:
-        logger.error(f"[MONITOR] Failed to send report: {e}")
+    await _send_admin_report(None, results)
 
     return results
 
