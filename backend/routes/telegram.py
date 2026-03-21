@@ -190,7 +190,7 @@ async def telegram_webhook(
                     from telegram import Bot
                     from services.localization import get_user_language
                     
-                    bot = Bot(token=settings.telegram_bot_token)
+                    bot = Bot(token=settings.telegram_bot_token_prod)
                     
                     # Get user language
                     lang = await get_user_language(db, str(user_id))
@@ -237,9 +237,16 @@ async def telegram_webhook(
         if app is None:
             return JSONResponse(content={"status": "ok"})
         
-        # Process update
+        # Process update in BACKGROUND to avoid Telegram webhook timeout
+        # Telegram requires fast response, actual processing can take time (ShipEngine API etc.)
+        async def _process_in_background(application, update_obj):
+            try:
+                await application.process_update(update_obj)
+            except Exception as e:
+                logger.error(f"Background update processing error: {e}")
+        
         update = Update.de_json(update_data, app.bot)
-        await app.process_update(update)
+        asyncio.create_task(_process_in_background(app, update))
         
         # Background MongoDB write
         if update_id:
