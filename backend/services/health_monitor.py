@@ -58,9 +58,16 @@ async def _check_webhook():
                 url = result.get("url", "")
                 pending = result.get("pending_update_count", 0)
                 last_error = result.get("last_error_message", "")
-                if last_error:
-                    return False, f"URL: {url[-30:]}, Pending: {pending}, Error: {last_error}"
-                return True, f"URL: ...{url[-30:]}, Pending: {pending}"
+                last_error_date = result.get("last_error_date", 0)
+
+                # Only report error if it happened within the last 2 hours
+                now_ts = int(datetime.now(timezone.utc).timestamp())
+                error_age = now_ts - last_error_date if last_error_date else 999999
+
+                if last_error and error_age < 7200:
+                    mins_ago = error_age // 60
+                    return False, f"Error {mins_ago}m ago: {last_error}"
+                return True, f"OK, Pending: {pending}"
         return False, "API error"
     except Exception as e:
         return False, str(e)
