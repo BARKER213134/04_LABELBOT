@@ -139,10 +139,13 @@ class ShipEngineService:
                 carriers_in_rates.add(rate.get("carrier_code", "unknown"))
             logger.info(f"Carriers in rates response: {carriers_in_rates}")
             
-            # Check for rate errors
+            # Check for rate errors (log only, non-critical)
             rate_errors = rates_data.get("rate_response", {}).get("errors", [])
             if rate_errors:
-                logger.warning(f"Rate errors from carriers: {rate_errors}")
+                # Filter out known non-critical carrier errors (GlobalPost etc.)
+                critical_errors = [e for e in rate_errors if e.get("carrier_code") not in ("globalpost",)]
+                if critical_errors:
+                    logger.warning(f"Rate errors from carriers: {critical_errors}")
             
             # Add markup to each rate - include ALL cost components
             for rate in rates:

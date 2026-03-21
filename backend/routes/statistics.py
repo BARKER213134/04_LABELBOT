@@ -20,19 +20,19 @@ async def get_statistics(
         pipeline_status = [
             {"$group": {"_id": "$status", "count": {"$sum": 1}}}
         ]
-        status_counts = await db.orders.aggregate(pipeline_status).to_list(None)
+        status_counts = await db.orders.aggregate(pipeline_status).to_list(100)
         
         # Orders by carrier
         pipeline_carrier = [
             {"$group": {"_id": "$carrier", "count": {"$sum": 1}}}
         ]
-        carrier_counts = await db.orders.aggregate(pipeline_carrier).to_list(None)
+        carrier_counts = await db.orders.aggregate(pipeline_carrier).to_list(100)
         
         # Total cost
         pipeline_cost = [
             {"$group": {"_id": None, "total": {"$sum": "$labelCost"}}}
         ]
-        cost_result = await db.orders.aggregate(pipeline_cost).to_list(None)
+        cost_result = await db.orders.aggregate(pipeline_cost).to_list(1)
         total_cost = cost_result[0]["total"] if cost_result else 0
         
         # Recent orders (last 7 days)
