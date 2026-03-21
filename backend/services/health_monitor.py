@@ -55,16 +55,15 @@ async def _check_webhook():
             data = resp.json()
             if data.get("ok"):
                 result = data["result"]
-                url = result.get("url", "")
                 pending = result.get("pending_update_count", 0)
                 last_error = result.get("last_error_message", "")
                 last_error_date = result.get("last_error_date", 0)
 
-                # Only report error if it happened within the last 2 hours
+                # Only report error if it happened within the last 10 minutes
                 now_ts = int(datetime.now(timezone.utc).timestamp())
                 error_age = now_ts - last_error_date if last_error_date else 999999
 
-                if last_error and error_age < 7200:
+                if last_error and error_age < 600:
                     mins_ago = error_age // 60
                     return False, f"Error {mins_ago}m ago: {last_error}"
                 return True, f"OK, Pending: {pending}"
@@ -86,7 +85,7 @@ async def _check_admin_api():
         return False, str(e)
 
 
-async def _send_admin_report(bot, results):
+async def _send_admin_report(results):
     """Send health report to admin via Telegram API directly"""
     import os
     import httpx
@@ -123,7 +122,6 @@ async def _send_admin_report(bot, results):
 
     text = "\n".join(lines)
 
-    # Send directly via Telegram Bot API (works without bot application loaded)
     token = os.environ.get("TELEGRAM_BOT_TOKEN_PROD", "")
     if not token:
         logger.warning("[MONITOR] No TELEGRAM_BOT_TOKEN_PROD, cannot send report")
@@ -135,7 +133,6 @@ async def _send_admin_report(bot, results):
                 f"https://api.telegram.org/bot{token}/sendMessage",
                 json={"chat_id": ADMIN_TELEGRAM_ID, "text": text}
             )
-            logger.info("[MONITOR] Health report sent to admin")
     except Exception as e:
         logger.error(f"[MONITOR] Failed to send report: {e}")
 
@@ -145,21 +142,20 @@ async def run_health_check():
     logger.info("[MONITOR] Running health check...")
 
     results = {}
-
     results["database"] = await _check_database()
     results["bot"] = await _check_bot()
     results["webhook"] = await _check_webhook()
     results["api"] = await _check_admin_api()
 
-    await _send_admin_report(None, results)
-
+    await _send_admin_report(results)
     return results
 
 
 async def health_monitor_loop():
     """Background loop: check health every hour"""
-    # Wait 60 seconds after startup before first check
-    await asyncio.sleep(60)
+    # Wait 5 minutes after startup before first check
+    # (avoids spam if pod restarts frequently)
+    await asyncio.sleep(300)
 
     while True:
         try:
