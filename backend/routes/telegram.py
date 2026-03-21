@@ -237,16 +237,9 @@ async def telegram_webhook(
         if app is None:
             return JSONResponse(content={"status": "ok"})
         
-        # Process update in BACKGROUND to avoid Telegram webhook timeout
-        # Telegram requires fast response, actual processing can take time (ShipEngine API etc.)
-        async def _process_in_background(application, update_obj):
-            try:
-                await application.process_update(update_obj)
-            except Exception as e:
-                logger.error(f"Background update processing error: {e}")
-        
+        # Process update synchronously - Telegram allows up to 60s for webhook response
         update = Update.de_json(update_data, app.bot)
-        asyncio.create_task(_process_in_background(app, update))
+        await app.process_update(update)
         
         # Background MongoDB write
         if update_id:
