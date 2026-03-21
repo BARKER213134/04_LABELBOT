@@ -77,6 +77,12 @@ async def lifespan(app: FastAPI):
     _background_tasks.add(task)
     task.add_done_callback(_background_tasks.discard)
 
+    # Start health monitor (checks every hour, sends report to admin)
+    from services.health_monitor import health_monitor_loop
+    monitor_task = asyncio.create_task(health_monitor_loop())
+    _background_tasks.add(monitor_task)
+    monitor_task.add_done_callback(_background_tasks.discard)
+
     yield
 
     logger.info("Shutting down...")
