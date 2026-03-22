@@ -244,13 +244,18 @@ async def telegram_webhook(
         # This ensures webhook returns instantly so K8s health checks never time out
         update = Update.de_json(update_data, app.bot)
         
-        async def _process_in_background(upd, upd_id):
+        # Capture bot_app in a local variable to avoid closure issues
+        bot_app = app
+        
+        async def _process_in_background(ba, upd, upd_id):
             try:
-                await app.process_update(upd)
-            except (TimedOut, NetworkError):
-                pass
+                logger.warning(f"[WEBHOOK] BG start processing update {upd_id}, type={'callback' if upd.callback_query else 'message'}")
+                await ba.process_update(upd)
+                logger.warning(f"[WEBHOOK] BG done processing update {upd_id}")
+            except (TimedOut, NetworkError) as e:
+                logger.warning(f"[WEBHOOK] BG network error for {upd_id}: {e}")
             except Exception as e:
-                logger.error(f"[WEBHOOK] Background processing error for {upd_id}: {e}")
+                logger.error(f"[WEBHOOK] BG processing error for {upd_id}: {e}", exc_info=True)
             finally:
                 if upd_id:
                     try:
@@ -258,7 +263,7 @@ async def telegram_webhook(
                     except Exception:
                         pass
         
-        task = asyncio.create_task(_process_in_background(update, update_id))
+        task = asyncio.create_task(_process_in_background(bot_app, update, update_id))
         _processing_tasks.add(task)
         task.add_done_callback(_processing_tasks.discard)
         
