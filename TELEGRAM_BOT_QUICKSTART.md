@@ -119,7 +119,7 @@
 ### Веб-дашборд:
 
 Для полного функционала используйте:
-https://shipping-dashboard-8.preview.emergentagent.com
+https://shipbot-dashboard.preview.emergentagent.com
 
 **В дашборде можно:**
 - Просмотреть все заказы

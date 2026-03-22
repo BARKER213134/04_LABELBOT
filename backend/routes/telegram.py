@@ -237,9 +237,15 @@ async def telegram_webhook(
         if app is None:
             return JSONResponse(content={"status": "ok"})
         
-        # Process update synchronously - Telegram allows up to 60s for webhook response
+        # Process update with timeout protection
+        # If processing takes too long, Kubernetes health checks fail and kill the pod
         update = Update.de_json(update_data, app.bot)
-        await app.process_update(update)
+        try:
+            await asyncio.wait_for(app.process_update(update), timeout=25.0)
+        except asyncio.TimeoutError:
+            logger.warning(f"[WEBHOOK] Update {update_id} processing timed out (25s)")
+        except Exception as e:
+            logger.error(f"[WEBHOOK] Update processing error: {e}")
         
         # Background MongoDB write
         if update_id:

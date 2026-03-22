@@ -7,212 +7,148 @@ PRODUCT REQUIREMENTS:
 - A database (MongoDB) to store user and shipment history.
 - A complete user management system where each user has a balance manageable from the admin panel.
 - A professional, multi-step wizard conversation flow for data entry in the bot.
-- Support for both test and production ShipEngine environments, switchable from the admin panel.
+- Support for both test and production ShipEngine environments.
 - The wizard must include a summary and an option to edit data before final confirmation.
-- The bot's UI should prioritize buttons over text commands.
-- A skip button for optional fields.
 - Prices fetched from ShipEngine must have a 0 markup.
-- The bot should include buttons for Balance, Templates, Refund, FAQ, and Help.
 - Implement cryptocurrency payments via OxaPay.
-- After a label is successfully created, an AI should generate a unique, uplifting thank-you message in Russian.
-- The bot should download the label PDF from ShipEngine and send it as a file, hiding the original URL.
-- An admin panel feature for mass messaging/advertising to all users.
-- Admin functionality to ban, unban, and delete users.
-- An admin panel with authentication. It should display order statistics, including the cost from ShipEngine, the price paid by the user, and the profit. Orders with less than 0 profit must be highlighted in red.
-- A maintenance mode in the admin panel to broadcast messages and temporarily disable bot functionality.
-- The Continue Order button after a balance top-up should only appear if the user has a pending order.
-- An admin notification system for new users, balance top-ups, label creations, and user errors.
-- The bot must support English and Russian languages (i18n).
+- An AI should generate a unique, uplifting thank-you message in Russian after label creation.
+- The bot should download the label PDF from ShipEngine and send it as a file.
+- An admin panel feature for mass messaging, user management, and order statistics (highlighting orders with < 0 profit).
+- A maintenance mode in the admin panel.
+- Support English and Russian languages (i18n).
 
 **User's preferred language**: Russian. The next agent MUST respond in Russian.
 
 **what currently exists?**
-A full-stack application (FastAPI backend, React admin panel, MongoDB) for a Telegram shipping bot. A significant amount of work has been done in this session to fix core issues and add new features.
-
-The most critical issue, a price discrepancy between the estimate and final charge from ShipEngine, has been addressed by enforcing the use of  during label creation. The price estimation logic was also improved to include additional fees () for better accuracy.
-
-Numerous bot stability issues were resolved by implementing a robust state-clearing mechanism that manually deletes conversation states from the  collection in MongoDB, fixing cases where the bot would hang.
-
-The admin panel received major enhancements: a full UI to manage a maintenance mode whitelist, and a new user detail view that displays collapsible lists of the user's entire label and top-up history.
-
-The agent also improved user-facing error messages, added retry logic for unstable ShipEngine API calls, and adjusted carrier rate filtering and sorting based on user feedback. However, the session ended with the production environment being down due to a failed deployment.
+A full-stack application (FastAPI backend, React admin panel, MongoDB) for a Telegram shipping bot. In this session, critical stability, financial, and deployment issues were resolved. The bot's startup sequence was optimized to prevent Kubernetes health check timeouts. A major financial bug where the bot undercharged users for large packages (missing insurance/dimensional weight fees) was fixed. A health monitor was added, and the ShipEngine API fallback mechanism was corrected using the user's actual Carrier IDs.
 
 **Last working item**:
-- Last item agent was working: Debugging a failed deployment which caused the admin panel and backend to be inaccessible on the production environment. The user provided deployment logs indicating the backend application was failing to start correctly.
-- Status: IN PROGRESS
-- Agent Testing Done: N
-- Which testing method agent to use? The main agent needs to analyze the deployment logs to fix the application startup crash. After a successful deployment, the frontend testing agent should be used to verify the admin panel, and the backend testing agent to verify the bot's core functionality.
-- User Testing Done: N
+- **Last item agent was working**: Implementing a hybrid webhook processing model in . 
+*Reasoning:* The production server kept returning HTTP 520 and crashing after a few hours. The agent diagnosed that synchronous processing of long ShipEngine API calls (30-40 seconds) in the webhook route tied up the single Uvicorn worker. This prevented the server from responding to Kubernetes health checks, causing K8s to kill and restart the pod. The agent just applied a fix to process fast updates synchronously and heavy tasks in a background , but the session ended before verification.
+- **Status**: TESTING PENDING
+- **Agent Testing Done**: N
+- **Which testing method agent to use?** backend testing agent / manual testing by curl to ensure the  endpoint responds immediately while processing heavy payloads in the background.
+- **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
-- Issue 1: Production deployment is failing (P0)
-- Issue 2: ShipEngine API for getting carriers is unstable (P1)
-- Issue 3: Incorrect weight/dimensions when loading from a template (P2)
-- Issue 4: SITKAGEAR text may still appear on UPS labels (P3)
+- Issue 1: Production Pod Restarts / HTTP 520 Errors (P0)
+  - Attempted fixes: Made bot preloading asynchronous, moved route imports out of lifespan. Finally, changed webhook processing to a hybrid async/sync model.
+  - Next debug checklist: Check  to ensure  for heavy updates doesn't lose context or break 's . Verify health checks pass during label generation.
+  - Why fix this issue and what will be achieved with the fix? Prevents the Kubernetes pod from being killed during long ShipEngine API calls, stabilizing production.
+  - Status: TESTING PENDING
+  - Is recurring issue? Y
+  - Should Test frontend/backend/both after fix? backend
+  - Blocked on other issue: None
 
-**Issues Detail:**
-- **Issue 1:**
-    - **Description:** The production deployment is failing, making the entire application inaccessible. The logs provided by the user in message #790 show  errors, which indicates that the NGINX ingress proxy cannot connect to the backend Uvicorn server. This strongly suggests the FastAPI application is crashing on startup.
-    - **Attempted fixes:** None for this specific log. The agent was about to start debugging when the session ended.
-    - **Next debug checklist:**
-        1.  Carefully analyze the backend startup logs provided by the user in message #790.
-        2.  The  error means the backend process on port 8001 is not running or not responding. Look for any Python tracebacks or fatal errors that occur immediately after the  message.
-        3.  The previous deployment failed due to an unhandled  exception. While the agent added an error handler for this, it's possible a new unhandled exception is causing the crash.
-        4.  Review all recent changes, especially in , , and  for potential startup issues.
-    - **Why fix this issue and what will be achieved with the fix?** This is a critical blocker. The production application is down and unusable. Fixing this will restore service and allow verification of all other fixes.
-    - **Status:** IN PROGRESS
-    - **Is recurring issue?** Y
-    - **Should Test frontend/backend/both after fix?** both
-    - **Blocked on other issue:** None. This is the primary blocker.
+- Issue 2: Incorrect weight/dimensions when loading from a template (P2)
+  - Attempted fixes: None yet.
+  - Next debug checklist: Review  ->  and  -> .
+  - Why fix this issue and what will be achieved with the fix? Ensures users see accurate data when reusing shipping templates.
+  - Status: NOT STARTED
+  - Is recurring issue? N
+  - Should Test frontend/backend/both after fix? backend
 
-- **Issue 2:**
-    - **Description:** The ShipEngine API endpoint  is highly unstable and frequently times out, which prevents the bot from fetching shipping rates.
-    - **Attempted fixes:** The agent implemented a retry mechanism, which helps but doesn't solve the root problem of the slow endpoint. The agreed-upon solution is to use a hardcoded fallback list of carrier IDs.
-    - **Next debug checklist:**
-        1.  Politely ask the user again to provide the  for their FedEx, UPS, and USPS accounts from their ShipEngine dashboard. They look like .
-        2.  Modify the  function in  to use this hardcoded list as a fallback if the API call fails or times out.
-    - **Why fix this issue and what will be achieved with the fix?** This will make the bot's core functionality (fetching rates) reliable even when the ShipEngine API is having issues.
-    - **Status:** BLOCKED (on user providing carrier IDs)
-    - **Is recurring issue?** Y
-    - **Should Test frontend/backend/both after fix?** backend
-    - **Blocked on other issue:** Issue 1.
-
-- **Issue 3:**
-    - **Description:** When loading a shipping template, the weight and dimensions are displayed incorrectly in the review summary. This is a carry-over issue from a previous session.
-    - **Next debug checklist:**
-        1.  Review  -> .
-        2.  Review  ->  to trace how template data is processed and displayed.
-    - **Status:** NOT STARTED
-    - **Is recurring issue?** N
-    - **Should Test frontend/backend/both after fix?** backend
-    - **Blocked on other issue:** Issue 1.
-
-- **Issue 4:**
-    - **Description:** SITKAGEAR text appears as the company name on UPS labels. This is a recurring issue.
-    - **Next debug checklist:** Advise the user to create a label in the production environment (once it's working) and check if the issue persists. Inform them this is very likely a setting in their ShipEngine account dashboard and not in the code.
-    - **Status:** USER VERIFICATION PENDING
-    - **Is recurring issue?** Y
-    - **Should Test frontend/backend/both after fix?** N/A
-    - **Blocked on other issue:** Issue 1.
+- Issue 3: SITKAGEAR text appears on UPS labels (P3)
+  - Attempted fixes: None. Believed to be a ShipEngine dashboard account setting.
+  - Next debug checklist: Ask user to verify if this still happens on production labels.
+  - Status: USER VERIFICATION PENDING
+  - Is recurring issue? Y
+  - Should Test frontend/backend/both after fix? NA
 
 **In progress Task List**:
 None.
 
-**Upcoming and Future Tasks**
+**Upcoming and Future Tasks**:
 - **Upcoming Tasks:**
-  - **FedEx Sandbox Handling (P2):** Implement a feature to hide FedEx as a carrier option when the bot is in sandbox mode.
+  - FedEx Sandbox Handling (P2): Hide FedEx as a carrier option when the bot is in sandbox mode.
 - **Future Tasks:**
-  - **Refactor  (P2):** This file is now nearly 3000 lines and is a significant maintenance liability. It urgently needs to be broken down into smaller, manageable modules (e.g., one module per conversation step).
+  - Refactor  (P1): File is ~3000 lines. Break it down into smaller modules per conversation step.
+  - Refactor  (P2): Break down massive React component into smaller, reusable pieces.
 
-**Completed work in this session**
-- **Core Pricing Fix:** Corrected logic to use  to guarantee the price seen by the user is the final price.
-- **Accurate Price Estimation:** Rate calculation now includes  (e.g., fuel surcharges) for more precise estimates.
-- **Accurate Profit Calculation:** Profit is now calculated dynamically () instead of being hardcoded.
-- **Bot State Management:** Fixed bot hanging issues by implementing robust state clearing in the MongoDB  collection on all cancellation/exit flows.
-- **Admin Panel UI/UX:**
-    - Implemented a full UI in the admin panel to manage a maintenance mode whitelist.
-    - Added collapsible sections in the user detail view to display the complete history of a user's created labels and balance top-ups.
-- **API & Deployment Resiliency:**
-    - Added a global Telegram bot error handler to prevent crashes from  errors.
-    - Implemented a retry mechanism for unstable ShipEngine API calls.
-    - Fixed API endpoints for user history to query correct fields ().
-- **Carrier Rate Handling:**
-    - Adjusted FedEx service filters to show a better mix of economy and express services.
-    - Increased the number of displayed FedEx rates to 6.
-    - Implemented sorting of all carrier rates by price (cheapest first).
-    - Removed duplicate USPS services from the rate list.
-- **Error Message Improvement:** Replaced technical ShipEngine/carrier error messages with generic, user-friendly text.
+**Completed work in this session**:
+- Fixed infinite recursion  in  across multiple files.
+- Fixed backend deployment  by moving  to a background task so Kubernetes health checks pass instantly.
+- Fixed critical financial bug: included  and  in rate estimates, and added a safeguard in  to charge actual label cost if it exceeds the estimate.
+- Added WhiteLabelPlatform.cc promotional button to bot's welcome and main menus.
+- Created  to check DB, Bot, API, and Webhooks hourly and alert the admin via Telegram.
+- Fixed MongoDB DNS  errors on startup by adding exponential backoff retry logic in .
+- Fixed ShipEngine fallback mechanism: Replaced dummy Carrier IDs with user's actual IDs (, , ).
+- Optimised MongoDB queries in  (added  limits).
+- Filtered out  carrier to prevent constant API warnings.
 
-**Earlier issues found/mentioned but not fixed**
-None not already listed in the pending issues.
+**Earlier issues found/mentioned but not fixed**:
+None outside of the pending list.
 
-**Known issue recurrence from previous fork**
-- **Price Discrepancy:** The root cause was found and fixed, but this needs to be verified on production.
-- **SITKAGEAR on UPS labels:** Still pending user verification.
-- **NEW: ShipEngine API instability:** The API is frequently timing out. A retry mechanism was added, but a more permanent fallback is needed.
-- **NEW: Deployment Failures:** The application is currently failing to deploy.
+**Known issue recurrence from previous fork**:
+- Issue recurrence in previous fork: Production Deployment Failures / Server Crashes.
+- Recurrence count: 3+
+- Status: TESTING PENDING (Believed to be solved by the final hybrid webhook fix, but K8s health check timeouts have been a persistent theme).
 
-**Code Architecture**
+**Code Architecture**:
 
 
-**Key Technical Concepts**
-- ** State Persistence:** Deep understanding that conversation state is persisted in the  MongoDB collection and requires manual deletion to properly reset the bot's flow.
-- **ShipEngine API Instability:** Encountered and mitigated frequent  and  issues with a retry wrapper. Identified the  endpoint as the primary bottleneck.
-- **Deployment Debugging:** The agent debugged multiple deployment failures by analyzing production logs, identifying application crashes caused by unhandled exceptions () and startup issues ().
-- **React UI Development:** Built complex, stateful UI components in the admin panel using  and  to fetch and display historical data and manage settings.
+**Key Technical Concepts**:
+- **Kubernetes Health Checks vs. Single Worker:** FastAPI running on a single Uvicorn worker will fail K8s liveness probes if a single request (like a webhook triggering ShipEngine) takes 30+ seconds.
+- **ShipEngine Cost Discrepancies:** Dimensional weight and insurance can make the final  drastically higher than the base . 
 
-**key DB schema**
-- **ptb_conversations:** Manually manipulated to clear bot state. Key is  and a  for the handler.
-- **orders:** Stores created label information. Queried for the user history view.
-- **balance_logs:** Used as the primary source for user top-up history.
-- **oxapay_invoices:** Used as a secondary source for user top-up history.
-- **settings:** A collection now used to store configuration, including the .
+**key DB schema**:
+- : Manages python-telegram-bot state.
+- : Stores label info.
+- : Tracks OxaPay crypto top-ups.
 
-**All files of reference**
-- : The monolithic file for all bot logic.
-- : All interaction with the ShipEngine API.
-- : The main file for the admin UI.
-- : Where the Telegram bot application is configured.
-- : API endpoints for the admin panel.
-
-**Areas that need refactoring**:
-- **:** This is the highest priority for refactoring. The file is extremely large (approaching 3000 lines) and contains convoluted logic for the entire user flow, making it nearly unmaintainable. It must be broken down into smaller, single-responsibility modules.
-- **:** This React component has grown very large. The logic for user details, balance management, label history, and top-up history should be extracted into separate, reusable components.
-
-**key api endpoints**
-- : Add/remove users from the maintenance whitelist.
-- : Get all created labels for a specific user.
-- : Get the balance top-up history for a specific user.
-
-**Critical Info for New Agent**
-- **PRODUCTION IS DOWN.** Your first and only priority is to fix the failed deployment. Analyze the logs in the user's last message (#790). The  error means the backend app is crashing on startup. You must find and fix this crash.
-- After fixing the deployment, you will need to get the  from the user to implement the fallback for the unstable ShipEngine API. This is the next most critical issue.
-- A massive number of features and fixes were implemented. Once production is back up, you should guide the user to test the key fixes:
-    1.  Create a FedEx label to confirm the price is now fixed and accurate.
-    2.  Cancel a label partway through and start a new one to confirm the bot no longer hangs.
-    3.  Check the new user history and maintenance whitelist features in the admin panel.
-- Be prepared to continue debugging, as many changes have been made and may have unintended side effects.
-- **Strongly recommend** proposing the refactoring of  as the next major task after the critical issues are resolved. The file's complexity is a huge risk to the project's stability.
-
-**documents and test reports created in this job**
+**changes in tech stack**:
 None.
 
-**Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Asks for sorting rates by price, not by carrier. (Implemented)
-2.  **User:** Requests to see a user's full label and top-up history in the admin panel. (Implemented)
-3.  **User:** Asks to see the amount and date of top-ups, not just the balance. (Implemented)
-4.  **User:** Reports that the label/top-up history is showing up empty (0). (Fixed by correcting API query fields)
-5.  **User:** Confirms labels are showing but top-ups are still missing. (Fixed by adding a second data source for top-ups)
-6.  **User:** admin panel stopped working (Reports production is down after a deployment).
-7.  **User:** (Provides deployment logs showing  errors).
-8.  **User:** (Responds to agent's clarification)
-9.  **User:** Reports a UPS-specific error: XML Shipping System is unavailable. (Fixed by adding better error messages)
-10. **User:** Notes that FedEx Ground Delivery is not showing up as an option. (Agent explained this is normal for residential addresses).
-11. **User:** Complains that FedEx rates are much higher than a competitor's. (Agent enabled cheaper FedEx services in response).
+**All files of reference**:
+- : App initialization and background tasks.
+- : Webhook endpoints (crucial for current pending issue).
+- : Carrier logic and pricing math.
+- : Core bot logic.
+- : System status reporter.
 
-**Project Health Check:**
-- **Broken:** The application is not deployable to the production environment, which is currently down.
+**Areas that need refactoring**:
+-  (High priority)
 
-**3rd Party Integrations**
-- **ShipEngine API**: For rates and labels.
-- **Telegram Bot API**: Via  library.
-- **OxaPay**: For cryptocurrency payments.
-- **OpenAI GPT-4o-mini**: For generating thank-you messages (uses Emergent LLM Key).
-- **MongoDB Atlas**: Production database.
+**key api endpoints**:
+- : Receives updates from Telegram.
+-  & : Used by Kubernetes for pod liveness.
 
-**Testing status**
-- **Testing agent used after significant changes:** NO
-- **Troubleshoot agent used after agent stuck in loop:** NO
-- **Test files created:** None
-- **Known regressions:** The entire production application is down due to a deployment failure.
+**Critical Info for New Agent**:
+- **DO NOT** make the entire webhook processing fully synchronous. The last action taken was implementing a hybrid webhook in  where quick updates are awaited directly, but heavy operations are pushed to . You MUST test if this successfully prevents the K8s pod from timing out and crashing (HTTP 520) while still allowing  to function properly.
+- The system heavily relies on 's . Ensure background tasks don't cause race conditions with persistence.
 
-**Credentials to test flow:**
-- **Admin Panel Login:**
-    - Username: 
-    - Password: 
-- **Admin Telegram ID**: 
+**documents and test reports created in this job**:
+-  (Updated)
+- 
 
-**What agent forgot to execute**
-- The agent did not fix the long-standing issue with incorrect weight/dimensions when loading from a template.
-- The agent did not follow up on getting the required  from the user to create a permanent fix for the ShipEngine API instability.
-- The agent did not analyze the final set of deployment logs provided by the user just before the session ended.</analysis>
+**Last 10 User Messages and any pending HUMAN messages**:
+1. User: Notes that the bot is spamming the health check every 5 minutes. (Agent fixed).
+2. User: Uploads image of a document verification UI. (Agent ignored, wrong project).
+3. User: Confirms it's the wrong project.
+4. User: бот перестал работать (Bot stopped working again).
+5. User: Provides deployment logs showing the bot worked for ~3 hours then crashed.
+6. User: сейчас 520 (Reporting production is down).
+7. User: Provides deployment logs showing successful startup, but followed by a crash.
+(Agent diagnosed the K8s health check timeout issue and pushed a fix just before the session ended).
+
+**Project Health Check**:
+- Broken (Production server is highly unstable and restarts every few hours due to webhook processing blocking health checks. A potential fix is in the code but unverified).
+
+**3rd Party Integrations**:
+- ShipEngine API — requires User API Key (Configured in DB/Settings)
+- Telegram Bot API — requires User API Key
+- OxaPay (Payments) — requires User API Key
+- OpenAI GPT-4o-mini (Thank you messages) — uses Emergent LLM Key
+
+**Testing status**:
+- Testing agent used after significant changes: YES (Early in session, but NOT for the final webhook changes).
+- Troubleshoot agent used after agent stuck in loop: NO
+- Test files created: None
+- Known regressions: Webhook background processing might interfere with PTB's ConversationHandler state. Needs verification.
+
+**Credentials to test flow**:
+- Admin Panel Login:  / 
+- Admin Telegram ID: 
+
+**What agent forgot to execute**:
+The agent did not test the final  modification made to  (the hybrid webhook logic) before the session ended. Testing this is priority #1.</analysis>
