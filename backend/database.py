@@ -10,11 +10,12 @@ class Database:
     db: AsyncIOMotorDatabase = None
 
 async def connect_db():
-    """Initialize database connection - fast startup, verify in background"""
+    """Initialize database connection - instant startup, lazy connect"""
     settings = get_settings()
     mongo_url = settings.mongo_url
 
-    # Create Motor client immediately (Motor is lazy - no TCP connection yet)
+    # Motor is lazy - no actual TCP connection happens here
+    # Real connection will be established on first database operation
     Database.client = AsyncIOMotorClient(
         mongo_url,
         serverSelectionTimeoutMS=10000,
@@ -30,14 +31,7 @@ async def connect_db():
         readPreference='primaryPreferred',
     )
     Database.db = Database.client[settings.db_name]
-    logger.info(f"MongoDB client created for: {settings.db_name} (lazy connect)")
-
-    # Quick ping attempt (3s timeout) - non-fatal if fails
-    try:
-        await asyncio.wait_for(Database.client.admin.command("ping"), timeout=3.0)
-        logger.info("MongoDB ping OK")
-    except Exception as e:
-        logger.warning(f"MongoDB ping failed (non-fatal, will retry lazily): {e}")
+    logger.info(f"MongoDB client created for: {settings.db_name}")
 
 async def close_db():
     """Close database connection"""
