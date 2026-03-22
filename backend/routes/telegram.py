@@ -249,13 +249,11 @@ async def telegram_webhook(
         
         async def _process_in_background(ba, upd, upd_id):
             try:
-                logger.warning(f"[WEBHOOK] BG start processing update {upd_id}, type={'callback' if upd.callback_query else 'message'}")
                 await ba.process_update(upd)
-                logger.warning(f"[WEBHOOK] BG done processing update {upd_id}")
-            except (TimedOut, NetworkError) as e:
-                logger.warning(f"[WEBHOOK] BG network error for {upd_id}: {e}")
+            except (TimedOut, NetworkError):
+                pass
             except Exception as e:
-                logger.error(f"[WEBHOOK] BG processing error for {upd_id}: {e}", exc_info=True)
+                logger.error(f"[WEBHOOK] BG error for update {upd_id}: {e}")
             finally:
                 if upd_id:
                     try:
