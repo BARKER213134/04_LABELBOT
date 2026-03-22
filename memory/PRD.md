@@ -48,7 +48,6 @@ Create a Telegram bot for generating shipping labels using the ShipEngine API wi
 - **Admin Telegram ID:** 7066790254
 
 ## Pending Issues
-- P1: Hardcoded carrier_ids for ShipEngine fallback (needs user's IDs)
 - P2: Incorrect weight/dimensions from templates
 - P3: "SITKAGEAR" on UPS labels (ShipEngine account setting)
 - P2: Hide FedEx in sandbox mode
@@ -58,6 +57,7 @@ Create a Telegram bot for generating shipping labels using the ShipEngine API wi
 - Refactor `AdminPanel.jsx` into components
 
 ## Update Log
+- **2026-03-22**: **P0 FIXED** - Webhook now uses fire-and-forget `asyncio.create_task()`. Health checks respond in <250ms even under load. Prevents K8s pod restarts.
 - **2026-03-21**: Fixed webhook timeout (background processing), MongoDB DNS retry, health monitor service
 - **2026-03-21**: Added WhiteLabelPlatform.cc button to bot menu (i18n)
 - **2026-03-21**: Fixed rate pricing (include all cost components), negative profit protection

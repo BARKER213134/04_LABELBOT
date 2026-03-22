@@ -36,6 +36,9 @@ _LOCAL_CACHE_TTL = 300
 # Blocked IPs (for severe abuse)
 _blocked_ips = set()
 
+# Background tasks set (prevents garbage collection)
+_processing_tasks = set()
+
 
 def _is_duplicate_local(update_id: int) -> bool:
     """Fast local-only deduplication check"""
@@ -237,19 +240,27 @@ async def telegram_webhook(
         if app is None:
             return JSONResponse(content={"status": "ok"})
         
-        # Process update with timeout protection
-        # If processing takes too long, Kubernetes health checks fail and kill the pod
+        # Fire-and-forget: process update in background task
+        # This ensures webhook returns instantly so K8s health checks never time out
         update = Update.de_json(update_data, app.bot)
-        try:
-            await asyncio.wait_for(app.process_update(update), timeout=25.0)
-        except asyncio.TimeoutError:
-            logger.warning(f"[WEBHOOK] Update {update_id} processing timed out (25s)")
-        except Exception as e:
-            logger.error(f"[WEBHOOK] Update processing error: {e}")
         
-        # Background MongoDB write
-        if update_id:
-            asyncio.create_task(_mark_update_processed(update_id, db))
+        async def _process_in_background(upd, upd_id):
+            try:
+                await app.process_update(upd)
+            except (TimedOut, NetworkError):
+                pass
+            except Exception as e:
+                logger.error(f"[WEBHOOK] Background processing error for {upd_id}: {e}")
+            finally:
+                if upd_id:
+                    try:
+                        await _mark_update_processed(upd_id, Database.db)
+                    except Exception:
+                        pass
+        
+        task = asyncio.create_task(_process_in_background(update, update_id))
+        _processing_tasks.add(task)
+        task.add_done_callback(_processing_tasks.discard)
         
         return JSONResponse(content={"status": "ok"})
     
