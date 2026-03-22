@@ -10,60 +10,34 @@ class Database:
     db: AsyncIOMotorDatabase = None
 
 async def connect_db():
-    """Initialize database connection with retry logic for DNS resolution in Kubernetes"""
+    """Initialize database connection - fast startup, verify in background"""
     settings = get_settings()
     mongo_url = settings.mongo_url
 
-    max_retries = 5
-    retry_delay = 2
+    # Create Motor client immediately (Motor is lazy - no TCP connection yet)
+    Database.client = AsyncIOMotorClient(
+        mongo_url,
+        serverSelectionTimeoutMS=10000,
+        connectTimeoutMS=5000,
+        socketTimeoutMS=10000,
+        maxPoolSize=50,
+        minPoolSize=5,
+        maxIdleTimeMS=30000,
+        waitQueueTimeoutMS=10000,
+        retryWrites=True,
+        retryReads=True,
+        w=1,
+        readPreference='primaryPreferred',
+    )
+    Database.db = Database.client[settings.db_name]
+    logger.info(f"MongoDB client created for: {settings.db_name} (lazy connect)")
 
-    for attempt in range(1, max_retries + 1):
-        try:
-            Database.client = AsyncIOMotorClient(
-                mongo_url,
-                serverSelectionTimeoutMS=15000,
-                connectTimeoutMS=10000,
-                socketTimeoutMS=15000,
-                maxPoolSize=50,
-                minPoolSize=5,
-                maxIdleTimeMS=30000,
-                waitQueueTimeoutMS=10000,
-                retryWrites=True,
-                retryReads=True,
-                w=1,
-                readPreference='primaryPreferred',
-            )
-            Database.db = Database.client[settings.db_name]
-
-            # Verify connection actually works (triggers DNS resolution)
-            await Database.client.admin.command("ping")
-            logger.info(f"Connected to MongoDB: {settings.db_name} (attempt {attempt})")
-            return
-
-        except Exception as e:
-            logger.warning(f"MongoDB connection attempt {attempt}/{max_retries} failed: {e}")
-            if Database.client:
-                Database.client.close()
-                Database.client = None
-                Database.db = None
-
-            if attempt < max_retries:
-                await asyncio.sleep(retry_delay * attempt)
-            else:
-                logger.error(f"Failed to connect to MongoDB after {max_retries} attempts")
-                # Create client without ping verification as last resort
-                Database.client = AsyncIOMotorClient(
-                    mongo_url,
-                    serverSelectionTimeoutMS=30000,
-                    connectTimeoutMS=15000,
-                    socketTimeoutMS=15000,
-                    maxPoolSize=50,
-                    minPoolSize=5,
-                    retryWrites=True,
-                    retryReads=True,
-                )
-                Database.db = Database.client[settings.db_name]
-                logger.warning("MongoDB client created without verification (lazy connect)")
+    # Quick ping attempt (3s timeout) - non-fatal if fails
+    try:
+        await asyncio.wait_for(Database.client.admin.command("ping"), timeout=3.0)
+        logger.info("MongoDB ping OK")
+    except Exception as e:
+        logger.warning(f"MongoDB ping failed (non-fatal, will retry lazily): {e}")
 
 async def close_db():
     """Close database connection"""
