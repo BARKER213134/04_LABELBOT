@@ -12,6 +12,33 @@ RATE_MARKUP = 10.0
 # Low balance threshold for notifications
 LOW_BALANCE_THRESHOLD = 50.0
 
+# USPS Flat Rate box max dimensions (L, W, H in inches) - sorted descending for fit check
+FLAT_RATE_MAX_DIMS = {
+    "flat_rate_envelope": (12.5, 9.5, 0.75),
+    "flat_rate_legal_envelope": (15.0, 9.5, 0.75),
+    "flat_rate_padded_envelope": (12.5, 9.5, 1.0),
+    "small_flat_rate_box": (8.625, 5.375, 1.625),
+    "medium_flat_rate_box": (13.625, 11.875, 5.5),
+    "large_flat_rate_box": (12.25, 12.25, 6.0),
+    "regional_rate_box_a": (10.125, 7.125, 5.0),
+    "regional_rate_box_b": (16.25, 14.5, 3.0),
+}
+# Max weight for flat rate: 70 lbs (USPS limit)
+FLAT_RATE_MAX_WEIGHT_LBS = 70.0
+
+
+def _package_fits_flat_rate(pkg_dims: tuple, flat_rate_type: str) -> bool:
+    """Check if package dimensions fit in a flat rate box (any orientation)"""
+    max_dims = FLAT_RATE_MAX_DIMS.get(flat_rate_type)
+    if not max_dims:
+        return True  # Unknown type, don't filter
+    
+    # Sort both descending for best-fit orientation check
+    pkg_sorted = sorted(pkg_dims, reverse=True)
+    box_sorted = sorted(max_dims, reverse=True)
+    
+    return all(p <= b for p, b in zip(pkg_sorted, box_sorted))
+
 class ShipEngineService:
     """Service for handling ShipEngine API interactions"""
     
@@ -133,6 +160,33 @@ class ShipEngineService:
             
             rates_data = response.json()
             rates = rates_data.get("rate_response", {}).get("rates", [])
+            
+            # Extract package dimensions for flat rate filtering
+            pkg = shipment_data.get("packages", [{}])[0]
+            pkg_weight = pkg.get("weight", {}).get("value", 0)
+            pkg_dims_raw = pkg.get("dimensions", {})
+            pkg_l = pkg_dims_raw.get("length", 0)
+            pkg_w = pkg_dims_raw.get("width", 0)
+            pkg_h = pkg_dims_raw.get("height", 0)
+            pkg_dims = (pkg_l, pkg_w, pkg_h)
+            has_dimensions = pkg_l > 0 and pkg_w > 0 and pkg_h > 0
+            
+            # Filter out flat rate options that don't fit the package
+            if has_dimensions:
+                filtered_rates = []
+                for rate in rates:
+                    pkg_type = rate.get("package_type") or ""
+                    if "flat_rate" in pkg_type or "regional_rate" in pkg_type:
+                        if not _package_fits_flat_rate(pkg_dims, pkg_type):
+                            logger.info(f"Filtered out {rate.get('carrier_code')}/{rate.get('service_code')} "
+                                       f"({pkg_type}) - package {pkg_l}x{pkg_w}x{pkg_h} doesn't fit")
+                            continue
+                    filtered_rates.append(rate)
+                
+                removed = len(rates) - len(filtered_rates)
+                if removed > 0:
+                    logger.warning(f"Removed {removed} flat rate options that don't fit package {pkg_l}x{pkg_w}x{pkg_h}")
+                rates = filtered_rates
             
             # Log carriers in response
             carriers_in_rates = set()

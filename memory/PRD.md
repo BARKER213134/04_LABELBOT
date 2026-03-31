@@ -57,7 +57,9 @@ Create a Telegram bot for generating shipping labels using the ShipEngine API wi
 - Refactor `AdminPanel.jsx` into components
 
 ## Update Log
+- **2026-03-22**: **CRITICAL FIX** - Filter out USPS flat rate options when package doesn't fit. Prevents $18→$117 price discrepancy on large packages.
 - **2026-03-22**: **P0 FIXED** - Webhook now uses fire-and-forget `asyncio.create_task()`. Health checks respond in <250ms even under load. Prevents K8s pod restarts.
+- **2026-03-22**: **DEPLOY FIX** - `connect_db()` instant startup (no ping blocking). Health check available in <2.5s.
 - **2026-03-21**: Fixed webhook timeout (background processing), MongoDB DNS retry, health monitor service
 - **2026-03-21**: Added WhiteLabelPlatform.cc button to bot menu (i18n)
 - **2026-03-21**: Fixed rate pricing (include all cost components), negative profit protection
